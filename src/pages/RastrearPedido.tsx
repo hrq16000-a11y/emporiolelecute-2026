@@ -208,6 +208,17 @@ const RastrearPedido = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const isFinalStatus = !!order && ["delivered", "cancelled"].includes(order.status);
+
+  // Tempo real via SSE (fallback automático para polling quando não conecta)
+  const { connected: liveConnected } = useOrderStream({
+    orderCode: order?.order_code,
+    enabled: !!order && !isFinalStatus,
+    onUpdate: () => {
+      if (order?.order_code) handleSearch(order.order_code, { silent: true });
+    },
+  });
+
   // Sincronização periódica do status enquanto o pedido não estiver finalizado
   useEffect(() => {
     if (!order) return;
@@ -218,8 +229,8 @@ const RastrearPedido = () => {
         handleSearch(code, { silent: true });
       }
     };
-    // Near-realtime: intervalo curto + sync ao voltar o foco/conexão.
-    const id = setInterval(sync, 15000);
+    // SSE ativo → polling só como rede de segurança (2 min). Sem SSE → 15s.
+    const id = setInterval(sync, liveConnected ? 120000 : 15000);
     window.addEventListener("focus", sync);
     window.addEventListener("online", sync);
     document.addEventListener("visibilitychange", sync);
@@ -230,7 +241,8 @@ const RastrearPedido = () => {
       document.removeEventListener("visibilitychange", sync);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order?.order_code, order?.status]);
+  }, [order?.order_code, order?.status, liveConnected]);
+
 
 
   const formatDate = (dateString: string) => {
