@@ -632,6 +632,21 @@ const Carrinho = () => {
   };
 
 
+  // Background sync do checkout: reexecuta a tentativa pendente quando a
+  // conexão volta. Idempotente (mesmo order_code), sem duplicar pedidos.
+  useEffect(() => {
+    if (!pendingSync) return;
+    const retry = () => {
+      if (isSubmitting) return;
+      setPendingSync(false);
+      setCheckoutError(null);
+      void handleSubmitOrder();
+    };
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSync, isSubmitting]);
+
   if (orderComplete) {
     return (
       <div className="min-h-screen bg-background">
