@@ -383,7 +383,26 @@ const ProductPage = () => {
     );
   }
 
+  // Falha de rede/backend ≠ produto inexistente: mostra erro rastreável + retry.
+  if (productError && !product) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-28 md:pt-32 pb-16 container mx-auto px-4">
+          <DataErrorState
+            scope="product"
+            error={productError}
+            onRetry={() => refetchProduct()}
+            isRetrying={isRefetchingProduct}
+          />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!product) {
+
     return (
       <div className="min-h-screen bg-background">
         <Header />
