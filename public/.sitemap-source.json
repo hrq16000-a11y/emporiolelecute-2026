@@ -1,10 +1,10 @@
 {
-  "materialized_at": "2026-08-12T20:33:45.709Z",
+  "materialized_at": "2026-08-12T20:35:15.925Z",
   "source": "generate-sitemap@v2.1b",
-  "generated_at": "2026-08-12T20:33:45.626Z",
+  "generated_at": "2026-08-12T20:35:15.839Z",
   "namespace": "/produto",
   "products_count": 66,
-  "sha256": "d166c4f411d60ed36d9d82932ea51c3c36ccbe5ded0b6cb63edb778e54fba82a",
+  "sha256": "6e2c9646e9960e4a192c750eb777f42509f206c2649337a7842ab2e385962ab6",
   "bytes": 38019,
   "endpoint": "https://xfqffqxqiuqauefrrcxn.supabase.co/functions/v1/generate-sitemap"
 }
