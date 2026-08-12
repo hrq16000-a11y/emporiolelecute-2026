@@ -315,8 +315,8 @@ const RastrearPedido = () => {
             )}
 
             {/* Order Details */}
-            {order && (
-              <div className="space-y-6">
+            {order && !isLoading && (
+              <div className="space-y-6 animate-fade-in">
                 {/* Status Card */}
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
                   <div className={`${status?.color} p-6 text-white`}>
