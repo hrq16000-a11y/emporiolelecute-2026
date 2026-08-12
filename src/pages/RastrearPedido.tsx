@@ -99,6 +99,8 @@ const RastrearPedido = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
   const [searched, setSearched] = useState(false);
   const { toast } = useToast();
 
@@ -107,16 +109,10 @@ const RastrearPedido = () => {
     { name: 'Rastrear Pedido', url: 'https://emporiolelecute.com.br/rastrear' },
   ];
 
-  // Auto-search if code is in URL
-  useEffect(() => {
-    if (initialCode) {
-      handleSearch(initialCode);
-    }
-  }, []);
-
-  const handleSearch = async (codeToSearch?: string) => {
+  const handleSearch = async (codeToSearch?: string, opts?: { silent?: boolean }) => {
     const code = codeToSearch || orderCode;
-    
+    const silent = !!opts?.silent;
+
     if (!code.trim()) {
       toast({
         title: "Digite o código do pedido",
@@ -125,8 +121,11 @@ const RastrearPedido = () => {
       return;
     }
 
-    setIsLoading(true);
-    setSearched(true);
+    if (silent) setIsSyncing(true);
+    else {
+      setIsLoading(true);
+      setSearched(true);
+    }
 
     try {
       // Use secure edge function for order tracking
@@ -136,6 +135,45 @@ const RastrearPedido = () => {
 
       if (error) {
         console.error("Error tracking order:", error);
+        if (!silent) {
+          toast({
+            title: "Erro ao buscar pedido",
+            description: "Tente novamente mais tarde.",
+            variant: "destructive",
+          });
+          setOrder(null);
+          setOrderItems([]);
+        }
+        return;
+      }
+
+      if (!data?.order) {
+        if (!silent) {
+          setOrder(null);
+          setOrderItems([]);
+          toast({
+            title: "Pedido não encontrado",
+            description: "Verifique o código e tente novamente.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      setOrder((prev) => {
+        if (silent && prev && prev.status !== data.order.status) {
+          toast({
+            title: "Status atualizado",
+            description: statusConfig[data.order.status]?.label || data.order.status,
+          });
+        }
+        return data.order;
+      });
+      setOrderItems(data.items || []);
+      setLastSync(new Date());
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      if (!silent) {
         toast({
           title: "Erro ao buscar pedido",
           description: "Tente novamente mais tarde.",
@@ -143,35 +181,34 @@ const RastrearPedido = () => {
         });
         setOrder(null);
         setOrderItems([]);
-        return;
       }
-
-      if (!data.order) {
-        setOrder(null);
-        setOrderItems([]);
-        toast({
-          title: "Pedido não encontrado",
-          description: "Verifique o código e tente novamente.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setOrder(data.order);
-      setOrderItems(data.items || []);
-    } catch (error) {
-      console.error("Error fetching order:", error);
-      toast({
-        title: "Erro ao buscar pedido",
-        description: "Tente novamente mais tarde.",
-        variant: "destructive",
-      });
-      setOrder(null);
-      setOrderItems([]);
     } finally {
-      setIsLoading(false);
+      if (silent) setIsSyncing(false);
+      else setIsLoading(false);
     }
   };
+
+  // Auto-search if code is in URL
+  useEffect(() => {
+    if (initialCode) {
+      handleSearch(initialCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sincronização periódica do status enquanto o pedido não estiver finalizado
+  useEffect(() => {
+    if (!order) return;
+    if (["delivered", "cancelled"].includes(order.status)) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        handleSearch(order.order_code, { silent: true });
+      }
+    }, 45000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order?.order_code, order?.status]);
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("pt-BR", {
