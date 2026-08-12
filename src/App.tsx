@@ -6,6 +6,8 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SocialProofToast from "@/components/SocialProofToast";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import RouteTransition, { GlobalProgressBar } from "@/components/RouteTransition";
+import { hydratePersistedQueries, installQueryPersistence } from "@/lib/queryPersist";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 
@@ -268,6 +270,13 @@ const queryClient = new QueryClient({
   }),
 });
 
+// Fallback de vitrine: hidrata o catálogo/config públicos do localStorage antes
+// do primeiro render e mantém o snapshot atualizado. Se o backend cair, a loja
+// continua renderizando o último estado conhecido em vez de ficar em branco.
+hydratePersistedQueries(queryClient);
+installQueryPersistence(queryClient);
+
+
 // Analytics wrapper component
 const AnalyticsWrapper = ({ children }: { children: React.ReactNode }) => {
   usePageTracking();
@@ -362,7 +371,9 @@ const App = () => {
               <VisitorTracker />
               <CookieConsentBanner />
               <SocialProofToast />
+              <GlobalProgressBar />
 
+              <RouteTransition>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={
@@ -1131,6 +1142,7 @@ const App = () => {
                   </Suspense>
                 } />
               </Routes>
+              </RouteTransition>
             </AnalyticsWrapper>
           </BrowserRouter>
       </TooltipProvider>
