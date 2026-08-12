@@ -716,7 +716,15 @@ const Produtos = () => {
                     <ProductSkeleton key={i} />
                   ))}
                 </div>
+              ) : productsError && !dbProducts?.length ? (
+                <DataErrorState
+                  scope="catalog"
+                  error={productsError}
+                  onRetry={() => refetchProducts()}
+                  isRetrying={isRefetchingProducts}
+                />
               ) : filteredProducts.length > 0 ? (
+
                 <>
                   <p className="text-sm text-muted-foreground mb-4">
                     {filteredProducts.length} {filteredProducts.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
