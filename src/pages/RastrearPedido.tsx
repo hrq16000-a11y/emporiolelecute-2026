@@ -12,6 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import DynamicSEO from "@/components/DynamicSEO";
 import BreadcrumbStructuredData from "@/components/BreadcrumbStructuredData";
 import { optimizeImage } from "@/lib/image";
+import OrderTrackingSkeleton from "@/components/OrderTrackingSkeleton";
+import { RefreshCw, Receipt, RotateCcw } from "lucide-react";
+import { useContactInfo } from "@/hooks/useContactInfo";
 
 interface OrderItem {
   id: string;
