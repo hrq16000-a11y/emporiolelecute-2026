@@ -282,7 +282,11 @@ const RastrearPedido = () => {
               </div>
             </div>
 
+            {/* Loading skeleton */}
+            {isLoading && <OrderTrackingSkeleton />}
+
             {/* No Order Found */}
+
             {searched && !order && !isLoading && (
               <div className="bg-card rounded-xl border border-border p-8 text-center">
                 <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
