@@ -33,8 +33,8 @@ const InstagramFeed = () => {
           <p className="text-muted-foreground">Acompanhe novidades, bastidores e inspirações</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {posts.slice(0, 12).map((post) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
+          {posts.slice(0, 6).map((post) => (
             <a
               key={post.id}
               href={post.post_url || "https://www.instagram.com/emporiolelecute"}
@@ -46,10 +46,11 @@ const InstagramFeed = () => {
               <BlurImage
                 src={post.image_url}
                 alt={post.alt_text}
-                width={400}
-                responsiveWidths={[200, 300, 400, 600]}
-                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                className="transition-transform duration-500 group-hover:scale-110"
+                width={600}
+                responsiveWidths={[300, 450, 600, 900]}
+                sizes="(max-width: 768px) 50vw, 33vw"
+                wrapperClassName="absolute inset-0 w-full h-full"
+                className="object-cover transition-transform duration-500 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-primary/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
                 <Heart className="h-8 w-8 text-primary-foreground" />
@@ -57,6 +58,7 @@ const InstagramFeed = () => {
             </a>
           ))}
         </div>
+
 
         <div className="text-center mt-8">
           <a
