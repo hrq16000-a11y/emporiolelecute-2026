@@ -270,6 +270,13 @@ const queryClient = new QueryClient({
   }),
 });
 
+// Fallback de vitrine: hidrata o catálogo/config públicos do localStorage antes
+// do primeiro render e mantém o snapshot atualizado. Se o backend cair, a loja
+// continua renderizando o último estado conhecido em vez de ficar em branco.
+hydratePersistedQueries(queryClient);
+installQueryPersistence(queryClient);
+
+
 // Analytics wrapper component
 const AnalyticsWrapper = ({ children }: { children: React.ReactNode }) => {
   usePageTracking();
