@@ -119,7 +119,8 @@ const Header = () => {
               width={1206}
               height={701}
               decoding="async"
-              fetchPriority="high"
+              // @ts-expect-error fetchpriority é atributo HTML válido (lowercase evita warning do React 18)
+              fetchpriority="high"
               className={`w-auto object-contain transition-all duration-500 group-hover:scale-105 ${
                 isScrolled ? "h-12 sm:h-14 md:h-20" : "h-16 sm:h-20 md:h-28"
               }`}
