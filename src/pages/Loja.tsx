@@ -1,3 +1,4 @@
+import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { Link } from "react-router-dom";
 import { MessageCircle, Heart, Shield, Truck, Star, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
