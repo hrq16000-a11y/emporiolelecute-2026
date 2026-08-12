@@ -1,4 +1,6 @@
 import { ProductSkeleton } from "@/components/ProductSkeleton";
+import DataErrorState from "@/components/DataErrorState";
+
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
@@ -34,7 +36,14 @@ const PRODUCTS_PER_PAGE = 12;
 
 const Produtos = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: dbProducts, isLoading: loadingProducts } = useDbProducts();
+  const {
+    data: dbProducts,
+    isLoading: loadingProducts,
+    error: productsError,
+    refetch: refetchProducts,
+    isRefetching: isRefetchingProducts,
+  } = useDbProducts();
+
   const { data: dbCategories } = useDbCategories({ publicOnly: true });
   const { data: dbOccasions } = useDbOccasions({ publicOnly: true });
   const { data: dbTags } = useTags();
@@ -716,7 +725,15 @@ const Produtos = () => {
                     <ProductSkeleton key={i} />
                   ))}
                 </div>
+              ) : productsError && !dbProducts?.length ? (
+                <DataErrorState
+                  scope="catalog"
+                  error={productsError}
+                  onRetry={() => refetchProducts()}
+                  isRetrying={isRefetchingProducts}
+                />
               ) : filteredProducts.length > 0 ? (
+
                 <>
                   <p className="text-sm text-muted-foreground mb-4">
                     {filteredProducts.length} {filteredProducts.length === 1 ? 'produto encontrado' : 'produtos encontrados'}

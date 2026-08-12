@@ -30,6 +30,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductPageSkeleton from "@/components/ProductPageSkeleton";
+import DataErrorState from "@/components/DataErrorState";
+
 // WhatsAppButton intencionalmente não importado na PDP — ver linha do bloco final.
 import ProductCard from "@/components/ProductCard";
 import RelatedProducts from "@/components/RelatedProducts";
@@ -82,7 +84,14 @@ const ProductPage = () => {
   const { whatsappNumber } = useContactInfo();
   const phone = (whatsappNumber || "5541992214299").replace(/\D/g, "");
   const navigate = useNavigate();
-  const { data: dbProduct, isLoading } = useDbProduct(slug || "");
+  const {
+    data: dbProduct,
+    isLoading,
+    error: productError,
+    refetch: refetchProduct,
+    isRefetching: isRefetchingProduct,
+  } = useDbProduct(slug || "");
+
   const { data: allProducts } = useDbProducts();
   const { data: pdpSections } = usePdpSectionsPublic();
   const { data: paymentConfig } = usePaymentConfig();
@@ -383,7 +392,26 @@ const ProductPage = () => {
     );
   }
 
+  // Falha de rede/backend ≠ produto inexistente: mostra erro rastreável + retry.
+  if (productError && !product) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-28 md:pt-32 pb-16 container mx-auto px-4">
+          <DataErrorState
+            scope="product"
+            error={productError}
+            onRetry={() => refetchProduct()}
+            isRetrying={isRefetchingProduct}
+          />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!product) {
+
     return (
       <div className="min-h-screen bg-background">
         <Header />
