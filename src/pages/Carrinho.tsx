@@ -75,6 +75,21 @@ const Carrinho = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
 
+  // Hidratação do carrinho (localStorage) — evita layout shift e flash de "carrinho vazio"
+  const [hydrated, setHydrated] = useState<boolean>(
+    () => useCartStore.persist?.hasHydrated?.() ?? true
+  );
+  useEffect(() => {
+    if (useCartStore.persist?.hasHydrated?.()) {
+      setHydrated(true);
+      return;
+    }
+    const unsub = useCartStore.persist?.onFinishHydration?.(() => setHydrated(true));
+    return () => unsub?.();
+  }, []);
+
+
+
   // Garante que a tela de "Pedido Enviado" abra sempre rolada ao topo,
   // independente da posição em que o usuário estava no formulário.
   useEffect(() => {
