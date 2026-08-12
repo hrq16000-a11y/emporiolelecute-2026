@@ -82,7 +82,14 @@ const ProductPage = () => {
   const { whatsappNumber } = useContactInfo();
   const phone = (whatsappNumber || "5541992214299").replace(/\D/g, "");
   const navigate = useNavigate();
-  const { data: dbProduct, isLoading } = useDbProduct(slug || "");
+  const {
+    data: dbProduct,
+    isLoading,
+    error: productError,
+    refetch: refetchProduct,
+    isRefetching: isRefetchingProduct,
+  } = useDbProduct(slug || "");
+
   const { data: allProducts } = useDbProducts();
   const { data: pdpSections } = usePdpSectionsPublic();
   const { data: paymentConfig } = usePaymentConfig();
