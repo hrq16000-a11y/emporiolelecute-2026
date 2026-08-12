@@ -1,4 +1,6 @@
 import { ProductSkeleton } from "@/components/ProductSkeleton";
+import DataErrorState from "@/components/DataErrorState";
+
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
