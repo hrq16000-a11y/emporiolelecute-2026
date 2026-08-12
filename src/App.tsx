@@ -564,6 +564,11 @@ const App = () => {
                       <AdminOrders />
                     </Suspense>
                   } />
+                  <Route path="pagamentos" element={
+                    <Suspense fallback={<AdminSkeleton />}>
+                      <AdminPayments />
+                    </Suspense>
+                  } />
                   <Route path="clientes" element={
                     <Suspense fallback={<AdminSkeleton />}>
                       <AdminCustomers />
