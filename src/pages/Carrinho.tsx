@@ -519,45 +519,55 @@ const Carrinho = () => {
     setInvalidFields(new Set());
 
     setIsSubmitting(true);
-    const code = generateOrderCode();
+    // Idempotência: o código é gerado UMA vez e reaproveitado em todas as
+    // tentativas, impedindo pedidos duplicados em caso de retry/instabilidade.
+    if (!orderCodeRef.current) orderCodeRef.current = generateOrderCode();
+    const code = orderCodeRef.current;
     setOrderCode(code);
 
     try {
       // Save order via secure server-side RPC (validates and inserts atomically)
-      const { error: orderError } = await supabase.rpc('create_order_with_items', {
-        _order: {
-          order_code: code,
-          customer_name: customer.name,
-          customer_email: customer.email,
-          customer_phone: customer.phone,
-          address_cep: address.cep,
-          address_city: address.city,
-          address_state: address.state,
-          shipping_method: 'A calcular via WhatsApp',
-          shipping_price: 0,
-          subtotal: total,
-          total: totalWithDiscount,
-          coupon_code: coupon?.code ?? null,
-          discount_amount: discount,
-          notes: coupon ? `Cupom aplicado: ${coupon.code} (-R$ ${coupon.discount_applied.toFixed(2)})` : null,
-          status: 'pending',
-        },
-        _items: items.map(item => ({
-          product_name: item.name,
-          product_slug: item.slug,
-          product_image: item.image,
-          quantity: item.quantity,
-          unit_price: item.price,
-          personalization: item.personalization || null,
-        })),
-      });
+      await retryAsync(async () => {
+        const { error: orderError } = await supabase.rpc('create_order_with_items', {
+          _order: {
+            order_code: code,
+            customer_name: customer.name,
+            customer_email: customer.email,
+            customer_phone: customer.phone,
+            address_cep: address.cep,
+            address_city: address.city,
+            address_state: address.state,
+            shipping_method: 'A calcular via WhatsApp',
+            shipping_price: 0,
+            subtotal: total,
+            total: totalWithDiscount,
+            coupon_code: coupon?.code ?? null,
+            discount_amount: discount,
+            notes: coupon ? `Cupom aplicado: ${coupon.code} (-R$ ${coupon.discount_applied.toFixed(2)})` : null,
+            status: 'pending',
+          },
+          _items: items.map(item => ({
+            product_name: item.name,
+            product_slug: item.slug,
+            product_image: item.image,
+            quantity: item.quantity,
+            unit_price: item.price,
+            personalization: item.personalization || null,
+          })),
+        });
 
-      if (orderError) {
-        console.error('Order save error:', orderError);
-        throw orderError;
-      }
+        if (orderError) {
+          // Violação de unicidade = o pedido já foi criado numa tentativa
+          // anterior. Não é erro: seguimos o fluxo sem duplicar.
+          const isDuplicate =
+            (orderError as { code?: string }).code === '23505' ||
+            /duplicate key|order_code/i.test(orderError.message ?? '');
+          if (isDuplicate) return;
+          throw orderError;
+        }
+      }, { retries: 2, backoffMs: 800 });
 
-      // Send email to store
+      // Send email to store (best-effort — nunca bloqueia a conclusão)
       const emailResponse = await supabase.functions.invoke('send-order-email', {
         body: {
           orderCode: code,
@@ -579,7 +589,7 @@ const Carrinho = () => {
       });
 
       if (emailResponse.error) {
-        console.error('Email error:', emailResponse.error);
+        reportError('checkout', emailResponse.error, { stage: 'send-order-email', code });
       }
 
       // Open WhatsApp with order details
@@ -595,16 +605,18 @@ const Carrinho = () => {
       });
 
     } catch (error) {
-      console.error('Error:', error);
+      const reported = reportError('checkout', error, { stage: 'create_order', code });
+      setCheckoutError(reported);
       toast({
-        title: "Erro ao enviar pedido",
-        description: "Tente novamente",
+        title: reported.title,
+        description: `${reported.description} Seu pedido ${code} não será duplicado ao tentar de novo.`,
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   if (orderComplete) {
     return (
