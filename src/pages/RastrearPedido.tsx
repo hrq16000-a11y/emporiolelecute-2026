@@ -336,6 +336,61 @@ const RastrearPedido = () => {
                   </div>
                 </div>
 
+                {/* Sync + pagamento / reembolso / nota */}
+                <div className="bg-card rounded-xl border border-border p-4 md:p-6 space-y-4 animate-fade-in">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Pagamento:</span>{" "}
+                      <span className="font-medium text-foreground">
+                        {paymentLabel[order.payment_status || "pending"] || "Aguardando"}
+                      </span>
+                      {lastSync && (
+                        <span className="block text-xs text-muted-foreground mt-1">
+                          Atualizado às {lastSync.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSearch(order.order_code, { silent: true })}
+                      disabled={isSyncing}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
+                      {isSyncing ? "Atualizando..." : "Atualizar status"}
+                    </Button>
+                  </div>
+
+                  {(order.payment_status === "approved" || order.payment_status === "refunded") && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <a
+                        href={buildWhatsappUrl(`Olá! Preciso da nota fiscal do pedido ${order.order_code}.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="secondary" size="sm">
+                          <Receipt className="h-4 w-4 mr-2" />
+                          Solicitar nota fiscal
+                        </Button>
+                      </a>
+                      {order.payment_status === "approved" && (
+                        <a
+                          href={buildWhatsappUrl(`Olá! Gostaria de solicitar reembolso do pedido ${order.order_code}.`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button variant="outline" size="sm">
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Solicitar reembolso
+                          </Button>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+
+
                 {/* Order Timeline */}
                 <div className="bg-card rounded-xl border border-border p-6">
                   <h3 className="font-semibold text-foreground mb-4">Progresso do Pedido</h3>
