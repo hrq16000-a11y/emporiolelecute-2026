@@ -23,6 +23,8 @@ import { formatPhoneBR, isValidPhoneBR } from "@/lib/phoneMask";
 import { loadCustomer, saveCustomer, loadAddress, saveAddress } from "@/lib/customerCache";
 import CheckoutSteps from "@/components/CheckoutSteps";
 import CheckoutStepsBar from "@/components/CheckoutStepsBar";
+import CheckoutSkeleton from "@/components/CheckoutSkeleton";
+import { useCartStore } from "@/stores/cartStore";
 
 interface AddressData {
   cep: string;
@@ -72,6 +74,21 @@ const Carrinho = () => {
   const [loadingGeo, setLoadingGeo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+
+  // Hidratação do carrinho (localStorage) — evita layout shift e flash de "carrinho vazio"
+  const [hydrated, setHydrated] = useState<boolean>(
+    () => useCartStore.persist?.hasHydrated?.() ?? true
+  );
+  useEffect(() => {
+    if (useCartStore.persist?.hasHydrated?.()) {
+      setHydrated(true);
+      return;
+    }
+    const unsub = useCartStore.persist?.onFinishHydration?.(() => setHydrated(true));
+    return () => unsub?.();
+  }, []);
+
+
 
   // Garante que a tela de "Pedido Enviado" abra sempre rolada ao topo,
   // independente da posição em que o usuário estava no formulário.
@@ -808,8 +825,9 @@ const Carrinho = () => {
             sectionIds={["step-cart", "step-data", "step-checkout"]}
           />
 
+          {!hydrated && <CheckoutSkeleton />}
 
-          <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
+          <div className={`grid lg:grid-cols-3 gap-6 md:gap-8 ${hydrated ? "animate-fade-in" : "hidden"}`}>
             {/* Left Column - Form */}
             <div className="lg:col-span-2 space-y-4 md:space-y-6">
               {/* Cart Items */}
