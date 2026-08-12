@@ -25,6 +25,8 @@ import CheckoutSteps from "@/components/CheckoutSteps";
 import CheckoutStepsBar from "@/components/CheckoutStepsBar";
 import CheckoutSkeleton from "@/components/CheckoutSkeleton";
 import { useCartStore } from "@/stores/cartStore";
+import { reportError, retryAsync, type ReportedError } from "@/lib/errorReporting";
+
 
 interface AddressData {
   cep: string;
