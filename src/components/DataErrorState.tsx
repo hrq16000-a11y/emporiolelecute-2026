@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { AlertTriangle, RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { reportError, type ErrorScope } from "@/lib/errorReporting";
+import CopyCorrelationId from "@/components/CopyCorrelationId";
 
 interface DataErrorStateProps {
   scope: ErrorScope;
@@ -40,6 +41,7 @@ const DataErrorState = ({
       </div>
       <h2 className="font-display text-lg text-foreground">{reported.title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{reported.description}</p>
+      <CopyCorrelationId correlationId={reported.correlationId} className="mt-3" />
       {hasCachedData && (
         <p className="mt-2 text-xs text-muted-foreground">
           Exibindo a última versão salva no seu dispositivo.

@@ -212,12 +212,23 @@ const RastrearPedido = () => {
   useEffect(() => {
     if (!order) return;
     if (["delivered", "cancelled"].includes(order.status)) return;
-    const id = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        handleSearch(order.order_code, { silent: true });
+    const code = order.order_code;
+    const sync = () => {
+      if (document.visibilityState === "visible" && navigator.onLine !== false) {
+        handleSearch(code, { silent: true });
       }
-    }, 45000);
-    return () => clearInterval(id);
+    };
+    // Near-realtime: intervalo curto + sync ao voltar o foco/conexão.
+    const id = setInterval(sync, 15000);
+    window.addEventListener("focus", sync);
+    window.addEventListener("online", sync);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", sync);
+      window.removeEventListener("online", sync);
+      document.removeEventListener("visibilitychange", sync);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order?.order_code, order?.status]);
 
