@@ -23,6 +23,8 @@ import { formatPhoneBR, isValidPhoneBR } from "@/lib/phoneMask";
 import { loadCustomer, saveCustomer, loadAddress, saveAddress } from "@/lib/customerCache";
 import CheckoutSteps from "@/components/CheckoutSteps";
 import CheckoutStepsBar from "@/components/CheckoutStepsBar";
+import CheckoutSkeleton from "@/components/CheckoutSkeleton";
+import { useCartStore } from "@/stores/cartStore";
 
 interface AddressData {
   cep: string;
