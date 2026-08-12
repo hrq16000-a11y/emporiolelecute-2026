@@ -1171,7 +1171,34 @@ const Carrinho = () => {
                   + frete (calculado via WhatsApp)
                 </p>
 
+                {checkoutError && (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    tabIndex={-1}
+                    ref={(el) => el?.focus()}
+                    className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-left animate-fade-in outline-none"
+                  >
+                    <p className="text-sm font-semibold text-destructive">{checkoutError.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{checkoutError.description}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Pedido reservado: <span className="font-mono">{orderCodeRef.current}</span> — tentar de novo não duplica.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      disabled={isSubmitting}
+                      onClick={() => { setCheckoutError(null); void handleSubmitOrder(); }}
+                    >
+                      {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
+
                 <div className="space-y-3">
+
                   <Button 
                     id="finalize-whatsapp-btn"
                     size="lg" 
