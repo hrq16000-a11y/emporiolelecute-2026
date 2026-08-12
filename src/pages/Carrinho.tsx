@@ -100,6 +100,10 @@ const Carrinho = () => {
     }
   }, [orderComplete]);
   const [orderCode, setOrderCode] = useState('');
+  /** Mantém o código estável entre tentativas → nunca duplica o pedido. */
+  const orderCodeRef = useRef<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<ReportedError | null>(null);
+
   const [couponInput, setCouponInput] = useState('');
   const [coupon, setCoupon] = useState<ValidCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
