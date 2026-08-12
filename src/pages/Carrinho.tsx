@@ -26,6 +26,7 @@ import CheckoutStepsBar from "@/components/CheckoutStepsBar";
 import CheckoutSkeleton from "@/components/CheckoutSkeleton";
 import { useCartStore } from "@/stores/cartStore";
 import { reportError, retryAsync, type ReportedError } from "@/lib/errorReporting";
+import CopyCorrelationId from "@/components/CopyCorrelationId";
 
 
 interface AddressData {
@@ -103,6 +104,9 @@ const Carrinho = () => {
   /** Mantém o código estável entre tentativas → nunca duplica o pedido. */
   const orderCodeRef = useRef<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<ReportedError | null>(null);
+  // Background sync: quando a falha é de rede, reenviamos automaticamente
+  // assim que a conexão voltar (o order_code reservado impede duplicação).
+  const [pendingSync, setPendingSync] = useState(false);
 
   const [couponInput, setCouponInput] = useState('');
   const [coupon, setCoupon] = useState<ValidCoupon | null>(null);
@@ -524,6 +528,7 @@ const Carrinho = () => {
 
     setInvalidFields(new Set());
     setCheckoutError(null);
+    setPendingSync(false);
 
     setIsSubmitting(true);
 
@@ -615,6 +620,7 @@ const Carrinho = () => {
     } catch (error) {
       const reported = reportError('checkout', error, { stage: 'create_order', code });
       setCheckoutError(reported);
+      setPendingSync(reported.retryable);
       toast({
         title: reported.title,
         description: `${reported.description} Seu pedido ${code} não será duplicado ao tentar de novo.`,
@@ -1190,6 +1196,15 @@ const Carrinho = () => {
                     <p className="text-[11px] text-muted-foreground mt-1">
                       Pedido reservado: <span className="font-mono">{orderCodeRef.current}</span> — tentar de novo não duplica.
                     </p>
+                    <CopyCorrelationId
+                      correlationId={checkoutError.correlationId}
+                      className="mt-1 justify-start"
+                    />
+                    {pendingSync && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Sem conexão: vamos reenviar automaticamente assim que a internet voltar.
+                      </p>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
