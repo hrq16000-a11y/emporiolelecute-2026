@@ -362,7 +362,9 @@ const App = () => {
               <VisitorTracker />
               <CookieConsentBanner />
               <SocialProofToast />
+              <GlobalProgressBar />
 
+              <RouteTransition>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={
