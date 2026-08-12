@@ -53,6 +53,7 @@ interface Order {
   tracking_carrier?: string | null;
   tracking_url?: string | null;
   shipped_at?: string | null;
+  payment_status?: string | null;
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock; description: string }> = {
@@ -94,7 +95,15 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
   }
 };
 
+const paymentLabel: Record<string, string> = {
+  pending: "Aguardando pagamento",
+  approved: "Pago / Aprovado",
+  refunded: "Reembolsado",
+  cancelled: "Cancelado",
+};
+
 const RastrearPedido = () => {
+  const { buildWhatsappUrl } = useContactInfo();
   const [searchParams] = useSearchParams();
   const initialCode = searchParams.get('code') || '';
   
