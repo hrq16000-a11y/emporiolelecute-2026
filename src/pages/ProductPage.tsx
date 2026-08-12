@@ -30,6 +30,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductPageSkeleton from "@/components/ProductPageSkeleton";
+import DataErrorState from "@/components/DataErrorState";
+
 // WhatsAppButton intencionalmente não importado na PDP — ver linha do bloco final.
 import ProductCard from "@/components/ProductCard";
 import RelatedProducts from "@/components/RelatedProducts";
