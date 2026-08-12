@@ -1686,6 +1686,39 @@ export type Database = {
           },
         ]
       }
+      order_status_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          error: string | null
+          id: string
+          order_code: string
+          order_id: string
+          status: string
+          success: boolean
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          order_code: string
+          order_id: string
+          status: string
+          success?: boolean
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          order_code?: string
+          order_id?: string
+          status?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address_cep: string
