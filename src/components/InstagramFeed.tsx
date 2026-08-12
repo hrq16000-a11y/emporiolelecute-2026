@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Instagram, Heart, ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useInstagramPosts } from "@/hooks/useInstagramPosts";
-import { BlurImage } from "@/components/BlurImage";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import sabonetesImg from "@/assets/category-sabonetes.webp";
 import velasImg from "@/assets/category-velas.webp";
@@ -40,6 +39,18 @@ const InstagramFeed = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, [openIndex, go]);
 
+  // Preload neighbours so switching posts never flickers
+  useEffect(() => {
+    if (openIndex === null) return;
+    [1, -1].forEach((delta) => {
+      const next = posts[(openIndex + delta + posts.length) % posts.length];
+      if (next) {
+        const img = new Image();
+        img.src = next.image_url;
+      }
+    });
+  }, [openIndex, posts]);
+
   const active = openIndex !== null ? posts[openIndex] : null;
 
   return (
@@ -63,9 +74,9 @@ const InstagramFeed = () => {
               type="button"
               onClick={() => setOpenIndex(index)}
               aria-label={`Ampliar: ${post.alt_text || "postagem do Instagram"}`}
-              className="relative aspect-square overflow-hidden rounded-xl group bg-muted/40 block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="relative aspect-[4/5] overflow-hidden rounded-xl group bg-muted/40 block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              {/* Blurred backdrop keeps rows aligned without cropping the photo */}
+              {/* Blurred backdrop fills the tile so rows stay aligned without cropping the photo */}
               <img
                 src={post.image_url}
                 alt=""
@@ -74,20 +85,18 @@ const InstagramFeed = () => {
                 decoding="async"
                 className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-40"
               />
-              <BlurImage
+              <img
                 src={post.image_url}
                 alt={post.alt_text || "Postagem do Instagram"}
-                width={600}
-                resize="contain"
-                responsiveWidths={[300, 450, 600, 900]}
-                sizes="(max-width: 640px) 50vw, 33vw"
-                wrapperClassName="absolute inset-0 w-full h-full bg-transparent"
-                className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-contain object-center transition-transform duration-500 group-hover:scale-[1.03]"
               />
               <div className="absolute inset-0 bg-primary/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
                 <Heart className="h-8 w-8 text-primary-foreground" />
               </div>
             </button>
+
           ))}
         </div>
 
@@ -116,11 +125,11 @@ const InstagramFeed = () => {
 
           {active && (
             <div className="relative animate-fade-in">
-              <div className="flex items-center justify-center max-h-[75vh] overflow-hidden rounded-t-lg bg-muted/30">
+              <div className="relative flex items-center justify-center h-[70vh] overflow-hidden rounded-t-lg bg-muted/30">
                 <img
                   src={active.image_url}
                   alt={active.alt_text || "Postagem do Instagram"}
-                  className="max-h-[75vh] w-auto max-w-full object-contain"
+                  className="h-full w-full object-contain animate-fade-in"
                 />
               </div>
 
