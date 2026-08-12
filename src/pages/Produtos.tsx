@@ -1,3 +1,4 @@
+import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
@@ -710,8 +711,10 @@ const Produtos = () => {
             {/* MAIN — grid de produtos */}
             <div className="flex-1 min-w-0">
               {loadingProducts ? (
-                <div className="flex justify-center py-16">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 md:grid-cols-3 xl:grid-cols-4 animate-fade-in">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <ProductSkeleton key={i} />
+                  ))}
                 </div>
               ) : filteredProducts.length > 0 ? (
                 <>

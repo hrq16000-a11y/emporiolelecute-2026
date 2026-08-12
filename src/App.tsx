@@ -52,6 +52,7 @@ const AdminTags = lazyWithRetry(() => import("./pages/admin/AdminTags"), "AdminT
 const AdminImport = lazyWithRetry(() => import("./pages/admin/AdminImport"), "AdminImport");
 const AdminBackup = lazyWithRetry(() => import("./pages/admin/AdminBackup"), "AdminBackup");
 const AdminOrders = lazyWithRetry(() => import("./pages/admin/AdminOrders"), "AdminOrders");
+const AdminPayments = lazyWithRetry(() => import("./pages/admin/AdminPayments"), "AdminPayments");
 const AdminCustomers = lazyWithRetry(() => import("./pages/admin/AdminCustomers"), "AdminCustomers");
 const AdminSettings = lazyWithRetry(() => import("./pages/admin/AdminSettings"), "AdminSettings");
 const AdminFeatures = lazyWithRetry(() => import("./pages/admin/AdminFeatures"), "AdminFeatures");
@@ -561,6 +562,11 @@ const App = () => {
                   <Route path="pedidos" element={
                     <Suspense fallback={<AdminSkeleton />}>
                       <AdminOrders />
+                    </Suspense>
+                  } />
+                  <Route path="pagamentos" element={
+                    <Suspense fallback={<AdminSkeleton />}>
+                      <AdminPayments />
                     </Suspense>
                   } />
                   <Route path="clientes" element={

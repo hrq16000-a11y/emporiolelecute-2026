@@ -1,3 +1,4 @@
+import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { Link } from "react-router-dom";
 import { MessageCircle, Heart, Shield, Truck, Star, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -141,9 +142,9 @@ const Loja = () => {
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 animate-fade-in">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-muted animate-pulse rounded-2xl aspect-square" />
+                  <ProductSkeleton key={i} />
                 ))}
               </div>
             ) : (

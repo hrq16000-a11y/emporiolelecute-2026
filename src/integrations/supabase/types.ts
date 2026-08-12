@@ -1889,6 +1889,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_events: {
+        Row: {
+          applied_status: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          event_id: string | null
+          id: string
+          order_code: string | null
+          payment_id: string | null
+          provider: string
+          provider_status: string | null
+          raw: Json | null
+          result: string
+        }
+        Insert: {
+          applied_status?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          order_code?: string | null
+          payment_id?: string | null
+          provider?: string
+          provider_status?: string | null
+          raw?: Json | null
+          result?: string
+        }
+        Update: {
+          applied_status?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          order_code?: string | null
+          payment_id?: string | null
+          provider?: string
+          provider_status?: string | null
+          raw?: Json | null
+          result?: string
+        }
+        Relationships: []
+      }
       pdp_badge_events: {
         Row: {
           badge_label: string | null

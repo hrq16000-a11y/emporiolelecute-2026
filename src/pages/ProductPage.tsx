@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ProductPageSkeleton from "@/components/ProductPageSkeleton";
 // WhatsAppButton intencionalmente não importado na PDP — ver linha do bloco final.
 import ProductCard from "@/components/ProductCard";
 import RelatedProducts from "@/components/RelatedProducts";
@@ -374,8 +375,8 @@ const ProductPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-28 md:pt-32 pb-16 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <main className="pt-28 md:pt-32 pb-16">
+          <ProductPageSkeleton />
         </main>
         <Footer />
       </div>
