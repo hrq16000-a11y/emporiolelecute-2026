@@ -523,8 +523,10 @@ const Carrinho = () => {
     }
 
     setInvalidFields(new Set());
+    setCheckoutError(null);
 
     setIsSubmitting(true);
+
     // Idempotência: o código é gerado UMA vez e reaproveitado em todas as
     // tentativas, impedindo pedidos duplicados em caso de retry/instabilidade.
     if (!orderCodeRef.current) orderCodeRef.current = generateOrderCode();
