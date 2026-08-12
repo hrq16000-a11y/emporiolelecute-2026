@@ -34,7 +34,14 @@ const PRODUCTS_PER_PAGE = 12;
 
 const Produtos = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: dbProducts, isLoading: loadingProducts } = useDbProducts();
+  const {
+    data: dbProducts,
+    isLoading: loadingProducts,
+    error: productsError,
+    refetch: refetchProducts,
+    isRefetching: isRefetchingProducts,
+  } = useDbProducts();
+
   const { data: dbCategories } = useDbCategories({ publicOnly: true });
   const { data: dbOccasions } = useDbOccasions({ publicOnly: true });
   const { data: dbTags } = useTags();
