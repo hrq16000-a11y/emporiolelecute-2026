@@ -635,7 +635,11 @@ const Carrinho = () => {
             <div className="bg-green-100 rounded-full w-14 h-14 md:w-24 md:h-24 flex items-center justify-center mx-auto mb-3 md:mb-6">
               <CheckCircle className="h-7 w-7 md:h-12 md:w-12 text-green-600" />
             </div>
-            <h1 className="font-display text-2xl md:text-4xl text-foreground mb-2 md:mb-4">
+            <h1
+              tabIndex={-1}
+              ref={(el) => el?.focus()}
+              className="font-display text-2xl md:text-4xl text-foreground mb-2 md:mb-4 outline-none"
+            >
               Pedido Enviado!
             </h1>
             <p className="text-sm md:text-base text-muted-foreground mb-1 md:mb-2">
