@@ -1133,6 +1133,7 @@ const App = () => {
                   </Suspense>
                 } />
               </Routes>
+              </RouteTransition>
             </AnalyticsWrapper>
           </BrowserRouter>
       </TooltipProvider>
