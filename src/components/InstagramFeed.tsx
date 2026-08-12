@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Instagram, Heart, ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useInstagramPosts } from "@/hooks/useInstagramPosts";
-import { BlurImage } from "@/components/BlurImage";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import sabonetesImg from "@/assets/category-sabonetes.webp";
 import velasImg from "@/assets/category-velas.webp";
@@ -39,6 +38,18 @@ const InstagramFeed = () => {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [openIndex, go]);
+
+  // Preload neighbours so switching posts never flickers
+  useEffect(() => {
+    if (openIndex === null) return;
+    [1, -1].forEach((delta) => {
+      const next = posts[(openIndex + delta + posts.length) % posts.length];
+      if (next) {
+        const img = new Image();
+        img.src = next.image_url;
+      }
+    });
+  }, [openIndex, posts]);
 
   const active = openIndex !== null ? posts[openIndex] : null;
 
@@ -114,11 +125,11 @@ const InstagramFeed = () => {
 
           {active && (
             <div className="relative animate-fade-in">
-              <div className="flex items-center justify-center max-h-[75vh] overflow-hidden rounded-t-lg bg-muted/30">
+              <div className="relative flex items-center justify-center h-[70vh] overflow-hidden rounded-t-lg bg-muted/30">
                 <img
                   src={active.image_url}
                   alt={active.alt_text || "Postagem do Instagram"}
-                  className="max-h-[75vh] w-auto max-w-full object-contain"
+                  className="h-full w-full object-contain animate-fade-in"
                 />
               </div>
 
