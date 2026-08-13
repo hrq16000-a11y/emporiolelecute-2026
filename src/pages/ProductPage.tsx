@@ -1141,7 +1141,7 @@ const ProductPage = () => {
         </section>
       )}
 
-      <FAQSection />
+      <FAQSection emitStructuredData={false} />
 
       <Footer />
       {/* Spacer mobile para o sticky CTA não cobrir o final do rodapé */}
