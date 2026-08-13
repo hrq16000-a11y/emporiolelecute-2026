@@ -842,6 +842,11 @@ const Carrinho = () => {
   }
 
   return (
+    <>
+      <Helmet>
+        <title>Carrinho | Empório LeleCute</title>
+        <meta name="robots" content="noindex,follow" />
+      </Helmet>
     <div className="min-h-screen bg-background">
       <Header />
       
