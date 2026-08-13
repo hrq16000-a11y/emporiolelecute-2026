@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     const { data: products, error } = await supabase
       .from('products')
-      .select('id,name,slug,description,long_description,price,images,is_active,seo_noindex,google_product_category,category_id')
+      .select('id,name,slug,seo_title,description,long_description,price,images,is_active,seo_noindex,google_product_category,category_id')
       .eq('is_active', true)
       .order('name')
 
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       const slug = String(p.slug ?? '')
       const images: string[] = Array.isArray(p.images) ? (p.images as string[]) : []
       const desc = String(p.description ?? p.long_description ?? '')
-      const title = name
+      const title = String((p as { seo_title?: string | null }).seo_title ?? '') || name
 
       if (!slug) issues.push({ severity: 'error', code: 'slug_missing', detail: 'Produto sem slug — URL não indexável.' })
       else if (slugSeen.has(slug)) issues.push({ severity: 'error', code: 'slug_duplicate', detail: `Slug duplicado com "${slugSeen.get(slug)}".` })
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
         issues.push({ severity: 'warn', code: 'slug_format', detail: 'Slug com caracteres fora de a-z, 0-9 e hífen.' })
       }
       if (title.length < 15) issues.push({ severity: 'warn', code: 'title_short', detail: `Título com ${title.length} caracteres (ideal 30-60).` })
-      if (title.length > 65) issues.push({ severity: 'warn', code: 'title_long', detail: `Título com ${title.length} caracteres (ideal até 60).` })
+      if (title.length > 65) issues.push({ severity: 'warn', code: 'title_long', detail: `Título com ${title.length} caracteres (ideal até 60). Use a correção em lote no SEO Check.` })
       if (!desc) issues.push({ severity: 'error', code: 'description_missing', detail: 'Sem descrição — meta description e JSON-LD ficam vazios.' })
       else if (desc.length < 70) issues.push({ severity: 'warn', code: 'description_short', detail: `Descrição com ${desc.length} caracteres (ideal 120-160).` })
       if (!images.length) issues.push({ severity: 'error', code: 'image_missing', detail: 'Sem imagem — Merchant Center e og:image quebram.' })
