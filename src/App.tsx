@@ -711,6 +711,12 @@ const App = () => {
                       <AdminMerchantFeed />
                     </Suspense>
                   } />
+                  <Route path="seo-check" element={
+                    <Suspense fallback={<AdminSkeleton />}>
+                      <AdminSeoCheck />
+                    </Suspense>
+                  } />
+
                   <Route path="instagram" element={
                     <Suspense fallback={<AdminSkeleton />}>
                       <AdminInstagram />
