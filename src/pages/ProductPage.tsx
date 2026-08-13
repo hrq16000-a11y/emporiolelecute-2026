@@ -487,7 +487,7 @@ const ProductPage = () => {
     <div className="min-h-screen bg-background">
       {/* SEO and Structured Data — Fase 7 */}
       <DynamicSEO
-        title={`${product.name} | Empório LeleCute`}
+        title={`${(dbProduct as { seo_title?: string | null } | null)?.seo_title || product.name} | Empório LeleCute`}
         description={(() => {
           const raw =
             product.description ||
