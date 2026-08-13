@@ -347,7 +347,9 @@ export function useUpdateProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      void import('@/lib/taxonomyAutomation').then((m) => m.markPublicTaxonomyDirty('products'));
     },
+
   });
 }
 
@@ -431,7 +433,9 @@ export function useSaveProductFull() {
       qc.invalidateQueries({ queryKey: ['product-by-id-or-slug'] });
       qc.invalidateQueries({ queryKey: ['product', data.slug] });
       qc.invalidateQueries({ queryKey: ['product_tags', data.id] });
+      void import('@/lib/taxonomyAutomation').then((m) => m.markPublicTaxonomyDirty('products'));
     },
+
   });
 }
 

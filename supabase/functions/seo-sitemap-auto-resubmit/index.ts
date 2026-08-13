@@ -55,6 +55,43 @@ Deno.serve(async (req) => {
     })
     const result = await r.json().catch(() => ({}))
 
+    // Ping IndexNow (Bing/Yandex) com as URLs do sitemap — complementa o GSC.
+    const INDEXNOW_KEY = '87296b506db34e8cb22cc31288f33f84'
+    const ORIGIN = 'https://emporiolelecute.com.br'
+    const indexnow = { sent: false, urls: 0, status: 0, error: null as string | null }
+    try {
+      const sm = await fetch(`${ORIGIN}/sitemap.xml`)
+      const xml = await sm.text()
+      const urlList = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
+        .map((m) => m[1])
+        .filter((u) => u.startsWith(ORIGIN))
+        .slice(0, 10000)
+      if (urlList.length) {
+        const ping = await fetch('https://api.indexnow.org/IndexNow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({
+            host: 'emporiolelecute.com.br',
+            key: INDEXNOW_KEY,
+            keyLocation: `${ORIGIN}/${INDEXNOW_KEY}.txt`,
+            urlList,
+          }),
+        })
+        indexnow.status = ping.status
+        indexnow.urls = urlList.length
+        indexnow.sent = ping.ok || ping.status === 202
+        if (!indexnow.sent) indexnow.error = await ping.text()
+      }
+    } catch (e) {
+      indexnow.error = e instanceof Error ? e.message : String(e)
+    }
+
+    await supabase.from('store_settings').upsert({
+      key: 'last_indexnow_ping',
+      value: { ...indexnow, pinged_at: new Date().toISOString() },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' })
+
     if (r.ok) {
       // Limpa a flag
       await supabase.from('store_settings').upsert({
@@ -64,9 +101,10 @@ Deno.serve(async (req) => {
       }, { onConflict: 'key' })
     }
 
-    return new Response(JSON.stringify({ resubmitted: r.ok, status: r.status, result }), {
+    return new Response(JSON.stringify({ resubmitted: r.ok, status: r.status, result, indexnow }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
+
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     console.error('seo-sitemap-auto-resubmit error', error)
