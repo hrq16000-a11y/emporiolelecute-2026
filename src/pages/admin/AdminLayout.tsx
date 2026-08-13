@@ -27,7 +27,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Tag, ArrowRightLeft, BarChart3, ShieldCheck, Bot, Activity, Clock, Star,
   BookOpen, TrendingUp, Network, Rocket, BrainCircuit, Brain, Landmark, Cpu,
   Orbit, Eye, Compass, Crown, Infinity: InfinityIcon, Hexagon, Layers3,
-  ShieldAlert, Boxes, Menu, Cookie, Truck, Power,
+  ShieldAlert, Boxes, Menu, Cookie, Truck, Power, BellRing,
 };
 
 function NavItem({ leaf, active, onClick }: { leaf: NavLeaf; active: boolean; onClick: () => void }) {
