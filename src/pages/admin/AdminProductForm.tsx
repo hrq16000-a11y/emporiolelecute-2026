@@ -3,6 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Save, Loader2, Tag, Check, AlertCircle, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImageUploader from '@/components/admin/ImageUploader';
+import PersonalizationOptionsEditor from '@/components/admin/PersonalizationOptionsEditor';
+import {
+  parsePersonalizationOptions,
+  serializePersonalizationOptions,
+  type PersonalizationOption,
+} from '@/lib/personalizationOptions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -185,6 +191,7 @@ const AdminProductForm = () => {
       featured_weight: String((existingProduct as any).featured_weight ?? 0),
       production_speed: ((existingProduct as any).production_speed || '') as '' | 'rapido' | 'normal' | 'longo',
     });
+    setPersonalizationOptions(parsePersonalizationOptions((existingProduct as any).personalization_options));
     setKeywordsInput(keywords.join(', '));
 
     // Pivôs — só carregam na hidratação inicial.
@@ -381,6 +388,7 @@ const AdminProductForm = () => {
         personalization_enabled: formData.personalization_enabled,
         personalization_label: formData.personalization_label || null,
         personalization_placeholder: formData.personalization_placeholder || null,
+        personalization_options: serializePersonalizationOptions(personalizationOptions),
         google_product_category: formData.google_product_category || null,
         editorial_content: formData.editorial_content || null,
         featured_weight: parseInt(formData.featured_weight) || 0,
@@ -730,6 +738,16 @@ const AdminProductForm = () => {
                         value={formData.personalization_placeholder}
                         onChange={(e) => setFormData((prev) => ({ ...prev, personalization_placeholder: e.target.value }))}
                         placeholder="Ex: Escreva o nome ou letra inicial..."
+                      />
+                    </div>
+                    <div className="space-y-2 border-t pt-4">
+                      <Label>Condições e variações do produto</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Campos extras que o cliente escolhe na página: textos, cores, imagens e variações.
+                      </p>
+                      <PersonalizationOptionsEditor
+                        value={personalizationOptions}
+                        onChange={setPersonalizationOptions}
                       />
                     </div>
                   </>
