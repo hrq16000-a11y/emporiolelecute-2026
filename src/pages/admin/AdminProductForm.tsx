@@ -108,6 +108,7 @@ const AdminProductForm = () => {
     featured_weight: '0',
     production_speed: '' as '' | 'rapido' | 'normal' | 'longo',
   });
+  const [personalizationOptions, setPersonalizationOptions] = useState<PersonalizationOption[]>([]);
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
