@@ -347,7 +347,9 @@ export function useUpdateProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      void import('@/lib/taxonomyAutomation').then((m) => m.markPublicTaxonomyDirty('products'));
     },
+
   });
 }
 
