@@ -760,7 +760,7 @@ const AdminProductForm = () => {
               name={formData.name}
               description={formData.description}
               price={formData.price}
-              originalPrice={formData.original_price}
+              originalPrice={formData.promotional_price ? formData.price : undefined}
               images={formData.images}
               badge={formData.badge}
               rating={formData.rating}
