@@ -43,6 +43,7 @@ export const EXECUTIVE_NAV: NavGroup[] = [
       { label: "Pedidos", path: "/admin/pedidos", icon: "ShoppingCart" },
       { label: "Pagamentos", path: "/admin/pagamentos", icon: "CreditCard" },
       { label: "Clientes", path: "/admin/clientes", icon: "Users" },
+      { label: "Teste de notificações", path: "/admin/notificacoes-teste", icon: "BellRing" },
       { label: "Banner LGPD", path: "/admin/lgpd/banner", icon: "Cookie" },
       { label: "Produtos", path: "/admin/produtos", icon: "Package" },
       { label: "Reviews", path: "/admin/reviews", icon: "Star" },
