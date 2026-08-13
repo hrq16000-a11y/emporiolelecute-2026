@@ -222,6 +222,7 @@ export type Database = {
           description_seo: string | null
           external_ref: string
           faqs: Json
+          google_product_category: string | null
           h1_override: string | null
           icon: string | null
           id: string
@@ -241,6 +242,7 @@ export type Database = {
           description_seo?: string | null
           external_ref: string
           faqs?: Json
+          google_product_category?: string | null
           h1_override?: string | null
           icon?: string | null
           id?: string
@@ -260,6 +262,7 @@ export type Database = {
           description_seo?: string | null
           external_ref?: string
           faqs?: Json
+          google_product_category?: string | null
           h1_override?: string | null
           icon?: string | null
           id?: string
