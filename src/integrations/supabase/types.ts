@@ -1510,6 +1510,39 @@ export type Database = {
           },
         ]
       }
+      merchant_feed_snapshots: {
+        Row: {
+          checksum: string | null
+          created_at: string
+          errors: number
+          id: string
+          item_count: number
+          items: Json
+          ready: number
+          warnings: number
+        }
+        Insert: {
+          checksum?: string | null
+          created_at?: string
+          errors?: number
+          id?: string
+          item_count?: number
+          items?: Json
+          ready?: number
+          warnings?: number
+        }
+        Update: {
+          checksum?: string | null
+          created_at?: string
+          errors?: number
+          id?: string
+          item_count?: number
+          items?: Json
+          ready?: number
+          warnings?: number
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -2433,6 +2466,7 @@ export type Database = {
           requires_shipping: boolean
           search_text: string | null
           seo_noindex: boolean
+          seo_title: string | null
           show_min_quantity: boolean
           show_quick_summary: boolean
           slug: string
@@ -2475,6 +2509,7 @@ export type Database = {
           requires_shipping?: boolean
           search_text?: string | null
           seo_noindex?: boolean
+          seo_title?: string | null
           show_min_quantity?: boolean
           show_quick_summary?: boolean
           slug: string
@@ -2517,6 +2552,7 @@ export type Database = {
           requires_shipping?: boolean
           search_text?: string | null
           seo_noindex?: boolean
+          seo_title?: string | null
           show_min_quantity?: boolean
           show_quick_summary?: boolean
           slug?: string
@@ -5882,6 +5918,39 @@ export type Database = {
           mitigation_strategy?: string | null
           source_engine?: string | null
           target_engine?: string | null
+        }
+        Relationships: []
+      }
+      seo_submission_log: {
+        Row: {
+          channel: string
+          created_at: string
+          detail: Json
+          id: string
+          ok: boolean
+          status: string
+          target: string | null
+          url_count: number
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          ok?: boolean
+          status: string
+          target?: string | null
+          url_count?: number
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          ok?: boolean
+          status?: string
+          target?: string | null
+          url_count?: number
         }
         Relationships: []
       }

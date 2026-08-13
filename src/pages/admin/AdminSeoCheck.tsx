@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   ShieldCheck, RefreshCw, AlertTriangle, XCircle, CheckCircle2,
-  ExternalLink, Rss, Loader2, Search,
+  ExternalLink, Rss, Loader2, Search, GitCompare,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import SeoSubmissionLogPanel from '@/components/admin/SeoSubmissionLogPanel';
+import SeoTitleFixPanel from '@/components/admin/SeoTitleFixPanel';
 
 interface SiteCheck { name: string; ok: boolean; detail: string; severity: 'info' | 'warn' | 'error' }
 interface SiteResult {
@@ -21,12 +23,21 @@ interface ProductIssue { severity: 'error' | 'warn'; code: string; detail: strin
 interface ProductReport { id: string; name: string; slug: string; url: string; issues: ProductIssue[] }
 interface FeedIssue { severity: 'error' | 'warn'; code: string; detail: string }
 interface FeedItem { id: string; title: string; link: string; issues: FeedIssue[] }
+interface FeedDiff {
+  previous_at: string | null;
+  unchanged: boolean;
+  added: string[];
+  removed: string[];
+  changed: { id: string; title: string; fields: string[] }[];
+}
 interface FeedResult {
   summary: {
     items: number; ok: number; errors: number; warnings: number;
-    ready_to_upload: number; feed_bytes: number;
+    ready_to_upload: number; blocked: number; missing_images: number; feed_bytes: number;
   };
   items: FeedItem[];
+  diff?: FeedDiff;
+  upload_allowed?: boolean;
   feed_url: string;
   ran_at: string;
 }
@@ -213,6 +224,57 @@ const AdminSeoCheck = () => {
                 </a>
               </Button>
             </div>
+            {feed.upload_allowed === false && (
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Envio bloqueado</AlertTitle>
+                <AlertDescription>
+                  {feed.summary.blocked} item(ns) com erro — {feed.summary.missing_images} produto(s) têm menos de 2
+                  imagens HTTPS. Corrija antes de enviar o feed ao Merchant Center.
+                </AlertDescription>
+              </Alert>
+            )}
+            {feed.upload_allowed === true && (
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Feed liberado para envio</AlertTitle>
+                <AlertDescription>
+                  {feed.summary.ready_to_upload} de {feed.summary.items} itens aprovados, todos com pelo menos 2 imagens HTTPS.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {feed.diff && (
+              <div className="rounded-lg border p-3">
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <GitCompare className="h-4 w-4 text-primary" /> Mudanças desde a última validação
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {feed.diff.previous_at
+                    ? `Comparado com ${new Date(feed.diff.previous_at).toLocaleString('pt-BR')}`
+                    : 'Primeira validação registrada — nada a comparar.'}
+                </p>
+                {feed.diff.previous_at && feed.diff.unchanged && (
+                  <p className="mt-2 text-xs text-muted-foreground">Nenhuma alteração no feed.</p>
+                )}
+                {(feed.diff.added.length > 0 || feed.diff.removed.length > 0 || feed.diff.changed.length > 0) && (
+                  <div className="mt-2 space-y-1 text-xs">
+                    {feed.diff.added.map((t) => (
+                      <p key={`a-${t}`} className="text-primary">+ novo item: {t}</p>
+                    ))}
+                    {feed.diff.removed.map((t) => (
+                      <p key={`r-${t}`} className="text-destructive">− removido do feed: {t}</p>
+                    ))}
+                    {feed.diff.changed.map((c) => (
+                      <p key={`c-${c.id}`} className="text-muted-foreground">
+                        <span className="font-medium text-foreground">{c.title}</span>: {c.fields.join(' · ')}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {feed.items.map((item) => (
               <div key={item.id} className="rounded-lg border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -240,6 +302,10 @@ const AdminSeoCheck = () => {
           </CardContent>
         </Card>
       )}
+
+      <SeoTitleFixPanel />
+
+      <SeoSubmissionLogPanel onResend={pingCrawlers} resending={pinging} />
 
       {products && (
         <Card>

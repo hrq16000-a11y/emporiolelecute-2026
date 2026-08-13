@@ -55,10 +55,23 @@ Deno.serve(async (req) => {
     })
     const result = await r.json().catch(() => ({}))
 
-    // Ping IndexNow (Bing/Yandex) com as URLs do sitemap — complementa o GSC.
+    // Ping IndexNow com as URLs do sitemap — complementa o GSC.
+    // Envia para múltiplos endpoints: se um recusar (ex.: Bing exige
+    // verificação própria), os demais ainda recebem as URLs.
     const INDEXNOW_KEY = '87296b506db34e8cb22cc31288f33f84'
     const ORIGIN = 'https://emporiolelecute.com.br'
-    const indexnow = { sent: false, urls: 0, status: 0, error: null as string | null }
+    const ENDPOINTS: { name: string; url: string }[] = [
+      { name: 'indexnow.org', url: 'https://api.indexnow.org/IndexNow' },
+      { name: 'yandex', url: 'https://yandex.com/indexnow' },
+      { name: 'bing', url: 'https://www.bing.com/indexnow' },
+    ]
+    const indexnow = {
+      sent: false,
+      urls: 0,
+      status: 0,
+      error: null as string | null,
+      endpoints: [] as { name: string; status: number; ok: boolean; error: string | null }[],
+    }
     try {
       const sm = await fetch(`${ORIGIN}/sitemap.xml`)
       const xml = await sm.text()
@@ -66,21 +79,43 @@ Deno.serve(async (req) => {
         .map((m) => m[1])
         .filter((u) => u.startsWith(ORIGIN))
         .slice(0, 10000)
+      indexnow.urls = urlList.length
+
       if (urlList.length) {
-        const ping = await fetch('https://api.indexnow.org/IndexNow', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json; charset=utf-8' },
-          body: JSON.stringify({
-            host: 'emporiolelecute.com.br',
-            key: INDEXNOW_KEY,
-            keyLocation: `${ORIGIN}/${INDEXNOW_KEY}.txt`,
-            urlList,
-          }),
+        const payload = JSON.stringify({
+          host: 'emporiolelecute.com.br',
+          key: INDEXNOW_KEY,
+          keyLocation: `${ORIGIN}/${INDEXNOW_KEY}.txt`,
+          urlList,
         })
-        indexnow.status = ping.status
-        indexnow.urls = urlList.length
-        indexnow.sent = ping.ok || ping.status === 202
-        if (!indexnow.sent) indexnow.error = await ping.text()
+        for (const ep of ENDPOINTS) {
+          try {
+            const ping = await fetch(ep.url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=utf-8' },
+              body: payload,
+            })
+            const ok = ping.ok || ping.status === 202
+            indexnow.endpoints.push({
+              name: ep.name,
+              status: ping.status,
+              ok,
+              error: ok ? null : (await ping.text()).slice(0, 300),
+            })
+          } catch (e) {
+            indexnow.endpoints.push({
+              name: ep.name, status: 0, ok: false,
+              error: e instanceof Error ? e.message : String(e),
+            })
+          }
+        }
+        const accepted = indexnow.endpoints.filter((e) => e.ok)
+        indexnow.sent = accepted.length > 0
+        indexnow.status = accepted[0]?.status ?? indexnow.endpoints[0]?.status ?? 0
+        const rejected = indexnow.endpoints.filter((e) => !e.ok)
+        if (rejected.length) {
+          indexnow.error = rejected.map((e) => `${e.name} [${e.status}]: ${e.error}`).join(' | ')
+        }
       }
     } catch (e) {
       indexnow.error = e instanceof Error ? e.message : String(e)
@@ -91,6 +126,25 @@ Deno.serve(async (req) => {
       value: { ...indexnow, pinged_at: new Date().toISOString() },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'key' })
+
+    const acceptedNames = indexnow.endpoints.filter((e) => e.ok).map((e) => e.name)
+    await supabase.from('seo_submission_log').insert({
+      channel: 'indexnow',
+      status: indexnow.sent
+        ? `success (${acceptedNames.join(', ')})`
+        : `failed (${indexnow.status || 0})`,
+      ok: indexnow.sent,
+      url_count: indexnow.urls,
+      target: 'emporiolelecute.com.br',
+      detail: {
+        key_location: `${ORIGIN}/${INDEXNOW_KEY}.txt`,
+        endpoints: indexnow.endpoints,
+        error: indexnow.error ? String(indexnow.error).slice(0, 500) : null,
+        triggered_by: force ? 'manual' : 'cron',
+      },
+    })
+
+
 
     if (r.ok) {
       // Limpa a flag

@@ -2,9 +2,19 @@
 // Busca o XML gerado por `merchant-feed` e aplica as regras do Merchant Center
 // item a item, retornando erros/avisos por produto. Somente leitura.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 interface Issue { severity: 'error' | 'warn'; code: string; detail: string }
-interface ItemReport { id: string; title: string; link: string; issues: Issue[] }
+interface ItemReport {
+  id: string; title: string; link: string; issues: Issue[]
+  images: string[]; https_images: number; price: string; availability: string
+}
+interface FeedDiff {
+  previous_at: string | null
+  added: string[]
+  removed: string[]
+  changed: { id: string; title: string; fields: string[] }[]
+}
 
 const tag = (xml: string, name: string): string | null => {
   const m = xml.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))
@@ -86,7 +96,16 @@ Deno.serve(async (req) => {
       if (!isHttps(link)) issues.push({ severity: 'error', code: 'link_invalid', detail: 'g:link ausente ou fora de HTTPS absoluto.' })
       if (!isHttps(image)) issues.push({ severity: 'error', code: 'image_invalid', detail: 'g:image_link ausente ou fora de HTTPS absoluto.' })
       else if (/placeholder/i.test(image!)) issues.push({ severity: 'error', code: 'image_placeholder', detail: 'Imagem principal é o placeholder da loja.' })
-      if (extraImages.length === 0) issues.push({ severity: 'warn', code: 'image_single', detail: 'Apenas 1 imagem — anúncios convertem mais com 3 ou mais.' })
+      const httpsImages = [image, ...extraImages].filter((u): u is string => isHttps(u))
+      if (httpsImages.length < 2) {
+        issues.push({
+          severity: 'error',
+          code: 'image_insufficient',
+          detail: `Apenas ${httpsImages.length} imagem HTTPS válida — o Merchant Center exige no mínimo 2. Faltam ${2 - httpsImages.length} imagem(ns).`,
+        })
+      } else if (httpsImages.length < 3) {
+        issues.push({ severity: 'warn', code: 'image_few', detail: '2 imagens — anúncios convertem mais com 3 ou mais.' })
+      }
       if (extraImages.some((u) => !isHttps(u))) issues.push({ severity: 'warn', code: 'image_extra_invalid', detail: 'Alguma imagem adicional não é HTTPS absoluta.' })
 
       const priceValue = Number.parseFloat(price)
@@ -113,21 +132,90 @@ Deno.serve(async (req) => {
       else if (!gcat.includes('>')) issues.push({ severity: 'warn', code: 'google_category_shallow', detail: 'Categoria Google genérica — use o caminho completo da taxonomia.' })
       if (!ptype) issues.push({ severity: 'warn', code: 'product_type_missing', detail: 'Sem g:product_type — perde segmentação no Performance Max.' })
 
-      reports.push({ id, title, link, issues })
+      reports.push({
+        id, title, link, issues,
+        images: [image, ...extraImages].filter((u): u is string => !!u),
+        https_images: [image, ...extraImages].filter((u): u is string => isHttps(u)).length,
+        price, availability,
+      })
     }
 
     const withIssues = reports.filter((r) => r.issues.length > 0)
+    const blocked = reports.filter((r) => r.issues.some((i) => i.severity === 'error'))
     const summary = {
       items: reports.length,
       ok: reports.length - withIssues.length,
       errors: reports.reduce((n, r) => n + r.issues.filter((i) => i.severity === 'error').length, 0),
       warnings: reports.reduce((n, r) => n + r.issues.filter((i) => i.severity === 'warn').length, 0),
-      ready_to_upload: reports.filter((r) => !r.issues.some((i) => i.severity === 'error')).length,
+      ready_to_upload: reports.length - blocked.length,
+      blocked: blocked.length,
+      missing_images: reports.filter((r) => r.https_images < 2).length,
       feed_bytes: xml.length,
     }
 
+    // --- Histórico e diff do feed ---
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    const fingerprint = reports.map((r) => ({
+      id: r.id, title: r.title, price: r.price, availability: r.availability,
+      link: r.link, images: r.images.length,
+    }))
+    const checksum = [...new Uint8Array(
+      await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(fingerprint))),
+    )].map((b) => b.toString(16).padStart(2, '0')).join('')
+
+    const { data: prevRow } = await supabase
+      .from('merchant_feed_snapshots')
+      .select('created_at, items, checksum')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const diff: FeedDiff = { previous_at: prevRow?.created_at ?? null, added: [], removed: [], changed: [] }
+    if (prevRow?.items) {
+      const prevItems = (prevRow.items as typeof fingerprint) ?? []
+      const prevMap = new Map(prevItems.map((i) => [i.id, i]))
+      const currMap = new Map(fingerprint.map((i) => [i.id, i]))
+      for (const [id, curr] of currMap) {
+        const prev = prevMap.get(id)
+        if (!prev) { diff.added.push(curr.title || id); continue }
+        const fields: string[] = []
+        if (prev.title !== curr.title) fields.push(`título: "${prev.title}" → "${curr.title}"`)
+        if (prev.price !== curr.price) fields.push(`preço: ${prev.price} → ${curr.price}`)
+        if (prev.availability !== curr.availability) fields.push(`disponibilidade: ${prev.availability} → ${curr.availability}`)
+        if (prev.link !== curr.link) fields.push('link alterado')
+        if (prev.images !== curr.images) fields.push(`imagens: ${prev.images} → ${curr.images}`)
+        if (fields.length) diff.changed.push({ id, title: curr.title || id, fields })
+      }
+      for (const [id, prev] of prevMap) {
+        if (!currMap.has(id)) diff.removed.push(prev.title || id)
+      }
+    }
+
+    const unchanged = prevRow?.checksum === checksum
+    if (!unchanged) {
+      await supabase.from('merchant_feed_snapshots').insert({
+        item_count: summary.items,
+        errors: summary.errors,
+        warnings: summary.warnings,
+        ready: summary.ready_to_upload,
+        checksum,
+        items: fingerprint,
+      })
+    }
+
     return new Response(
-      JSON.stringify({ summary, items: withIssues, feed_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/merchant-feed`, ran_at: new Date().toISOString() }),
+      JSON.stringify({
+        summary,
+        items: withIssues,
+        diff: { ...diff, unchanged },
+        upload_allowed: blocked.length === 0,
+        feed_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/merchant-feed`,
+        ran_at: new Date().toISOString(),
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (e) {
