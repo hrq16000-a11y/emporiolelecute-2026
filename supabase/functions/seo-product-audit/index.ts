@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     const { data: products, error } = await supabase
       .from('products')
-      .select('id,name,slug,description,short_description,price,images,is_active,meta_title,meta_description,sku,category_id')
+      .select('id,name,slug,description,long_description,price,images,is_active,seo_noindex,google_product_category,category_id')
       .eq('is_active', true)
       .order('name')
 
@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
       const name = String(p.name ?? '')
       const slug = String(p.slug ?? '')
       const images: string[] = Array.isArray(p.images) ? (p.images as string[]) : []
-      const desc = String(p.meta_description ?? p.short_description ?? p.description ?? '')
-      const title = String(p.meta_title ?? name)
+      const desc = String(p.description ?? p.long_description ?? '')
+      const title = name
 
       if (!slug) issues.push({ severity: 'error', code: 'slug_missing', detail: 'Produto sem slug — URL não indexável.' })
       else if (slugSeen.has(slug)) issues.push({ severity: 'error', code: 'slug_duplicate', detail: `Slug duplicado com "${slugSeen.get(slug)}".` })
@@ -57,7 +57,8 @@ Deno.serve(async (req) => {
       else if (desc.length < 70) issues.push({ severity: 'warn', code: 'description_short', detail: `Descrição com ${desc.length} caracteres (ideal 120-160).` })
       if (!images.length) issues.push({ severity: 'error', code: 'image_missing', detail: 'Sem imagem — Merchant Center e og:image quebram.' })
       if (!(Number(p.price) > 0)) issues.push({ severity: 'error', code: 'price_invalid', detail: 'Preço ausente ou zerado — offer inválido no rich result.' })
-      if (!p.sku) issues.push({ severity: 'warn', code: 'sku_missing', detail: 'Sem SKU — usando slug como fallback no JSON-LD/feed.' })
+      if (p.seo_noindex) issues.push({ severity: 'warn', code: 'noindex', detail: 'Produto marcado como noindex — fora do índice do Google.' })
+      if (!p.google_product_category) issues.push({ severity: 'warn', code: 'google_category_missing', detail: 'Sem categoria Google — feed usa a categoria padrão da loja.' })
       if (!p.category_id) issues.push({ severity: 'warn', code: 'category_missing', detail: 'Sem categoria — breadcrumb e feed menos precisos.' })
 
       reports.push({
