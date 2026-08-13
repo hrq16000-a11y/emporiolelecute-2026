@@ -650,12 +650,7 @@ const Carrinho = () => {
 
   if (orderComplete) {
     return (
-      <>
-        <Helmet>
-          <title>Carrinho | Empório LeleCute</title>
-          <meta name="robots" content="noindex,follow" />
-        </Helmet>
-        <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <Header />
         <main className="pt-20 pb-8 md:pt-24 md:pb-16">
           <div className="container mx-auto px-4 py-6 md:py-16 text-center max-w-lg">
