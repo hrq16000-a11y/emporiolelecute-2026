@@ -105,6 +105,7 @@ const ProductPage = () => {
   const [quantity, setQuantity] = useState(10);
   const [quantityInput, setQuantityInput] = useState<string>("10");
   const [personalization, setPersonalization] = useState("");
+  const [optionValues, setOptionValues] = useState<PersonalizationValues>({});
   const [addedToCart, setAddedToCart] = useState(false);
   const [showStickyCta, setShowStickyCta] = useState(false);
   const [favoriteFeedback, setFavoriteFeedback] = useState("");
@@ -116,8 +117,19 @@ const ProductPage = () => {
   // Ref sempre fresco com estado atual — garante que callbacks (sticky, popup, summary)
   // construam a mensagem com a quantidade/personalização do momento do clique,
   // sem depender de closures eventualmente desatualizadas.
-  const valuesRef = useRef({ quantity, personalization });
-  valuesRef.current = { quantity, personalization };
+  const personalizationOptions = useMemo(
+    () => parsePersonalizationOptions((dbProduct as { personalization_options?: unknown } | null)?.personalization_options),
+    [dbProduct],
+  );
+
+  // Resumo final enviado ao carrinho/WhatsApp: opções escolhidas + texto livre.
+  const fullPersonalization = useMemo(() => {
+    const summary = formatPersonalizationSelections(personalizationOptions, optionValues);
+    return [summary, personalization.trim()].filter(Boolean).join(" | ");
+  }, [personalizationOptions, optionValues, personalization]);
+
+  const valuesRef = useRef({ quantity, personalization: fullPersonalization });
+  valuesRef.current = { quantity, personalization: fullPersonalization };
 
   // Sticky CTA: gatilho via IntersectionObserver no botão de compra principal.
   // - Aparece quando o CTA primário sai do viewport (rolagem para baixo).
@@ -241,6 +253,16 @@ const ProductPage = () => {
   const handleAddToCart = () => {
     if (!product) return;
 
+    const missing = missingRequiredOptions(personalizationOptions, optionValues);
+    if (missing.length > 0) {
+      toast({
+        title: "Escolha as opções obrigatórias",
+        description: missing.join(", "),
+        variant: "destructive",
+      });
+      return;
+    }
+
     addItem({
       id: product.id,
       slug: product.slug,
@@ -248,7 +270,7 @@ const ProductPage = () => {
       price: product.price,
       originalPrice: product.originalPrice && product.originalPrice > product.price ? product.originalPrice : undefined,
       image: product.images[0] || "/placeholder.svg",
-      personalization,
+      personalization: fullPersonalization,
       minQuantity: product.minQuantity,
       quantity,
     });
@@ -778,6 +800,15 @@ const ProductPage = () => {
                     onChange={(e) => setPersonalization(e.target.value)}
                     className="min-h-[80px] resize-none border-border/40 focus-visible:ring-1"
                   />
+                  {personalizationOptions.length > 0 && (
+                    <div className="mt-5 border-t border-primary/20 pt-4">
+                      <ProductPersonalizationOptions
+                        options={personalizationOptions}
+                        values={optionValues}
+                        onChange={setOptionValues}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -848,7 +879,7 @@ const ProductPage = () => {
                 minQuantity={product.minQuantity}
                 productionDays={product.productionDays}
                 quantity={quantity}
-                personalization={personalization}
+                personalization={fullPersonalization}
                 onWhatsApp={() => openWhatsApp("quick_summary")}
                 productSlug={product.slug}
                 productName={product.name}
@@ -1127,7 +1158,7 @@ const ProductPage = () => {
         minQuantity={product.minQuantity}
         productionDays={product.productionDays}
         quantity={quantity}
-        personalized={Boolean(normalizePersonalization(personalization))}
+        personalized={Boolean(normalizePersonalization(fullPersonalization))}
         enabled={ctaConfig?.exitPopup?.enabled !== false}
         title={ctaConfig?.exitPopup?.title}
         description={ctaConfig?.exitPopup?.description}
