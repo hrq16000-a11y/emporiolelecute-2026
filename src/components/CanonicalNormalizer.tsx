@@ -79,7 +79,12 @@ export default function CanonicalNormalizer() {
     }
 
     setCanonical(`${ORIGIN}${cleanedPath}`);
+    // Helmet injeta o canonical da rota logo após a montagem; roda de novo
+    // para eliminar qualquer duplicata remanescente.
+    const t = window.setTimeout(() => setCanonical(`${ORIGIN}${cleanedPath}`), 400);
+    return () => window.clearTimeout(t);
   }, [location.pathname, location.search, location.hash, navigate]);
+
 
   return null;
 }
