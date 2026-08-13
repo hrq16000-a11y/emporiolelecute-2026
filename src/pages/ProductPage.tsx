@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -27,6 +27,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import ProductPersonalizationOptions from "@/components/ProductPersonalizationOptions";
+import {
+  formatPersonalizationSelections,
+  missingRequiredOptions,
+  parsePersonalizationOptions,
+  type PersonalizationValues,
+} from "@/lib/personalizationOptions";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductPageSkeleton from "@/components/ProductPageSkeleton";
