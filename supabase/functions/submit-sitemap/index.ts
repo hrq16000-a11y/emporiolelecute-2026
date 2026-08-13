@@ -100,6 +100,26 @@ Deno.serve(async (req) => {
       { onConflict: 'key' },
     )
 
+    // 3b) Log estruturado do envio (painel /admin/seo-check)
+    await supabase.from('seo_submission_log').insert({
+      channel: 'gsc',
+      status: submission.gsc_status,
+      ok: submitOk,
+      url_count: submittedWeb,
+      target: property,
+      detail: {
+        sitemap_url: sitemapUrl,
+        indexed_web: indexedWeb,
+        submitted_images: submittedImg,
+        last_downloaded: submission.last_downloaded,
+        errors: submission.errors,
+        warnings: submission.warnings,
+        gsc_error: submitError ? String(submitError).slice(0, 500) : null,
+      },
+    })
+
+
+
     // 4) Email opcional
     const notificationEmail = seoConfig?.sitemap_notification_email
     if (notificationEmail) {
