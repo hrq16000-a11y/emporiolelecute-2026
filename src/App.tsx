@@ -23,6 +23,7 @@ const ProductPage = lazy(() => import("./pages/ProductPage"));
 const Carrinho = lazy(() => import("./pages/Carrinho"));
 const Envio = lazy(() => import("./pages/Envio"));
 const RastrearPedido = lazy(() => import("./pages/RastrearPedido"));
+const PreferenciasNotificacao = lazy(() => import("./pages/PreferenciasNotificacao"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Sobre = lazy(() => import("./pages/Sobre"));
 const Contato = lazy(() => import("./pages/Contato"));
@@ -454,6 +455,11 @@ const App = () => {
                 <Route path="/rastrear/:code" element={
                   <Suspense fallback={<PageSkeleton />}>
                     <RastrearPedido />
+                  </Suspense>
+                } />
+                <Route path="/notificacoes" element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <PreferenciasNotificacao />
                   </Suspense>
                 } />
                 

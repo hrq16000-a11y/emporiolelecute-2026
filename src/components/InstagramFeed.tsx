@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Instagram, Heart, ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Instagram, Heart, ExternalLink, X, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useInstagramPosts } from "@/hooks/useInstagramPosts";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import sabonetesImg from "@/assets/category-sabonetes.webp";
@@ -17,7 +17,7 @@ const fallbackPosts = [
 ];
 
 const InstagramFeed = () => {
-  const { data: dbPosts } = useInstagramPosts();
+  const { data: dbPosts, refetch, isFetching } = useInstagramPosts();
   const source = dbPosts && dbPosts.length > 0 ? dbPosts : fallbackPosts;
   const posts = source.slice(0, 6);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -65,9 +65,18 @@ const InstagramFeed = () => {
             Siga-nos no <span className="text-primary">Instagram</span>
           </h2>
           <p className="text-muted-foreground">Acompanhe novidades, bastidores e inspirações</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-60"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            {isFetching ? "Atualizando..." : "Atualizar fotos"}
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-4 max-w-4xl mx-auto">
           {posts.map((post, index) => (
             <button
               key={post.id}
@@ -116,7 +125,7 @@ const InstagramFeed = () => {
 
       <Dialog open={openIndex !== null} onOpenChange={(open) => !open && close()}>
         <DialogContent
-          className="max-w-3xl w-[95vw] p-0 border-none bg-background/95 backdrop-blur [&>button]:hidden"
+          className="max-w-3xl w-[96vw] sm:w-[95vw] p-0 border-none bg-background/95 backdrop-blur [&>button]:hidden"
         >
           <DialogTitle className="sr-only">Postagem do Instagram</DialogTitle>
           <DialogDescription className="sr-only">
@@ -125,7 +134,7 @@ const InstagramFeed = () => {
 
           {active && (
             <div className="relative animate-fade-in">
-              <div className="relative flex items-center justify-center h-[70vh] overflow-hidden rounded-t-lg bg-muted/30">
+              <div className="relative flex items-center justify-center h-[60vh] sm:h-[70vh] overflow-hidden rounded-t-lg bg-muted/30">
                 <img
                   src={active.image_url}
                   alt={active.alt_text || "Postagem do Instagram"}
