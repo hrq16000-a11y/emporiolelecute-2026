@@ -92,6 +92,20 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'key' })
 
+    await supabase.from('seo_submission_log').insert({
+      channel: 'indexnow',
+      status: indexnow.sent ? `success (${indexnow.status})` : `failed (${indexnow.status || 0})`,
+      ok: indexnow.sent,
+      url_count: indexnow.urls,
+      target: 'emporiolelecute.com.br',
+      detail: {
+        key_location: `${ORIGIN}/${INDEXNOW_KEY}.txt`,
+        error: indexnow.error ? String(indexnow.error).slice(0, 500) : null,
+        triggered_by: force ? 'manual' : 'cron',
+      },
+    })
+
+
     if (r.ok) {
       // Limpa a flag
       await supabase.from('store_settings').upsert({
