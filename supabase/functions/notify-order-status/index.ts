@@ -2,6 +2,7 @@
 // Chamado exclusivamente pelo trigger do banco (pg_net) com header x-internal-key.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { sendWebPush } from "../_shared/webpush.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -85,6 +86,82 @@ Deno.serve(async (req: Request) => {
 
   if (already) return json({ skipped: "already_notified" });
 
+  // ---- Web Push primeiro; e-mail continua como fallback automático ----
+  const customerEmail = String(order.customer_email || "").trim().toLowerCase();
+  let pushDelivered = false;
+
+  const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY") || "";
+  const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY") || "";
+  const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:emporiolelecute@gmail.com";
+
+  const { data: prefs } = customerEmail
+    ? await admin
+        .from("notification_preferences")
+        .select("email_enabled, push_enabled")
+        .eq("email", customerEmail)
+        .maybeSingle()
+    : { data: null };
+
+  const wantsPush = prefs?.push_enabled === true;
+  const wantsEmail = prefs?.email_enabled !== false; // padrão: e-mail ligado
+
+  if (wantsPush && vapidPublic && vapidPrivate && customerEmail) {
+    const { data: alreadyPush } = await admin
+      .from("order_status_notifications")
+      .select("id")
+      .eq("order_id", order.id)
+      .eq("status", status)
+      .eq("channel", "push")
+      .eq("success", true)
+      .maybeSingle();
+
+    if (alreadyPush) {
+      pushDelivered = true;
+    } else {
+      const { data: subs } = await admin
+        .from("push_subscriptions")
+        .select("id, endpoint, p256dh, auth")
+        .eq("email", customerEmail);
+
+      const payload = JSON.stringify({
+        title: `Pedido ${order.order_code}: ${label}`,
+        body: message,
+        url: `/rastrear?code=${encodeURIComponent(order.order_code)}`,
+        tag: `order-${order.order_code}`,
+      });
+
+      for (const sub of subs || []) {
+        const result = await sendWebPush(sub, payload, {
+          publicKey: vapidPublic,
+          privateKey: vapidPrivate,
+          subject: vapidSubject,
+        });
+        if (result.ok) {
+          pushDelivered = true;
+          await admin.from("push_subscriptions").update({ last_success_at: new Date().toISOString(), failure_count: 0 }).eq("id", sub.id);
+        } else if (result.expired) {
+          await admin.from("push_subscriptions").delete().eq("id", sub.id);
+        } else {
+          console.error("[notify-order-status] push failed", result.status, result.error);
+        }
+      }
+
+      await admin.from("order_status_notifications").insert({
+        order_id: order.id,
+        order_code: order.order_code,
+        status,
+        channel: "push",
+        success: pushDelivered,
+        error: pushDelivered ? null : "push_delivery_failed",
+      });
+    }
+  }
+
+  // Se o push chegou e o cliente desativou e-mail, não enviamos e-mail.
+  if (pushDelivered && !wantsEmail) {
+    return json({ sent: true, channel: "push" });
+  }
+
   const emailOk = typeof order.customer_email === "string" &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(order.customer_email);
 
@@ -137,7 +214,7 @@ Deno.serve(async (req: Request) => {
       channel: "email",
       success: true,
     });
-    return json({ sent: true });
+    return json({ sent: true, channel: pushDelivered ? "push+email" : "email" });
   } catch (e) {
     await admin.from("order_status_notifications").insert({
       order_id: order.id,
