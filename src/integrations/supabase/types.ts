@@ -2420,6 +2420,7 @@ export type Database = {
           pdp_badge_override: Json | null
           personalization_enabled: boolean | null
           personalization_label: string | null
+          personalization_options: Json
           personalization_placeholder: string | null
           pix_discount: number | null
           price: number
@@ -2461,6 +2462,7 @@ export type Database = {
           pdp_badge_override?: Json | null
           personalization_enabled?: boolean | null
           personalization_label?: string | null
+          personalization_options?: Json
           personalization_placeholder?: string | null
           pix_discount?: number | null
           price: number
@@ -2502,6 +2504,7 @@ export type Database = {
           pdp_badge_override?: Json | null
           personalization_enabled?: boolean | null
           personalization_label?: string | null
+          personalization_options?: Json
           personalization_placeholder?: string | null
           pix_discount?: number | null
           price?: number
