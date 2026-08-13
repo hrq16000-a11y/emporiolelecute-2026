@@ -759,7 +759,7 @@ const AdminProductForm = () => {
             <ProductLivePreview
               name={formData.name}
               description={formData.description}
-              price={formData.price}
+              price={formData.promotional_price || formData.price}
               originalPrice={formData.promotional_price ? formData.price : undefined}
               images={formData.images}
               badge={formData.badge}
