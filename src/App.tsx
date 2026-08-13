@@ -81,6 +81,7 @@ const AdminProductsHealth = lazyWithRetry(() => import("./pages/admin/AdminProdu
 const AdminCoupons = lazyWithRetry(() => import("./pages/admin/AdminCoupons"), "AdminCoupons");
 const AdminRedirects = lazyWithRetry(() => import("./pages/admin/AdminRedirects"), "AdminRedirects");
 const AdminRobots = lazyWithRetry(() => import("./pages/admin/AdminRobots"), "AdminRobots");
+const AdminNotificationTest = lazyWithRetry(() => import("./pages/admin/AdminNotificationTest"), "AdminNotificationTest");
 const AdminTracking = lazyWithRetry(() => import("./pages/admin/AdminTracking"), "AdminTracking");
 const AdminConversionCTA = lazyWithRetry(() => import("./pages/admin/AdminConversionCTA"), "AdminConversionCTA");
 const AdminSocialProof = lazyWithRetry(() => import("./pages/admin/AdminSocialProof"), "AdminSocialProof");
@@ -773,6 +774,11 @@ const App = () => {
                   <Route path="robots" element={
                     <Suspense fallback={<AdminSkeleton />}>
                       <AdminRobots />
+                    </Suspense>
+                  } />
+                  <Route path="notificacoes-teste" element={
+                    <Suspense fallback={<AdminSkeleton />}>
+                      <AdminNotificationTest />
                     </Suspense>
                   } />
                   <Route path="tracking" element={
