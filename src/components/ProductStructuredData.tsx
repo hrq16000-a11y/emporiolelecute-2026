@@ -28,6 +28,8 @@ interface ProductStructuredDataProps {
   material?: string;
   /** Optional: explicit SKU/MPN; falls back to slug */
   sku?: string;
+  /** Variações/condições configuradas no admin (cores, imagens, opções). */
+  variantGroups?: { label: string; values: string[] }[];
 }
 
 /**
@@ -50,6 +52,7 @@ export function buildProductJsonLd({
   reviews,
   material,
   sku,
+  variantGroups,
   baseUrl,
   productUrl,
   priceValidUntilStr,
@@ -73,6 +76,9 @@ export function buildProductJsonLd({
       { "@type": "PropertyValue", "name": "Feito à mão", "value": "Sim" },
       { "@type": "PropertyValue", "name": "Personalizado", "value": "Sim" },
       { "@type": "PropertyValue", "name": "Origem", "value": "Brasil" },
+      ...(variantGroups || [])
+        .filter((g) => g.label && g.values.length > 0)
+        .map((g) => ({ "@type": "PropertyValue", name: g.label, value: g.values.join(", ") })),
     ],
     "url": productUrl,
     "offers": {

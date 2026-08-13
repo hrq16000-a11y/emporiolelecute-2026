@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, X, Save, Loader2, Tag, Check, AlertCircle, Truck } fro
 import { Button } from '@/components/ui/button';
 import ImageUploader from '@/components/admin/ImageUploader';
 import PersonalizationOptionsEditor from '@/components/admin/PersonalizationOptionsEditor';
+import ProductLivePreview from '@/components/admin/ProductLivePreview';
 import {
   parsePersonalizationOptions,
   serializePersonalizationOptions,
@@ -754,6 +755,20 @@ const AdminProductForm = () => {
                 )}
               </CardContent>
             </Card>
+
+            <ProductLivePreview
+              name={formData.name}
+              description={formData.description}
+              price={formData.promotional_price || formData.price}
+              originalPrice={formData.promotional_price ? formData.price : undefined}
+              images={formData.images}
+              badge={formData.badge}
+              rating={formData.rating}
+              personalizationEnabled={formData.personalization_enabled}
+              personalizationLabel={formData.personalization_label}
+              personalizationPlaceholder={formData.personalization_placeholder}
+              options={personalizationOptions}
+            />
 
             <Card className="shadow-card">
               <CardHeader>
