@@ -69,6 +69,8 @@ const AdminPdpSections = lazyWithRetry(() => import("./pages/admin/AdminPdpSecti
 const AdminSearch = lazyWithRetry(() => import("./pages/admin/AdminSearch"), "AdminSearch");
 const SearchAnalytics = lazyWithRetry(() => import("./pages/admin/SearchAnalytics"), "SearchAnalytics");
 const AdminMerchantFeed = lazyWithRetry(() => import("./pages/admin/AdminMerchantFeed"), "AdminMerchantFeed");
+const AdminSeoCheck = lazyWithRetry(() => import("./pages/admin/AdminSeoCheck"), "AdminSeoCheck");
+
 const AdminInstagram = lazyWithRetry(() => import("./pages/admin/AdminInstagram"), "AdminInstagram");
 const AdminFeedInstagram = lazyWithRetry(() => import("./pages/admin/AdminFeedInstagram"), "AdminFeedInstagram");
 const AdminOccasionLandings = lazyWithRetry(() => import("./pages/admin/AdminOccasionLandings"), "AdminOccasionLandings");
