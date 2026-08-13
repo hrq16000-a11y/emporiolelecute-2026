@@ -498,6 +498,14 @@ const ProductPage = () => {
         image={product.images[0] || undefined}
         url={canonicalUrl}
         type="product"
+        product={{
+          price: product.price,
+          currency: "BRL",
+          availability: "in stock",
+          brand: "Empório LeleCute",
+          sku: canonicalSlug,
+          category: dbProduct?.category?.name,
+        }}
       />
       <ProductStructuredData
         name={product.name}
@@ -511,6 +519,9 @@ const ProductPage = () => {
         productionDays={product.productionDays}
         category={dbProduct?.category?.name}
         material="Artesanal — produzido à mão no Brasil"
+        variantGroups={personalizationOptions
+          .filter((o) => (o.choices || []).length > 0)
+          .map((o) => ({ label: o.label, values: (o.choices || []).map((c) => c.label).filter(Boolean) }))}
         reviews={reviews.map((r) => ({
           author_name: r.author_name,
           rating: r.rating,
