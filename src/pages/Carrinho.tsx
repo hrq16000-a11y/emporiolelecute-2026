@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Trash2, Minus, Plus, ArrowLeft, MessageCircle, MapPin, User, Mail, Phone, Package, Loader2, CheckCircle, Truck, Crosshair, UserPlus, Lock, Eye, EyeOff } from "lucide-react";
@@ -649,7 +650,12 @@ const Carrinho = () => {
 
   if (orderComplete) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
+        <Helmet>
+          <title>Carrinho | Empório LeleCute</title>
+          <meta name="robots" content="noindex,follow" />
+        </Helmet>
+        <div className="min-h-screen bg-background">
         <Header />
         <main className="pt-20 pb-8 md:pt-24 md:pb-16">
           <div className="container mx-auto px-4 py-6 md:py-16 text-center max-w-lg">
@@ -1286,6 +1292,7 @@ const Carrinho = () => {
       <Footer />
       <WhatsAppButton />
     </div>
+    </>
   );
 };
 
