@@ -38,6 +38,7 @@ interface PageAudit {
   meta_robots: string | null;
   x_robots_tag: string | null;
   indexable: boolean;
+  source: 'prerender' | 'live';
   issues: string[];
   duration_ms: number;
 }
@@ -103,7 +104,8 @@ async function auditPage(kind: PageAudit['kind'], path: string): Promise<PageAud
   if (!canonical) issues.push('Sem <link rel="canonical">');
   else if (!canonical_ok) issues.push(`Canonical divergente: ${canonical}`);
 
-  const breadcrumbs_ok = breadcrumbs >= 2;
+  // A home é a raiz da trilha: não exigimos BreadcrumbList nela.
+  const breadcrumbs_ok = path === '/' ? true : breadcrumbs >= 2;
   if (!breadcrumbs_ok) issues.push('BreadcrumbList ausente ou com menos de 2 itens');
 
   const robotsBlob = `${meta_robots ?? ''} ${x_robots_tag ?? ''}`.toLowerCase();
@@ -112,7 +114,7 @@ async function auditPage(kind: PageAudit['kind'], path: string): Promise<PageAud
 
   return {
     kind, path, url, status, redirected_to, canonical, canonical_ok,
-    breadcrumbs, breadcrumbs_ok, meta_robots, x_robots_tag, indexable, issues,
+    breadcrumbs, breadcrumbs_ok, meta_robots, x_robots_tag, indexable, source, issues,
     duration_ms: Date.now() - started,
   };
 }
