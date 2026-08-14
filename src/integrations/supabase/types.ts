@@ -364,6 +364,7 @@ export type Database = {
       }
       combination_pages_registry: {
         Row: {
+          authority_manipulation: boolean
           auto_discovered: boolean
           cannibalization_risk: string
           canonical_path: string | null
@@ -400,6 +401,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          authority_manipulation?: boolean
           auto_discovered?: boolean
           cannibalization_risk?: string
           canonical_path?: string | null
@@ -436,6 +438,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          authority_manipulation?: boolean
           auto_discovered?: boolean
           cannibalization_risk?: string
           canonical_path?: string | null
@@ -6757,6 +6760,7 @@ export type Database = {
       }
       theme_hubs: {
         Row: {
+          authority_manipulation: boolean
           authority_score: number
           cannibalization_risk: string
           created_at: string
@@ -6787,6 +6791,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          authority_manipulation?: boolean
           authority_score?: number
           cannibalization_risk?: string
           created_at?: string
@@ -6817,6 +6822,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          authority_manipulation?: boolean
           authority_score?: number
           cannibalization_risk?: string
           created_at?: string

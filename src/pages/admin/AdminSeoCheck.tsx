@@ -12,6 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import SeoSubmissionLogPanel from '@/components/admin/SeoSubmissionLogPanel';
 import SeoTitleFixPanel from '@/components/admin/SeoTitleFixPanel';
+import SeoCrawlerProbePanel from '@/components/admin/SeoCrawlerProbePanel';
+import SeoJsonLdPanel from '@/components/admin/SeoJsonLdPanel';
+import SeoDailyGuardPanel from '@/components/admin/SeoDailyGuardPanel';
 
 interface SiteCheck { name: string; ok: boolean; detail: string; severity: 'info' | 'warn' | 'error' }
 interface SiteResult {
@@ -304,6 +307,12 @@ const AdminSeoCheck = () => {
       )}
 
       <SeoTitleFixPanel />
+
+      <SeoJsonLdPanel />
+
+      <SeoDailyGuardPanel />
+
+      <SeoCrawlerProbePanel />
 
       <SeoSubmissionLogPanel onResend={pingCrawlers} resending={pinging} />
 
