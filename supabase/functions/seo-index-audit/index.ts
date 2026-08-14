@@ -43,6 +43,7 @@ interface PageAudit {
 }
 
 const norm = (u: string) => u.replace(/\/+$/, '').toLowerCase();
+const PRERENDER = `${Deno.env.get('SUPABASE_URL')}/functions/v1/prerender`;
 
 async function auditPage(kind: PageAudit['kind'], path: string): Promise<PageAudit> {
   const url = `${ORIGIN}${path}`;
@@ -54,13 +55,28 @@ async function auditPage(kind: PageAudit['kind'], path: string): Promise<PageAud
   let breadcrumbs = 0;
   let meta_robots: string | null = null;
   let x_robots_tag: string | null = null;
+  let source: 'prerender' | 'live' = 'live';
 
   try {
+    // A hospedagem entrega o SPA (head injetado no cliente). Auditamos primeiro o
+    // HTML pré-renderizado servido a robôs; se falhar, caímos para o HTML público.
     const res = await fetch(url, { headers: { 'User-Agent': BOT_UA, Accept: 'text/html' }, redirect: 'follow' });
     status = res.status;
     if (norm(res.url) !== norm(url)) redirected_to = res.url;
     x_robots_tag = res.headers.get('x-robots-tag');
-    const html = await res.text();
+    let html = await res.text();
+
+    const hasHead = /rel=["']canonical["']/i.test(html);
+    if (!hasHead) {
+      try {
+        const pre = await fetch(`${PRERENDER}?path=${encodeURIComponent(path)}`, { headers: { 'User-Agent': BOT_UA } });
+        if (pre.ok) {
+          const preHtml = await pre.text();
+          if (/rel=["']canonical["']/i.test(preHtml)) { html = preHtml; source = 'prerender'; }
+        }
+      } catch { /* prerender indisponível: mantém HTML público */ }
+    }
+
 
     canonical = html.match(/<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1] ?? null;
     meta_robots = html.match(/<meta[^>]+name=["']robots["'][^>]*content=["']([^"']+)["']/i)?.[1] ?? null;
