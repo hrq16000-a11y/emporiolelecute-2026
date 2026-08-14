@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: failures } = await supabase
       .from('seo_submission_log')
-      .select('id, target, status, detail, created_at')
+      .select('id, channel, status, ok, url_count, created_at')
       .order('created_at', { ascending: false })
       .limit(30);
 
