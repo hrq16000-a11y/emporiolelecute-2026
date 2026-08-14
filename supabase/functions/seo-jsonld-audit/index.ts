@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
     const { data: products, error } = await supabase
       .from('products')
-      .select('slug, name, description, long_description, price, images, stock_quantity')
+      .select('slug, name, description, long_description, price, images, is_active')
       .eq('is_active', true)
       .order('updated_at', { ascending: false })
       .limit(limit);
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
             field: 'offers.price', ok: Number(offers?.price) === Number(p.price),
             expected: str(p.price), found: str(offers?.price),
           });
-          const expectedAvail = (p.stock_quantity ?? 1) > 0
+          const expectedAvail = (p.is_active ?? true)
             ? 'https://schema.org/InStock'
             : 'https://schema.org/OutOfStock';
           checks.push({
