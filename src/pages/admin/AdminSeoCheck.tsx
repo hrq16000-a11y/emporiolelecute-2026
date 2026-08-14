@@ -14,6 +14,8 @@ import SeoSubmissionLogPanel from '@/components/admin/SeoSubmissionLogPanel';
 import SeoTitleFixPanel from '@/components/admin/SeoTitleFixPanel';
 import SeoCrawlerProbePanel from '@/components/admin/SeoCrawlerProbePanel';
 import SeoJsonLdPanel from '@/components/admin/SeoJsonLdPanel';
+import SeoHubJsonLdPanel from '@/components/admin/SeoHubJsonLdPanel';
+import SeoWebVitalsPanel from '@/components/admin/SeoWebVitalsPanel';
 import SeoDailyGuardPanel from '@/components/admin/SeoDailyGuardPanel';
 import SeoIndexAuditPanel from '@/components/admin/SeoIndexAuditPanel';
 import SeoImageQualityPanel from '@/components/admin/SeoImageQualityPanel';
@@ -322,6 +324,10 @@ const AdminSeoCheck = () => {
       <SeoTitleFixPanel />
 
       <SeoJsonLdPanel />
+
+      <SeoHubJsonLdPanel />
+
+      <SeoWebVitalsPanel />
 
       <SeoDailyGuardPanel />
 
