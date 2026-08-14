@@ -68,15 +68,28 @@ Deno.serve(async (req) => {
 
     const reports: PageReport[] = [];
 
+    const prerenderBase = `${Deno.env.get('SUPABASE_URL')}/functions/v1/prerender`;
+
     for (const p of products ?? []) {
       const url = productAbsolute(p.slug, CANONICAL_ORIGIN);
       const checks: FieldCheck[] = [];
       let hasProduct = false;
 
       try {
-        const res = await fetch(url, { headers: { 'User-Agent': BOT_UA } });
-        const html = await res.text();
-        const blocks = extractLd(html);
+        // A hospedagem entrega o SPA (JSON-LD injetado no cliente). Para auditar o
+        // markup servido a robôs que não executam JS, lemos o HTML pré-renderizado
+        // e, se ele falhar, caímos para o HTML público com UA de bot.
+        const path = `/produto/${p.slug}`;
+        let res = await fetch(`${prerenderBase}?path=${encodeURIComponent(path)}`, {
+          headers: { 'User-Agent': BOT_UA },
+        });
+        let html = await res.text();
+        let blocks = extractLd(html);
+        if (!blocks.some((b) => b?.['@type'] === 'Product')) {
+          res = await fetch(url, { headers: { 'User-Agent': BOT_UA } });
+          html = await res.text();
+          blocks = extractLd(html);
+        }
         const product = blocks.find((b) => b?.['@type'] === 'Product');
         hasProduct = Boolean(product);
 
