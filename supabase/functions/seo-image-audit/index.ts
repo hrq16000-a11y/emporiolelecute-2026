@@ -18,6 +18,7 @@ const corsHeaders = {
 
 const ORIGIN = 'https://emporiolelecute.com.br';
 const BOT_UA = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+const PRERENDER = `${Deno.env.get('SUPABASE_URL')}/functions/v1/prerender`;
 const MAX_BYTES = 300 * 1024; // 300 KB por imagem servida
 const PUBLIC_SEG = '/storage/v1/object/public/';
 const RENDER_SEG = '/storage/v1/render/image/public/';
@@ -80,8 +81,19 @@ Deno.serve(async (req) => {
       // ---- alt no HTML renderizado ----
       const pdp = `${ORIGIN}/produtos/${p.slug}`;
       try {
-        const html = await (await fetch(pdp, { headers: { 'User-Agent': BOT_UA, Accept: 'text/html' } })).text();
-        const tags = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
+        // O HTML público é o shell do SPA; o markup servido a robôs vem do prerender.
+        let html = await (await fetch(pdp, { headers: { 'User-Agent': BOT_UA, Accept: 'text/html' } })).text();
+        let tags = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
+        try {
+          const pre = await fetch(`${PRERENDER}?path=${encodeURIComponent(`/produto/${p.slug}`)}`, {
+            headers: { 'User-Agent': BOT_UA },
+          });
+          if (pre.ok) {
+            const preHtml = await pre.text();
+            const preTags = [...preHtml.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
+            if (preTags.length > tags.length) { html = preHtml; tags = preTags; }
+          }
+        } catch { /* prerender indisponível */ }
         const withAlt = tags.filter((t) => /alt=["'][^"']+["']/i.test(t)).length;
         altChecks.push({ slug: p.slug, url: pdp, images: tags.length, with_alt: withAlt, ok: tags.length > 0 && withAlt === tags.length });
       } catch {
