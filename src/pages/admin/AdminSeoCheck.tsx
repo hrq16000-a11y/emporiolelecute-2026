@@ -15,6 +15,11 @@ import SeoTitleFixPanel from '@/components/admin/SeoTitleFixPanel';
 import SeoCrawlerProbePanel from '@/components/admin/SeoCrawlerProbePanel';
 import SeoJsonLdPanel from '@/components/admin/SeoJsonLdPanel';
 import SeoDailyGuardPanel from '@/components/admin/SeoDailyGuardPanel';
+import SeoIndexAuditPanel from '@/components/admin/SeoIndexAuditPanel';
+import SeoImageQualityPanel from '@/components/admin/SeoImageQualityPanel';
+import SeoGscCoveragePanel from '@/components/admin/SeoGscCoveragePanel';
+import SeoForceActionsPanel from '@/components/admin/SeoForceActionsPanel';
+
 
 interface SiteCheck { name: string; ok: boolean; detail: string; severity: 'info' | 'warn' | 'error' }
 interface SiteResult {
@@ -306,6 +311,14 @@ const AdminSeoCheck = () => {
         </Card>
       )}
 
+      <SeoForceActionsPanel />
+
+      <SeoIndexAuditPanel />
+
+      <SeoGscCoveragePanel />
+
+      <SeoImageQualityPanel />
+
       <SeoTitleFixPanel />
 
       <SeoJsonLdPanel />
@@ -315,6 +328,7 @@ const AdminSeoCheck = () => {
       <SeoCrawlerProbePanel />
 
       <SeoSubmissionLogPanel onResend={pingCrawlers} resending={pinging} />
+
 
       {products && (
         <Card>
