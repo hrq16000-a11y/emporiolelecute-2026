@@ -145,8 +145,8 @@ Deno.serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(30);
 
-    const recentFailures = (failures ?? []).filter((f: { status?: string }) =>
-      typeof f.status === 'string' && !/^(ok|success|202|200)$/i.test(f.status));
+    const recentFailures = (failures ?? []).filter((f: { ok?: boolean }) => f.ok === false);
+
 
     const excluded = coverage.filter((c) => c.verdict !== 'PASS');
 
