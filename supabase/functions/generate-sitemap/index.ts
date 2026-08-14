@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
 
     const { data: themeHubs } = await supabase
       .from('theme_hubs')
-      .select('slug, updated_at, is_approved, is_indexed, readiness_score, topical_coverage, authority_score, internal_links_count, thin_content_risk, cannibalization_risk, authority_manipulation, editorial_content, faqs')
+      .select('slug, updated_at, is_approved, is_indexed, readiness_score, topical_coverage, authority_score, internal_links_count, thin_content_risk, cannibalization_risk, editorial_content, faqs')
       .limit(500);
     const themeHubsXml = (themeHubs ?? [])
       .filter((h: any) => isHighGate(h, 'theme'))
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
 
     const { data: comboPages } = await supabase
       .from('combination_pages_registry')
-      .select('path, updated_at, discovery_status, is_indexable, readiness_score, topical_coverage, quality_score, products_count, internal_links_count, thin_content_risk, cannibalization_risk, authority_manipulation, editorial_content, faqs')
+      .select('path, updated_at, discovery_status, is_indexable, readiness_score, topical_coverage, quality_score, products_count, internal_links_count, thin_content_risk, cannibalization_risk, editorial_content, faqs')
       .limit(500);
     const comboPagesXml = (comboPages ?? [])
       .filter((c: any) => isHighGate(c, 'combination'))
