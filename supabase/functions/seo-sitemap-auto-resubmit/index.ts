@@ -3,6 +3,7 @@
 // para fazer debounce de várias edições no admin.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { sendSeoFailureAlert } from '../_shared/seoAlert.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -145,6 +146,16 @@ Deno.serve(async (req) => {
     })
 
 
+
+    // Alerta por e-mail quando o IndexNow falhar
+    if (!indexnow.sent && indexnow.urls > 0) {
+      await sendSeoFailureAlert(supabase, {
+        channel: 'indexnow',
+        target: `${ORIGIN}/${INDEXNOW_KEY}.txt`,
+        reason: indexnow.error ?? 'nenhum endpoint aceitou o envio',
+        extra: { endpoints: indexnow.endpoints, urls: indexnow.urls },
+      })
+    }
 
     if (r.ok) {
       // Limpa a flag

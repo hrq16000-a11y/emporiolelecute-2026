@@ -3,6 +3,7 @@
 // Pode ser chamado manualmente ou agendado via pg_cron.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { sendSeoFailureAlert } from '../_shared/seoAlert.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -119,6 +120,16 @@ Deno.serve(async (req) => {
     })
 
 
+
+    // 3c) Alerta automático em caso de falha no GSC
+    if (!submitOk) {
+      await sendSeoFailureAlert(supabase, {
+        channel: 'gsc',
+        target: sitemapUrl,
+        reason: submitError ? String(submitError).slice(0, 500) : `status ${submission.gsc_status}`,
+        extra: { property, errors: submission.errors, warnings: submission.warnings },
+      })
+    }
 
     // 4) Email opcional
     const notificationEmail = seoConfig?.sitemap_notification_email
