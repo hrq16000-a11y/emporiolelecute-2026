@@ -311,6 +311,14 @@ const AdminSeoCheck = () => {
         </Card>
       )}
 
+      <SeoForceActionsPanel />
+
+      <SeoIndexAuditPanel />
+
+      <SeoGscCoveragePanel />
+
+      <SeoImageQualityPanel />
+
       <SeoTitleFixPanel />
 
       <SeoJsonLdPanel />
@@ -320,6 +328,7 @@ const AdminSeoCheck = () => {
       <SeoCrawlerProbePanel />
 
       <SeoSubmissionLogPanel onResend={pingCrawlers} resending={pinging} />
+
 
       {products && (
         <Card>
