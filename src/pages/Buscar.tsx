@@ -166,6 +166,8 @@ const Buscar = () => {
         _categoryId: p.category_id || undefined,
         _priceNum: Number(p.price) || 0,
         _categoryName: p.category?.name || "",
+        _categorySlug: p.category?.slug || "",
+
         _occasionNames: (p.occasions || []).map((o) => o.name),
         _tagNames: (p.tags || []).map((t) => t.name),
       })) as any;
