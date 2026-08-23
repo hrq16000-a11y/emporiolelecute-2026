@@ -3,7 +3,7 @@
  *
  * O Supabase pode devolver colunas `numeric` como STRING (ex.: "4.60"),
  * e conteúdo editado à mão pode chegar como "R$ 4,60". O Google exige
- * que `offers.price` e `itemprop="price"` sejam estritamente numéricos,
+ * que o valor monetário do schema seja estritamente numérico,
  * com ponto decimal e sem símbolo de moeda.
  *
  * Regras aplicadas:
