@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendSeoFailureAlert } from '../_shared/seoAlert.ts'
+import { isLocalEnv, mockIntegration } from '../_shared/localEnv.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +16,14 @@ const GSC_GATEWAY = 'https://connector-gateway.lovable.dev/google_search_console
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
+  }
+
+  // Ambiente local/offline: não chama o Google Search Console.
+  if (isLocalEnv()) {
+    const mock = mockIntegration('gsc:submit-sitemap', { sitemap_url: 'http://localhost:8080/sitemap.xml' })
+    return new Response(JSON.stringify({ success: true, mocked: true, submission: mock.detail }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   try {

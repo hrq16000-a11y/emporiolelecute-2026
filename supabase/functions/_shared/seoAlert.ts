@@ -8,6 +8,8 @@
  * - Sempre inclui URL alvo e motivo do erro.
  */
 
+import { isLocalEnv, mockIntegration } from './localEnv.ts';
+
 // deno-lint-ignore no-explicit-any
 type Client = any;
 
@@ -63,6 +65,13 @@ export async function sendSeoFailureAlert(supabase: Client, failure: SeoFailure)
   sent: boolean;
   reason: string;
 }> {
+  // Ambiente local/offline: não chama o Resend, apenas registra o alerta.
+  if (isLocalEnv()) {
+    mockIntegration('resend:seo-alert', { channel: failure.channel, target: failure.target });
+    await logAttempt(supabase, failure, null, false, 'mocked (local)');
+    return { sent: true, reason: 'mocked (local)' };
+  }
+
   try {
     const { data: stateRow } = await supabase
       .from('store_settings').select('value').eq('key', 'seo_alert_state').maybeSingle();
