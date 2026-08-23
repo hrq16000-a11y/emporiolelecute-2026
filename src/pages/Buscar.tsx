@@ -12,6 +12,7 @@ import ProductCard from "@/components/ProductCard";
 import { useDbProducts, useDbCategories } from "@/hooks/useProducts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useSearchCacheVersion } from "@/hooks/useSearchCacheVersion";
 import { supabase } from "@/integrations/supabase/client";
 import SearchEmptyState from "@/components/SearchEmptyState";
 import type { Product } from "@/data/products";
