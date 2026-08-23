@@ -50,8 +50,10 @@ const Favoritos = () => {
       <DynamicSEO
         title="Meus favoritos | Empório LeleCute"
         description="Produtos personalizados que você salvou para retomar depois."
-        noindex
       />
+      <Helmet>
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
       <Header />
 
       <main className="container mx-auto px-4 py-8 sm:py-12">
