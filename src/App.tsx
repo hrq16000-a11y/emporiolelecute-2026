@@ -20,6 +20,8 @@ const Index = lazy(() => import("./pages/Index"));
 const Produtos = lazy(() => import("./pages/Produtos"));
 const Buscar = lazy(() => import("./pages/Buscar"));
 const Favoritos = lazy(() => import("./pages/Favoritos"));
+const ListaCompartilhada = lazy(() => import("./pages/ListaCompartilhada"));
+
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const Carrinho = lazy(() => import("./pages/Carrinho"));
 const Envio = lazy(() => import("./pages/Envio"));
@@ -427,6 +429,12 @@ const App = () => {
                     <Favoritos />
                   </Suspense>
                 } />
+                <Route path="/lista/:token" element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <ListaCompartilhada />
+                  </Suspense>
+                } />
+
                 <Route path="/buscar" element={
                   <Suspense fallback={<PageSkeleton />}>
                     <Buscar />

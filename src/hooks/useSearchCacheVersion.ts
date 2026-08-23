@@ -27,3 +27,10 @@ export function useSearchCacheVersion() {
 
   return data ?? 0;
 }
+
+/**
+ * Alias semântico: a mesma versão global também invalida catálogo
+ * (cards, listagens e páginas de detalhe) quando produtos, categorias,
+ * preços ou boosts mudam no admin.
+ */
+export const useCatalogVersion = useSearchCacheVersion;

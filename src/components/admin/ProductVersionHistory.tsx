@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { History, RotateCcw, Loader2, ArrowRight } from 'lucide-react';
+import { History, RotateCcw, Loader2, ArrowRight, Download } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -92,7 +93,20 @@ export default function ProductVersionHistory({ productId }: Props) {
           <DialogDescription>
             Compare as versões campo a campo e restaure rapidamente o que precisar.
           </DialogDescription>
+          <div className="pt-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={versions.length === 0}
+              onClick={() => exportVersionsCsv(productId, versions)}
+            >
+              <Download className="w-4 h-4 mr-1.5" />
+              Exportar CSV
+            </Button>
+          </div>
         </DialogHeader>
+
 
         {isLoading ? (
           <div className="flex items-center justify-center py-10 text-muted-foreground">
@@ -197,4 +211,42 @@ export default function ProductVersionHistory({ productId }: Props) {
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Exporta o histórico em CSV com o diff por campo e o autor de cada mudança. */
+function exportVersionsCsv(productId: string, versions: ProductVersion[]) {
+  const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+  const header = ['versao', 'data', 'operacao', 'autor', 'campo', 'valor_anterior', 'valor_novo'];
+  const lines: string[] = [header.join(';')];
+
+  versions.forEach((v, index) => {
+    const previous = versions[index + 1];
+    const keys = (v.changed_fields.length ? v.changed_fields : Object.keys(v.snapshot)).filter(
+      (k) => !IGNORED.has(k),
+    );
+    const rows = keys.length ? keys : ['—'];
+    rows.forEach((key) => {
+      lines.push(
+        [
+          v.version,
+          new Date(v.created_at).toLocaleString('pt-BR'),
+          v.operation,
+          v.actor_email ?? 'Sistema',
+          key === '—' ? '—' : fieldLabel(key),
+          key === '—' ? '' : formatFieldValue(previous?.snapshot?.[key]),
+          key === '—' ? '' : formatFieldValue(v.snapshot?.[key]),
+        ]
+          .map(escape)
+          .join(';'),
+      );
+    });
+  });
+
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `historico-produto-${productId.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
