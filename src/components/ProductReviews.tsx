@@ -162,7 +162,7 @@ const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Pr
         ))}
       </div>
 
-      {reviews.length > initialLimit && (
+      {canExpand && reviews.length > initialLimit && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
