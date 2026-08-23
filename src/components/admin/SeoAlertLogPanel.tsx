@@ -12,7 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { downloadCsv, downloadJson } from '@/lib/seoExport';
+import { exportCsv, exportJson } from '@/lib/seoExport';
 
 export interface SeoAlertLogRow {
   id: string;
@@ -117,14 +117,14 @@ const SeoAlertLogPanel = () => {
             <Button
               variant="outline" size="sm" className="min-h-10"
               disabled={rows.length === 0}
-              onClick={() => downloadCsv('seo-alert-log', exportRows())}
+              onClick={() => exportCsv('seo-alert-log', exportRows())}
             >
               <Download className="mr-2 h-4 w-4" /> CSV
             </Button>
             <Button
               variant="outline" size="sm" className="min-h-10"
               disabled={rows.length === 0}
-              onClick={() => downloadJson('seo-alert-log', rows)}
+              onClick={() => exportJson('seo-alert-log', rows)}
             >
               <Download className="mr-2 h-4 w-4" /> JSON
             </Button>
