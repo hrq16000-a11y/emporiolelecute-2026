@@ -105,10 +105,32 @@ const Produtos = () => {
 
     setSearch(urlSearch ?? "");
     setSelectedCategory(urlCategoria);
-    setSelectedOccasion(urlOcasiao);
     setSelectedSegment(urlSegmento);
     setSelectedTag(urlTag);
     setCurrentPage(urlPage ? Number(urlPage) || 1 : 1);
+
+    // Ocasião: restaura a última escolha salva quando a URL não traz o filtro
+    // (apenas na primeira montagem, para não sequestrar navegações posteriores).
+    if (urlOcasiao) {
+      setSelectedOccasion(urlOcasiao);
+      writeStoredOccasion(urlOcasiao);
+      occasionRestored.current = true;
+      return;
+    }
+    if (!occasionRestored.current) {
+      occasionRestored.current = true;
+      const stored = readStoredOccasion();
+      if (stored) {
+        setSelectedOccasion(stored);
+        const next = new URLSearchParams(searchParams);
+        next.set('ocasiao', stored);
+        setSearchParams(next, { replace: true });
+        return;
+      }
+    }
+    setSelectedOccasion(null);
+  }, [searchParams, setSearchParams]);
+
   }, [searchParams]);
 
   // Reset to page 1 when filters change
