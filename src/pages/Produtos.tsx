@@ -1,7 +1,7 @@
 import { ProductSkeleton } from "@/components/ProductSkeleton";
 import DataErrorState from "@/components/DataErrorState";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Search, Grid, List, ShoppingBag, Loader2, Tag, ChevronRight, ChevronLeft, MessageCircle, Sparkles, Heart, Truck, SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
