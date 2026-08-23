@@ -91,6 +91,12 @@ Deno.serve(async (req) => {
           urlList,
         })
         for (const ep of ENDPOINTS) {
+          // Offline: nenhum ping sai da máquina, sucesso simulado.
+          if (isLocalEnv()) {
+            mockIntegration(`indexnow:${ep.name}`, { urls: urlList.length })
+            indexnow.endpoints.push({ name: ep.name, status: 200, ok: true, error: null })
+            continue
+          }
           try {
             const ping = await fetch(ep.url, {
               method: 'POST',
