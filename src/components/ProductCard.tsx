@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, ArrowRight, Clock, Sparkles } from "lucide-react";
+import { ArrowRight, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,6 +10,7 @@ import type { Product } from "@/data/products";
 import { optimizeImage, buildSrcSet } from "@/lib/image";
 import { getProductionSpeed, speedLabel } from "@/lib/productMeta";
 import { urls } from "@/lib/urls";
+import WishlistButton from "@/components/WishlistButton";
 
 interface ProductCardProps {
   product: Product;
