@@ -105,6 +105,11 @@ Deno.serve(async (req) => {
 
     // 5) ping real de teste no IndexNow (uma única URL: a home)
     try {
+      if (isLocalEnv()) {
+        mockIntegration('indexnow:bing-ping', { host: 'emporiolelecute.com.br' });
+        push('indexnow_ping', 'Ping de teste no IndexNow (Bing)', true, 'Simulado (ambiente local, sem chamada externa).');
+        throw { __skip: true };
+      }
       const ping = await fetch('https://www.bing.com/indexnow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
