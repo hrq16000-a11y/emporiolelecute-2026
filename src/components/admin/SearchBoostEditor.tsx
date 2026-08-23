@@ -251,16 +251,29 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
                       <div className="min-w-0">
                         <p className="text-sm truncate">
                           {b.product_name ?? b.product_id}
-                          {!b.is_active && (
+                          {!b.is_active ? (
+                            <Badge variant="outline" className="ml-2">Inativo</Badge>
+                          ) : isBoostLive(b) ? (
+                            <Badge variant="secondary" className="ml-2">No ar</Badge>
+                          ) : (
                             <Badge variant="outline" className="ml-2">
-                              Inativo
+                              {b.starts_at && new Date(b.starts_at) > new Date() ? "Agendado" : "Encerrado"}
                             </Badge>
                           )}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           peso {b.weight} · {b.product_slug}
+                          {b.campaign_label ? ` · ${b.campaign_label}` : ""}
                         </p>
+                        {(b.starts_at || b.ends_at) && (
+                          <p className="text-xs text-muted-foreground">
+                            {b.starts_at ? new Date(b.starts_at).toLocaleString("pt-BR") : "—"}
+                            {" → "}
+                            {b.ends_at ? new Date(b.ends_at).toLocaleString("pt-BR") : "—"}
+                          </p>
+                        )}
                       </div>
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="sm" variant="ghost" className="text-destructive">
