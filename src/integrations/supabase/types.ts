@@ -7630,7 +7630,18 @@ export type Database = {
         }[]
       }
       save_product_full: { Args: { _payload: Json }; Returns: Json }
-      search_products: { Args: { _limit?: number; _q: string }; Returns: Json }
+      search_products:
+        | { Args: { _limit?: number; _q: string }; Returns: Json }
+        | {
+            Args: {
+              _category_id?: string
+              _limit?: number
+              _max_price?: number
+              _min_price?: number
+              _q: string
+            }
+            Returns: Json
+          }
       set_user_role: {
         Args: { _action: string; _role: string; _user_id: string }
         Returns: Json
