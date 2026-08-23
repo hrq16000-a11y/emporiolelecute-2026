@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import SearchInsights from "@/components/admin/SearchInsights";
 import SynonymEditor from "@/components/admin/SynonymEditor";
 import SearchBoostEditor from "@/components/admin/SearchBoostEditor";
+import SearchAuditPanel from "@/components/admin/SearchAuditPanel";
+
 
 export default function AdminSearch() {
   const [tab, setTab] = useState("insights");
