@@ -22,6 +22,8 @@ import {
   useCommitConfirmedReviews, useReviewImportAudit, useUpdateReviewAudit, type ReviewAuditRow,
 } from '@/hooks/useReviewImportAudit';
 import { explainMatch, findBestMatches, classifyScore } from '@/lib/fuzzyMatch';
+import FuzzyMatchExplanation from '@/components/admin/FuzzyMatchExplanation';
+
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendente',
