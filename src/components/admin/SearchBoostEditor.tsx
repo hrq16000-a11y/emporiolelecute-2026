@@ -179,11 +179,42 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
               )}
             </div>
           </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div>
+              <Label>Campanha (opcional)</Label>
+              <Input
+                value={campaignLabel}
+                onChange={(e) => setCampaignLabel(e.target.value)}
+                placeholder="ex.: Dia das Mães 2026"
+              />
+            </div>
+            <div>
+              <Label>Início (opcional)</Label>
+              <Input
+                type="datetime-local"
+                value={startsAt}
+                onChange={(e) => setStartsAt(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Fim (opcional)</Label>
+              <Input
+                type="datetime-local"
+                value={endsAt}
+                onChange={(e) => setEndsAt(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Com datas preenchidas, o boost entra e sai do ar automaticamente na janela definida.
+            Sem datas, vale enquanto estiver ativo.
+          </p>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Switch checked={isActive} onCheckedChange={setIsActive} id="boost-active" />
               <Label htmlFor="boost-active">Ativo</Label>
             </div>
+
             <Button onClick={save} disabled={upsert.isPending}>
               {upsert.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
