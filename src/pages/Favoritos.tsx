@@ -6,7 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import DynamicSEO from '@/components/DynamicSEO';
-import ProductSkeleton from '@/components/ProductSkeleton';
+import { ProductSkeleton } from '@/components/ProductSkeleton';
 import WishlistButton from '@/components/WishlistButton';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
