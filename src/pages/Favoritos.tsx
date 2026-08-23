@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useQuery } from '@tanstack/react-query';
 import { Heart, ArrowRight } from 'lucide-react';
 import Header from '@/components/Header';
