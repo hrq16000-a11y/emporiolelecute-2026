@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { urls, CANONICAL_ORIGIN } from '@/lib/urls';
+import { parseSafePrice } from '@/lib/safePrice';
 
 interface ReviewItem {
   author_name: string;
@@ -12,9 +13,9 @@ interface ReviewItem {
 interface ProductStructuredDataProps {
   name: string;
   description: string;
-  price: number;
+  price: number | string;
   /** Preço "de" original quando há desconto ativo. */
-  originalPrice?: number;
+  originalPrice?: number | string | null;
   images: string[];
   slug: string;
   rating?: number;
@@ -61,6 +62,11 @@ export function buildProductJsonLd({
   productUrl: string;
   priceValidUntilStr: string;
 }) {
+  // Parse SAFE: o Supabase pode devolver numeric como string ("4.60") e
+  // conteúdo legado pode chegar como "R$ 4,60". O schema.org exige número puro.
+  const safePrice = parseSafePrice(price);
+  const safeOriginal = parseSafePrice(originalPrice);
+
   return {
     "@context": "https://schema.org/",
     "@type": "Product",
@@ -85,14 +91,14 @@ export function buildProductJsonLd({
       "@type": "Offer",
       "url": productUrl,
       "priceCurrency": "BRL",
-      "price": Number(Number(price).toFixed(2)),
+      ...(safePrice !== null ? { price: safePrice } : {}),
       "priceValidUntil": priceValidUntilStr,
-      ...(originalPrice && originalPrice > price
+      ...(safeOriginal !== null && safePrice !== null && safeOriginal > safePrice
         ? {
             priceSpecification: {
               "@type": "UnitPriceSpecification",
               priceType: "https://schema.org/ListPrice",
-              price: Number(Number(originalPrice).toFixed(2)),
+              price: safeOriginal,
               priceCurrency: "BRL",
             },
           }

@@ -21,6 +21,9 @@ import SeoIndexAuditPanel from '@/components/admin/SeoIndexAuditPanel';
 import SeoImageQualityPanel from '@/components/admin/SeoImageQualityPanel';
 import SeoGscCoveragePanel from '@/components/admin/SeoGscCoveragePanel';
 import SeoForceActionsPanel from '@/components/admin/SeoForceActionsPanel';
+import SeoGscTrendsPanel from '@/components/admin/SeoGscTrendsPanel';
+import SeoBingPanel from '@/components/admin/SeoBingPanel';
+import SeoAlertLogPanel from '@/components/admin/SeoAlertLogPanel';
 
 
 interface SiteCheck { name: string; ok: boolean; detail: string; severity: 'info' | 'warn' | 'error' }
@@ -319,6 +322,10 @@ const AdminSeoCheck = () => {
 
       <SeoGscCoveragePanel />
 
+      <SeoGscTrendsPanel />
+
+      <SeoBingPanel />
+
       <SeoImageQualityPanel />
 
       <SeoTitleFixPanel />
@@ -334,6 +341,8 @@ const AdminSeoCheck = () => {
       <SeoCrawlerProbePanel />
 
       <SeoSubmissionLogPanel onResend={pingCrawlers} resending={pinging} />
+
+      <SeoAlertLogPanel />
 
 
       {products && (

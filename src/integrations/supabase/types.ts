@@ -3095,6 +3095,45 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_alert_log: {
+        Row: {
+          channel: string
+          created_at: string
+          email_to: string | null
+          extra: Json
+          id: string
+          outcome: string
+          reason: string
+          sent: boolean
+          target: string
+          urls: Json
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          email_to?: string | null
+          extra?: Json
+          id?: string
+          outcome?: string
+          reason: string
+          sent?: boolean
+          target: string
+          urls?: Json
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          email_to?: string | null
+          extra?: Json
+          id?: string
+          outcome?: string
+          reason?: string
+          sent?: boolean
+          target?: string
+          urls?: Json
+        }
+        Relationships: []
+      }
       seo_causality_registry: {
         Row: {
           affected_layers: Json | null
@@ -4436,6 +4475,54 @@ export type Database = {
           strategic_fragmentation_score?: number | null
           strategic_integrity_score?: number | null
           systemic_alignment_score?: number | null
+        }
+        Relationships: []
+      }
+      seo_gsc_snapshots: {
+        Row: {
+          clicks: number
+          coverage_issues: Json
+          created_at: string
+          ctr: number
+          excluded_count: number
+          id: string
+          impressions: number
+          indexed_count: number
+          page_type: string
+          position: number
+          site_url: string
+          snapshot_date: string
+          top_queries: Json
+        }
+        Insert: {
+          clicks?: number
+          coverage_issues?: Json
+          created_at?: string
+          ctr?: number
+          excluded_count?: number
+          id?: string
+          impressions?: number
+          indexed_count?: number
+          page_type?: string
+          position?: number
+          site_url: string
+          snapshot_date: string
+          top_queries?: Json
+        }
+        Update: {
+          clicks?: number
+          coverage_issues?: Json
+          created_at?: string
+          ctr?: number
+          excluded_count?: number
+          id?: string
+          impressions?: number
+          indexed_count?: number
+          page_type?: string
+          position?: number
+          site_url?: string
+          snapshot_date?: string
+          top_queries?: Json
         }
         Relationships: []
       }

@@ -36,6 +36,29 @@ async function alertEmail(supabase: Client): Promise<string | null> {
   return cfg?.alert_email || cfg?.sitemap_notification_email || null;
 }
 
+async function logAttempt(
+  supabase: Client,
+  failure: SeoFailure,
+  emailTo: string | null,
+  sent: boolean,
+  outcome: string,
+) {
+  try {
+    await supabase.from('seo_alert_log').insert({
+      channel: failure.channel,
+      target: failure.target,
+      reason: String(failure.reason).slice(0, 2000),
+      urls: (failure.urls ?? []).slice(0, 50),
+      extra: failure.extra ?? {},
+      email_to: emailTo,
+      sent,
+      outcome,
+    });
+  } catch (e) {
+    console.error('[seo-alert] falha ao registrar log', e);
+  }
+}
+
 export async function sendSeoFailureAlert(supabase: Client, failure: SeoFailure): Promise<{
   sent: boolean;
   reason: string;
@@ -46,12 +69,16 @@ export async function sendSeoFailureAlert(supabase: Client, failure: SeoFailure)
     const state = (stateRow?.value as Record<string, string> | null) ?? {};
     const last = state[failure.channel];
     if (last && (Date.now() - new Date(last).getTime()) / 60000 < THROTTLE_MINUTES) {
+      await logAttempt(supabase, failure, null, false, 'throttled');
       return { sent: false, reason: 'throttled' };
     }
 
     const to = await alertEmail(supabase);
     const resendKey = Deno.env.get('RESEND_API_KEY');
-    if (!to || !resendKey) return { sent: false, reason: 'sem e-mail ou RESEND_API_KEY' };
+    if (!to || !resendKey) {
+      await logAttempt(supabase, failure, to, false, 'sem e-mail ou RESEND_API_KEY');
+      return { sent: false, reason: 'sem e-mail ou RESEND_API_KEY' };
+    }
 
     const urls = (failure.urls ?? []).slice(0, 20);
     const res = await fetch('https://api.resend.com/emails', {
@@ -74,6 +101,7 @@ export async function sendSeoFailureAlert(supabase: Client, failure: SeoFailure)
 
     if (!res.ok) {
       console.error('[seo-alert] resend falhou', res.status, (await res.text()).slice(0, 300));
+      await logAttempt(supabase, failure, to, false, `resend ${res.status}`);
       return { sent: false, reason: `resend ${res.status}` };
     }
 
@@ -83,6 +111,7 @@ export async function sendSeoFailureAlert(supabase: Client, failure: SeoFailure)
       updated_at: new Date().toISOString(),
     }, { onConflict: 'key' });
 
+    await logAttempt(supabase, failure, to, true, 'ok');
     return { sent: true, reason: 'ok' };
   } catch (e) {
     console.error('[seo-alert] erro', e);
