@@ -35,6 +35,10 @@ interface PageReport {
   types: string[];
   checks: Check[];
   duration_ms: number;
+  /** Blocos JSON-LD brutos, já normalizados (pretty-print) para inspeção/cópia. */
+  ld_raw: string[];
+  /** Trecho do <head> renderizado, para conferência lado a lado. */
+  html_head: string;
 }
 
 // deno-lint-ignore no-explicit-any
