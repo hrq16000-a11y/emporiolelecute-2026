@@ -2434,6 +2434,42 @@ export type Database = {
           },
         ]
       }
+      product_versions: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          changed_fields: Json
+          created_at: string
+          id: string
+          operation: string
+          product_id: string
+          snapshot: Json
+          version: number
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          changed_fields?: Json
+          created_at?: string
+          id?: string
+          operation: string
+          product_id: string
+          snapshot: Json
+          version: number
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          changed_fields?: Json
+          created_at?: string
+          id?: string
+          operation?: string
+          product_id?: string
+          snapshot?: Json
+          version?: number
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           badge: string | null
@@ -7379,6 +7415,41 @@ export type Database = {
           },
         ]
       }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          personalization: Json
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          personalization?: Json
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          personalization?: Json
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       admin_audit_timeline: {
@@ -7628,6 +7699,10 @@ export type Database = {
           primary_slug: string
           product_id: string
         }[]
+      }
+      revert_product_version: {
+        Args: { _fields?: string[]; _version_id: string }
+        Returns: Json
       }
       save_product_full: { Args: { _payload: Json }; Returns: Json }
       search_products: {

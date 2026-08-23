@@ -42,6 +42,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { evaluateProductSeo } from '@/lib/productSeo';
 import { buildProductChecklist } from '@/lib/thinContent';
 import ProductSeoScoreBadge from '@/components/admin/ProductSeoScoreBadge';
+import ProductVersionHistory from '@/components/admin/ProductVersionHistory';
 import ProductSeoChecklist from '@/components/admin/ProductSeoChecklist';
 import SocialSeoPreviews from '@/components/admin/SocialSeoPreviews';
 import EditorialTemplatesPicker from '@/components/admin/EditorialTemplatesPicker';
@@ -509,6 +510,7 @@ const AdminProductForm = () => {
             });
             return (
               <div className="flex items-center gap-2 flex-wrap">
+                {id && <ProductVersionHistory productId={id} />}
                 <ProductSeoScoreBadge evaluation={seo} />
                 {seo.issues.filter((i) => i.level === 'error').length > 0 && (
                   <span className="text-xs text-rose-700">

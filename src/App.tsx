@@ -19,6 +19,7 @@ import { PageSkeleton, AdminSkeleton } from "./components/ui/skeleton-loading";
 const Index = lazy(() => import("./pages/Index"));
 const Produtos = lazy(() => import("./pages/Produtos"));
 const Buscar = lazy(() => import("./pages/Buscar"));
+const Favoritos = lazy(() => import("./pages/Favoritos"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const Carrinho = lazy(() => import("./pages/Carrinho"));
 const Envio = lazy(() => import("./pages/Envio"));
@@ -419,6 +420,11 @@ const App = () => {
                 <Route path="/produtos" element={
                   <Suspense fallback={<PageSkeleton />}>
                     <Produtos />
+                  </Suspense>
+                } />
+                <Route path="/favoritos" element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <Favoritos />
                   </Suspense>
                 } />
                 <Route path="/buscar" element={
