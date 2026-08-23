@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { optimizeImageFile, formatBytes } from '@/lib/imagePipeline';
 
 interface ImageUploaderProps {
   images: string[];
@@ -121,6 +122,8 @@ const ImageUploader = ({ images, onImagesChange, maxImages = 8 }: ImageUploaderP
   // Feedback por arquivo durante o batch (evita sensação de "travou").
   const [uploadQueue, setUploadQueue] = useState<UploadEntry[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Bytes economizados pela otimização no batch atual (feedback ao admin).
+  const savedBytesRef = useRef(0);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -210,6 +213,7 @@ const ImageUploader = ({ images, onImagesChange, maxImages = 8 }: ImageUploaderP
     }));
     setUploadQueue(initialQueue);
     setUploading(true);
+    savedBytesRef.current = 0;
 
     const updateEntry = (id: string, patch: Partial<UploadEntry>) =>
       setUploadQueue((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
@@ -244,7 +248,10 @@ const ImageUploader = ({ images, onImagesChange, maxImages = 8 }: ImageUploaderP
       onImagesChange(newImages);
       toast({
         title: 'Upload concluído',
-        description: `${uploadedUrls.length} imagem(ns) enviada(s).`,
+        description:
+          savedBytesRef.current > 0
+            ? `${uploadedUrls.length} imagem(ns) enviada(s) • ${formatBytes(savedBytesRef.current)} economizados na otimização.`
+            : `${uploadedUrls.length} imagem(ns) enviada(s).`,
       });
     }
 
@@ -328,6 +335,9 @@ const ImageUploader = ({ images, onImagesChange, maxImages = 8 }: ImageUploaderP
             </p>
             <p className="text-xs text-muted-foreground">
               PNG, JPG ou WEBP (máx. 5MB cada) • Até {maxImages} imagens
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Otimização automática: WebP, máx. 1600px e placeholder para melhor LCP/CLS
             </p>
           </div>
         )}
