@@ -402,7 +402,7 @@ const Buscar = () => {
               hasActiveFilters={activeCount > 0}
             />
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+            <div className="stagger grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 [&>*]:stagger-item">
               {(hasSearchTerm ? filtered : filtered.slice(0, visibleLocal)).map((p) => (
                 <ProductCard key={p.id} product={p as Product} />
               ))}
