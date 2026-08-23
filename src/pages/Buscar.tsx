@@ -24,16 +24,33 @@ interface SearchRpcResult {
   suggestion: string | null;
 }
 
-function useServerSearch(term: string) {
+interface ServerSearchFilters {
+  categoryId?: string | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+}
+
+function useServerSearch(term: string, filters: ServerSearchFilters) {
   const q = term.trim();
+  const categoryId = filters.categoryId ?? null;
+  const minPrice = filters.minPrice ?? null;
+  const maxPrice =
+    filters.maxPrice != null && Number.isFinite(filters.maxPrice) ? filters.maxPrice : null;
+
   return useQuery({
-    queryKey: ["search_products", q],
+    queryKey: ["search_products", q, categoryId, minPrice, maxPrice],
     enabled: q.length >= 2,
-    staleTime: 30_000,
+    // Cache por termo + filtros: digitar de volta um termo já buscado não gera request.
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async (): Promise<SearchRpcResult> => {
       const { data, error } = await supabase.rpc("search_products" as never, {
         _q: q,
         _limit: 60,
+        _category_id: categoryId,
+        _min_price: minPrice,
+        _max_price: maxPrice,
       } as never);
       if (error) return { ids: [], suggestion: null };
       const payload = (data ?? {}) as { ids?: string[]; suggestion?: string | null };
@@ -44,6 +61,7 @@ function useServerSearch(term: string) {
     },
   });
 }
+
 
 const PRICE_RANGES: { id: string; label: string; min: number; max: number }[] = [
   { id: "lt50", label: "Até R$ 50", min: 0, max: 50 },
@@ -66,7 +84,23 @@ const Buscar = () => {
   const debouncedQuery = useDebounce(query, 300);
   const { data: dbProducts, isLoading } = useDbProducts();
   const { data: dbCategories } = useDbCategories({ publicOnly: true });
-  const { data: searchResult, isFetching: isSearching } = useServerSearch(debouncedQuery);
+
+  // Filtros aplicados no Postgres (categoria/preço) — o frontend só ordena o resultado.
+  const selectedCategoryId = useMemo(
+    () => (dbCategories || []).find((c) => c.slug === selectedCategory)?.id ?? null,
+    [dbCategories, selectedCategory],
+  );
+  const selectedRange = useMemo(
+    () => PRICE_RANGES.find((r) => r.id === selectedPrice) ?? null,
+    [selectedPrice],
+  );
+
+  const { data: searchResult, isFetching: isSearching } = useServerSearch(debouncedQuery, {
+    categoryId: selectedCategoryId,
+    minPrice: selectedRange ? selectedRange.min : null,
+    maxPrice: selectedRange && Number.isFinite(selectedRange.max) ? selectedRange.max : null,
+  });
+
 
   // Autofoco no campo ao abrir a página (UX mobile)
   useEffect(() => {
@@ -132,33 +166,35 @@ const Buscar = () => {
         _categoryId: p.category_id || undefined,
         _priceNum: Number(p.price) || 0,
         _categoryName: p.category?.name || "",
+        _categorySlug: p.category?.slug || "",
+
         _occasionNames: (p.occasions || []).map((o) => o.name),
         _tagNames: (p.tags || []).map((t) => t.name),
       })) as any;
   }, [dbProducts]);
 
   const filtered = useMemo(() => {
-    // Fase 2 (refactor server-side) — busca textual feita pela RPC `search_products`.
-    // O frontend só aplica filtros de categoria/preço sobre o resultado já ranqueado.
+    // Busca textual + filtros de categoria/preço rodam no Postgres (RPC `search_products`).
+    // O frontend só reordena pelo ranking recebido. Sem termo, filtra o catálogo local.
     const rawQuery = debouncedQuery.trim();
-    const range = PRICE_RANGES.find((r) => r.id === selectedPrice);
 
-    let base: any[] = products;
     if (rawQuery.length >= 2) {
       const ids = searchResult?.ids ?? [];
       const order = new Map(ids.map((id, idx) => [id, idx]));
-      base = products
+      return products
         .filter((p: any) => order.has(p.id))
         .sort((a: any, b: any) => (order.get(a.id)! - order.get(b.id)!));
     }
 
-    return base.filter((p: any) => {
-      const matchesCat = !selectedCategory || p._categoryId === selectedCategory;
+    return (products as any[]).filter((p: any) => {
+      const matchesCat = !selectedCategory || p._categorySlug === selectedCategory;
       const matchesPrice =
-        !range || (p._priceNum >= range.min && p._priceNum < range.max);
+        !selectedRange ||
+        (p._priceNum >= selectedRange.min && p._priceNum < selectedRange.max);
       return matchesCat && matchesPrice;
     });
-  }, [products, debouncedQuery, selectedCategory, selectedPrice, searchResult]);
+  }, [products, debouncedQuery, selectedCategory, selectedRange, searchResult]);
+
 
   // "Você quis dizer..." vem direto da RPC (similaridade trigram no servidor).
   const suggestion = useMemo(() => {

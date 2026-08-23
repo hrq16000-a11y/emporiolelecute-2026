@@ -2859,35 +2859,80 @@ export type Database = {
         }
         Relationships: []
       }
+      search_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       search_boosts: {
         Row: {
+          campaign_label: string | null
           created_at: string
+          ends_at: string | null
           id: string
           is_active: boolean
           notes: string | null
           product_id: string
+          starts_at: string | null
           term: string
           term_normalized: string
           updated_at: string
           weight: number
         }
         Insert: {
+          campaign_label?: string | null
           created_at?: string
+          ends_at?: string | null
           id?: string
           is_active?: boolean
           notes?: string | null
           product_id: string
+          starts_at?: string | null
           term: string
           term_normalized: string
           updated_at?: string
           weight?: number
         }
         Update: {
+          campaign_label?: string | null
           created_at?: string
+          ends_at?: string | null
           id?: string
           is_active?: boolean
           notes?: string | null
           product_id?: string
+          starts_at?: string | null
           term?: string
           term_normalized?: string
           updated_at?: string
@@ -7585,7 +7630,18 @@ export type Database = {
         }[]
       }
       save_product_full: { Args: { _payload: Json }; Returns: Json }
-      search_products: { Args: { _limit?: number; _q: string }; Returns: Json }
+      search_products:
+        | { Args: { _limit?: number; _q: string }; Returns: Json }
+        | {
+            Args: {
+              _category_id?: string
+              _limit?: number
+              _max_price?: number
+              _min_price?: number
+              _q: string
+            }
+            Returns: Json
+          }
       set_user_role: {
         Args: { _action: string; _role: string; _user_id: string }
         Returns: Json
