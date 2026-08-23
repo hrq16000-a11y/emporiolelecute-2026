@@ -116,12 +116,26 @@ const Buscar = () => {
     [selectedPrice],
   );
 
-  const { data: searchResult, isFetching: isSearching } = useServerSearch(debouncedQuery, {
+  const {
+    data: searchPages,
+    isFetching: isSearching,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useServerSearch(debouncedQuery, {
     categoryId: selectedCategoryId,
     minPrice: selectedRange ? selectedRange.min : null,
     maxPrice: selectedRange && Number.isFinite(selectedRange.max) ? selectedRange.max : null,
   });
 
+  const searchResult = useMemo(() => {
+    const pages = searchPages?.pages ?? [];
+    return {
+      ids: pages.flatMap((p) => p.ids),
+      suggestion: pages[0]?.suggestion ?? null,
+      total: pages[0]?.total ?? 0,
+    };
+  }, [searchPages]);
 
   // Autofoco no campo ao abrir a página (UX mobile)
   useEffect(() => {
@@ -145,19 +159,9 @@ const Buscar = () => {
     setSearchParams(next, { replace: true });
   }, [debouncedQuery, selectedCategory, selectedPrice, setSearchParams]);
 
-  // Fase 2 — registra a busca para alimentar o cockpit administrativo (insights).
-  // Fire-and-forget; nunca bloqueia a UI.
-  useEffect(() => {
-    const q = debouncedQuery.trim();
-    if (q.length < 2 || !searchResult) return;
-    supabase
-      .rpc("log_search" as never, {
-        _q: q,
-        _result_count: searchResult.ids.length,
-        _suggestion: searchResult.suggestion,
-      } as never)
-      .then(() => undefined, () => undefined);
-  }, [debouncedQuery, searchResult]);
+  // A RPC `search_products` já registra a consulta (log_search) na primeira
+  // página, alimentando o cockpit administrativo sem request extra do cliente.
+
 
 
   const products: Product[] = useMemo(() => {
