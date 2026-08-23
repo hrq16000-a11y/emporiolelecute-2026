@@ -34,7 +34,8 @@ const Stars = ({ value }: { value: number }) => (
 );
 
 const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Props) => {
-  const { data: reviews = [], isLoading } = useProductReviews(productId);
+  const { data: reviews: _unused } = { data: undefined } as never;
+
   const { data: stats } = useProductReviewStats(productId);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
