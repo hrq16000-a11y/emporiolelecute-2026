@@ -228,8 +228,18 @@ const Buscar = () => {
     return searchResult?.suggestion ?? null;
   }, [debouncedQuery, filtered.length, searchResult]);
 
+  const hasSearchTerm = debouncedQuery.trim().length >= 2;
+  const totalResults = hasSearchTerm ? searchResult.total : filtered.length;
+  const [visibleLocal, setVisibleLocal] = useState(PAGE_SIZE);
+
+  // Ao trocar termo/filtros, volta a fatia local ao tamanho de uma página.
+  useEffect(() => {
+    setVisibleLocal(PAGE_SIZE);
+  }, [debouncedQuery, selectedCategory, selectedPrice]);
+
   const activeCount =
     (debouncedQuery ? 1 : 0) + (selectedCategory ? 1 : 0) + (selectedPrice ? 1 : 0);
+
 
   const clearAll = () => {
     setQuery("");
