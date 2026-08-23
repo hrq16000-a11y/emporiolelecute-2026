@@ -8,6 +8,8 @@
  * - Sempre inclui URL alvo e motivo do erro.
  */
 
+import { isLocalEnv, mockIntegration } from './localEnv.ts';
+
 // deno-lint-ignore no-explicit-any
 type Client = any;
 
