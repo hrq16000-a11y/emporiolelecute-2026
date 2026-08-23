@@ -1,7 +1,7 @@
 import { ProductSkeleton } from "@/components/ProductSkeleton";
 import DataErrorState from "@/components/DataErrorState";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Search, Grid, List, ShoppingBag, Loader2, Tag, ChevronRight, ChevronLeft, MessageCircle, Sparkles, Heart, Truck, SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
@@ -34,6 +34,20 @@ import type { Product } from "@/data/products";
 
 const PRODUCTS_PER_PAGE = 12;
 
+/** Persistência do filtro de ocasião entre navegações (mantém a curadoria escolhida). */
+const OCCASION_STORAGE_KEY = 'produtos:occasion';
+
+const readStoredOccasion = (): string | null => {
+  try { return localStorage.getItem(OCCASION_STORAGE_KEY) || null; } catch { return null; }
+};
+
+const writeStoredOccasion = (slug: string | null) => {
+  try {
+    if (slug) localStorage.setItem(OCCASION_STORAGE_KEY, slug);
+    else localStorage.removeItem(OCCASION_STORAGE_KEY);
+  } catch { /* ignore */ }
+};
+
 const Produtos = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -51,7 +65,10 @@ const Produtos = () => {
 
   const [search, setSearch] = useState(searchParams.get('busca') || searchParams.get('search') || "");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(searchParams.get('categoria') || null);
-  const [selectedOccasion, setSelectedOccasion] = useState<string | null>(searchParams.get('ocasiao') || null);
+  const [selectedOccasion, setSelectedOccasion] = useState<string | null>(
+    () => searchParams.get('ocasiao') || readStoredOccasion(),
+  );
+  const occasionRestored = useRef(false);
   const [selectedSegment, setSelectedSegment] = useState<string | null>(searchParams.get('segmento') || null);
   const [selectedTag, setSelectedTag] = useState<string | null>(searchParams.get('tag') || null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -88,11 +105,33 @@ const Produtos = () => {
 
     setSearch(urlSearch ?? "");
     setSelectedCategory(urlCategoria);
-    setSelectedOccasion(urlOcasiao);
     setSelectedSegment(urlSegmento);
     setSelectedTag(urlTag);
     setCurrentPage(urlPage ? Number(urlPage) || 1 : 1);
-  }, [searchParams]);
+
+    // Ocasião: restaura a última escolha salva quando a URL não traz o filtro
+    // (apenas na primeira montagem, para não sequestrar navegações posteriores).
+    if (urlOcasiao) {
+      setSelectedOccasion(urlOcasiao);
+      writeStoredOccasion(urlOcasiao);
+      occasionRestored.current = true;
+      return;
+    }
+    if (!occasionRestored.current) {
+      occasionRestored.current = true;
+      const stored = readStoredOccasion();
+      if (stored) {
+        setSelectedOccasion(stored);
+        const next = new URLSearchParams(searchParams);
+        next.set('ocasiao', stored);
+        setSearchParams(next, { replace: true });
+        return;
+      }
+    }
+    setSelectedOccasion(null);
+  }, [searchParams, setSearchParams]);
+
+
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -141,6 +180,7 @@ const Produtos = () => {
 
   const handleOccasionChange = (occasionSlug: string | null) => {
     setSelectedOccasion(occasionSlug);
+    writeStoredOccasion(occasionSlug);
     const newParams = new URLSearchParams(searchParams);
     if (occasionSlug) {
       newParams.set('ocasiao', occasionSlug);

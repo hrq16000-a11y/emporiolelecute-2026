@@ -1,7 +1,8 @@
 // Fase 7 — Bloco visual de avaliações de produto (com fotos)
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Star, BadgeCheck, ExternalLink, X, ChevronDown, ChevronUp, Quote } from 'lucide-react';
 import { useProductReviews, useProductReviewStats } from '@/hooks/useProductReviews';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { optimizeImage } from '@/lib/image';
 import { event as gaEvent } from '@/lib/analytics';
 
@@ -34,10 +35,20 @@ const Stars = ({ value }: { value: number }) => (
 );
 
 const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Props) => {
-  const { data: reviews = [], isLoading } = useProductReviews(productId);
+  const { data: allReviews = [], isLoading } = useProductReviews(productId);
   const { data: stats } = useProductReviewStats(productId);
+  const { data: flags } = useFeatureFlags();
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+
+  // Curadoria: as melhores avaliações verificadas primeiro (verificada > nota >
+  // ordem de relevância original vinda do hook).
+  const reviews = useMemo(() => {
+    return [...allReviews].sort((a, b) => {
+      if (a.is_verified !== b.is_verified) return a.is_verified ? -1 : 1;
+      return (b.rating ?? 0) - (a.rating ?? 0);
+    });
+  }, [allReviews]);
 
   if (isLoading) return null;
   if (!reviews.length) return null;
@@ -52,8 +63,9 @@ const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Pr
     });
   };
 
+  const canExpand = Boolean(flags?.pdp_reviews_expand_enabled);
   const isCompact = variant === 'compact';
-  const visibleReviews = expanded ? reviews : reviews.slice(0, initialLimit);
+  const visibleReviews = canExpand && expanded ? reviews : reviews.slice(0, initialLimit);
   const remaining = reviews.length - visibleReviews.length;
 
   return (
@@ -162,7 +174,7 @@ const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Pr
         ))}
       </div>
 
-      {reviews.length > initialLimit && (
+      {canExpand && reviews.length > initialLimit && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
