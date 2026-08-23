@@ -90,14 +90,8 @@ const ProductCard = ({ product, priority = false }: ProductCardProps) => {
         />
         
 
-        {/* Favorite Button — sem shadow, sem hover coral agressivo */}
-        <button
-          onClick={(e) => e.preventDefault()}
-          className="absolute top-2 right-2 sm:top-3 sm:right-3 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          aria-label="Adicionar aos favoritos"
-        >
-          <Heart className="h-4 w-4 text-foreground/70" strokeWidth={1.5} />
-        </button>
+        {/* Favorite Button — salva o produto na wishlist (local + banco) */}
+        <WishlistButton productId={product.id} productName={product.name} />
       </Link>
       
       {/* Product Info */}
