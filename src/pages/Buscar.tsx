@@ -24,16 +24,33 @@ interface SearchRpcResult {
   suggestion: string | null;
 }
 
-function useServerSearch(term: string) {
+interface ServerSearchFilters {
+  categoryId?: string | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+}
+
+function useServerSearch(term: string, filters: ServerSearchFilters) {
   const q = term.trim();
+  const categoryId = filters.categoryId ?? null;
+  const minPrice = filters.minPrice ?? null;
+  const maxPrice =
+    filters.maxPrice != null && Number.isFinite(filters.maxPrice) ? filters.maxPrice : null;
+
   return useQuery({
-    queryKey: ["search_products", q],
+    queryKey: ["search_products", q, categoryId, minPrice, maxPrice],
     enabled: q.length >= 2,
-    staleTime: 30_000,
+    // Cache por termo + filtros: digitar de volta um termo já buscado não gera request.
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async (): Promise<SearchRpcResult> => {
       const { data, error } = await supabase.rpc("search_products" as never, {
         _q: q,
         _limit: 60,
+        _category_id: categoryId,
+        _min_price: minPrice,
+        _max_price: maxPrice,
       } as never);
       if (error) return { ids: [], suggestion: null };
       const payload = (data ?? {}) as { ids?: string[]; suggestion?: string | null };
@@ -44,6 +61,7 @@ function useServerSearch(term: string) {
     },
   });
 }
+
 
 const PRICE_RANGES: { id: string; label: string; min: number; max: number }[] = [
   { id: "lt50", label: "Até R$ 50", min: 0, max: 50 },
