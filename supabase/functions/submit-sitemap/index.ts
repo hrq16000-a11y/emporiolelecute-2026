@@ -18,6 +18,14 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // Ambiente local/offline: não chama o Google Search Console.
+  if (isLocalEnv()) {
+    const mock = mockIntegration('gsc:submit-sitemap', { sitemap_url: 'http://localhost:8080/sitemap.xml' })
+    return new Response(JSON.stringify({ success: true, mocked: true, submission: mock.detail }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
     const GSC_KEY = Deno.env.get('GOOGLE_SEARCH_CONSOLE_API_KEY')
