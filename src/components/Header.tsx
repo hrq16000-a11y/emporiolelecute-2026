@@ -173,7 +173,16 @@ const Header = () => {
               ))}
             </div>
 
+            <Link
+              to="/favoritos"
+              aria-label="Meus favoritos"
+              className="text-muted-foreground hover:text-primary transition-colors duration-200"
+            >
+              <Heart className="h-5 w-5" strokeWidth={1.5} />
+            </Link>
+
             <MiniCart />
+
 
 
             {/* Conectar (login) */}
