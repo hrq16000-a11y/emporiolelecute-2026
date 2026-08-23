@@ -43,11 +43,13 @@ export default function AdminSearch() {
       </Card>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList className="overflow-x-auto">
           <TabsTrigger value="insights">Insights</TabsTrigger>
           <TabsTrigger value="synonyms">Sinônimos</TabsTrigger>
           <TabsTrigger value="boosts">Boosts</TabsTrigger>
+          <TabsTrigger value="audit">Auditoria</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="insights" className="mt-4">
           <SearchInsights
