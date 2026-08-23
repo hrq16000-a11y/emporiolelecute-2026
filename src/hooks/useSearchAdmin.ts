@@ -187,16 +187,6 @@ export function useSearchAuditLog(limit = 200) {
 }
 
 
-export function useDeleteBoost() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("search_boosts" as never).delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => invalidateSearchCaches(qc),
-  });
-}
 
 // ---------- INSIGHTS ----------
 
