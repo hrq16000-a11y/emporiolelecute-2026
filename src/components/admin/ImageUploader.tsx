@@ -182,7 +182,18 @@ const ImageUploader = ({ images, onImagesChange, maxImages = 8 }: ImageUploaderP
         .from('product-images')
         .getPublicUrl(filePath);
 
+      // Processamento pesado (variantes responsivas + placeholder) roda em
+      // background — o admin não espera por ele.
+      void enqueueImageJob({
+        storagePath: filePath,
+        publicUrl: data.publicUrl,
+        sourceBytes: file.size,
+      }).catch(() => {
+        /* fila é complementar: falha aqui não invalida o upload */
+      });
+
       return data.publicUrl;
+
     } catch (error) {
       console.error('Upload error:', error);
       return null;
