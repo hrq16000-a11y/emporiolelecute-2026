@@ -43,8 +43,12 @@ function useServerSearch(term: string, filters: ServerSearchFilters) {
   const maxPrice =
     filters.maxPrice != null && Number.isFinite(filters.maxPrice) ? filters.maxPrice : null;
 
+  // Invalidação automática: a versão sobe no banco quando produtos, categorias,
+  // boosts ou sinônimos mudam no admin — os resultados nunca ficam obsoletos.
+  const cacheVersion = useSearchCacheVersion();
+
   return useInfiniteQuery({
-    queryKey: ["search_products", q, categoryId, minPrice, maxPrice],
+    queryKey: ["search_products", q, categoryId, minPrice, maxPrice, cacheVersion],
     enabled: q.length >= 2,
     initialPageParam: 0,
     // Cache por termo + filtros: digitar de volta um termo já buscado não gera request.
