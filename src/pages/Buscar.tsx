@@ -363,16 +363,18 @@ const Buscar = () => {
           {/* Resultados */}
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-muted-foreground">
-              {isLoading || isSearching
+              {isLoading || (isSearching && !isFetchingNextPage)
                 ? "Buscando…"
-                : `${filtered.length} ${filtered.length === 1 ? "resultado" : "resultados"}`}
+                : hasSearchTerm
+                  ? `${filtered.length} de ${totalResults} ${totalResults === 1 ? "resultado" : "resultados"}`
+                  : `${filtered.length} ${filtered.length === 1 ? "resultado" : "resultados"}`}
             </p>
             <Link to="/produtos" className="text-xs text-primary hover:underline">
               Ver catálogo completo
             </Link>
           </div>
 
-          {isLoading || isSearching ? (
+          {isLoading || (isSearching && !isFetchingNextPage) ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
@@ -386,21 +388,46 @@ const Buscar = () => {
             />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
-              {filtered.slice(0, 60).map((p) => (
+              {(hasSearchTerm ? filtered : filtered.slice(0, visibleLocal)).map((p) => (
                 <ProductCard key={p.id} product={p as Product} />
               ))}
             </div>
           )}
 
-          {filtered.length > 60 && (
+          {/* Paginação: busca server-side usa offset/limit; catálogo local incrementa a fatia */}
+          {hasSearchTerm && hasNextPage && (
             <div className="text-center mt-6">
-              <Link to={`/produtos?busca=${encodeURIComponent(debouncedQuery)}`}>
-                <Button variant="outline" size="sm">
-                  Ver todos os {filtered.length} resultados
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando…
+                  </>
+                ) : (
+                  `Carregar mais (${totalResults - filtered.length} restantes)`
+                )}
+              </Button>
             </div>
           )}
+
+          {!hasSearchTerm && filtered.length > visibleLocal && (
+            <div className="text-center mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                onClick={() => setVisibleLocal((v) => v + PAGE_SIZE)}
+              >
+                Carregar mais
+              </Button>
+            </div>
+          )}
+
         </div>
       </main>
 
