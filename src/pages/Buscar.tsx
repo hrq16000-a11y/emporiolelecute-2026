@@ -11,7 +11,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import ProductCard from "@/components/ProductCard";
 import { useDbProducts, useDbCategories } from "@/hooks/useProducts";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import SearchEmptyState from "@/components/SearchEmptyState";
 import type { Product } from "@/data/products";
@@ -19,9 +19,15 @@ import type { Product } from "@/data/products";
 // Fase 2 (refactor server-side) — Toda a busca tolerante (acento, typo,
 // sinônimos) acontece no Postgres via RPC `search_products`. O frontend
 // apenas envia o termo e recebe IDs ordenados por relevância + sugestão.
-interface SearchRpcResult {
+// Fase 3 — paginação real (offset/limit) para não trazer o bloco inteiro.
+const PAGE_SIZE = 24;
+
+interface SearchRpcPage {
   ids: string[];
   suggestion: string | null;
+  total: number;
+  offset: number;
+  hasMore: boolean;
 }
 
 interface ServerSearchFilters {
@@ -37,30 +43,45 @@ function useServerSearch(term: string, filters: ServerSearchFilters) {
   const maxPrice =
     filters.maxPrice != null && Number.isFinite(filters.maxPrice) ? filters.maxPrice : null;
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["search_products", q, categoryId, minPrice, maxPrice],
     enabled: q.length >= 2,
+    initialPageParam: 0,
     // Cache por termo + filtros: digitar de volta um termo já buscado não gera request.
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     placeholderData: (prev) => prev,
-    queryFn: async (): Promise<SearchRpcResult> => {
+    getNextPageParam: (last: SearchRpcPage) =>
+      last.hasMore ? last.offset + last.ids.length : undefined,
+    queryFn: async ({ pageParam }): Promise<SearchRpcPage> => {
+      const offset = Number(pageParam) || 0;
       const { data, error } = await supabase.rpc("search_products" as never, {
         _q: q,
-        _limit: 60,
+        _limit: PAGE_SIZE,
+        _offset: offset,
         _category_id: categoryId,
         _min_price: minPrice,
         _max_price: maxPrice,
       } as never);
-      if (error) return { ids: [], suggestion: null };
-      const payload = (data ?? {}) as { ids?: string[]; suggestion?: string | null };
+      if (error) return { ids: [], suggestion: null, total: 0, offset, hasMore: false };
+      const payload = (data ?? {}) as {
+        ids?: string[];
+        suggestion?: string | null;
+        total?: number;
+        offset?: number;
+        has_more?: boolean;
+      };
       return {
         ids: Array.isArray(payload.ids) ? payload.ids : [],
         suggestion: payload.suggestion ?? null,
+        total: Number(payload.total ?? 0),
+        offset: Number(payload.offset ?? offset),
+        hasMore: Boolean(payload.has_more),
       };
     },
   });
 }
+
 
 
 const PRICE_RANGES: { id: string; label: string; min: number; max: number }[] = [
