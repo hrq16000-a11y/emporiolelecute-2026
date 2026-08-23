@@ -104,27 +104,28 @@ Deno.serve(async (req) => {
     }
 
     // 5) ping real de teste no IndexNow (uma única URL: a home)
-    try {
-      if (isLocalEnv()) {
-        mockIntegration('indexnow:bing-ping', { host: 'emporiolelecute.com.br' });
-        push('indexnow_ping', 'Ping de teste no IndexNow (Bing)', true, 'Simulado (ambiente local, sem chamada externa).');
-        throw { __skip: true };
+    if (isLocalEnv()) {
+      mockIntegration('indexnow:bing-ping', { host: 'emporiolelecute.com.br' });
+      push('indexnow_ping', 'Ping de teste no IndexNow (Bing)', true,
+        'Simulado (ambiente local, sem chamada externa).');
+    } else {
+      try {
+        const ping = await fetch('https://www.bing.com/indexnow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({
+            host: 'emporiolelecute.com.br',
+            key: INDEXNOW_KEY,
+            keyLocation: `${ORIGIN}/${INDEXNOW_KEY}.txt`,
+            urlList: [`${ORIGIN}/`],
+          }),
+        });
+        const ok = ping.ok || ping.status === 202;
+        push('indexnow_ping', 'Ping de teste no IndexNow (Bing)', ok,
+          ok ? `Bing aceitou o envio (HTTP ${ping.status}).` : `Bing recusou: HTTP ${ping.status} — ${(await ping.text()).slice(0, 200)}`);
+      } catch (e) {
+        push('indexnow_ping', 'Ping de teste no IndexNow (Bing)', false, String(e));
       }
-      const ping = await fetch('https://www.bing.com/indexnow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({
-          host: 'emporiolelecute.com.br',
-          key: INDEXNOW_KEY,
-          keyLocation: `${ORIGIN}/${INDEXNOW_KEY}.txt`,
-          urlList: [`${ORIGIN}/`],
-        }),
-      });
-      const ok = ping.ok || ping.status === 202;
-      push('indexnow_ping', 'Ping de teste no IndexNow (Bing)', ok,
-        ok ? `Bing aceitou o envio (HTTP ${ping.status}).` : `Bing recusou: HTTP ${ping.status} — ${(await ping.text()).slice(0, 200)}`);
-    } catch (e) {
-      push('indexnow_ping', 'Ping de teste no IndexNow (Bing)', false, String(e));
     }
 
     const allOk = checks.every((c) => c.ok);
