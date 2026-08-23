@@ -34,11 +34,20 @@ const Stars = ({ value }: { value: number }) => (
 );
 
 const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Props) => {
-  const { data: reviews: _unused } = { data: undefined } as never;
-
+  const { data: allReviews = [], isLoading } = useProductReviews(productId);
   const { data: stats } = useProductReviewStats(productId);
+  const { data: flags } = useFeatureFlags();
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+
+  // Curadoria: as melhores avaliações verificadas primeiro (verificada > nota >
+  // ordem de relevância original vinda do hook).
+  const reviews = useMemo(() => {
+    return [...allReviews].sort((a, b) => {
+      if (a.is_verified !== b.is_verified) return a.is_verified ? -1 : 1;
+      return (b.rating ?? 0) - (a.rating ?? 0);
+    });
+  }, [allReviews]);
 
   if (isLoading) return null;
   if (!reviews.length) return null;
@@ -53,8 +62,9 @@ const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Pr
     });
   };
 
+  const canExpand = Boolean(flags?.pdp_reviews_expand_enabled);
   const isCompact = variant === 'compact';
-  const visibleReviews = expanded ? reviews : reviews.slice(0, initialLimit);
+  const visibleReviews = canExpand && expanded ? reviews : reviews.slice(0, initialLimit);
   const remaining = reviews.length - visibleReviews.length;
 
   return (
