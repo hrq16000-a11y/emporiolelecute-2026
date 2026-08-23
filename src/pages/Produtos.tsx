@@ -34,6 +34,20 @@ import type { Product } from "@/data/products";
 
 const PRODUCTS_PER_PAGE = 12;
 
+/** Persistência do filtro de ocasião entre navegações (mantém a curadoria escolhida). */
+const OCCASION_STORAGE_KEY = 'produtos:occasion';
+
+const readStoredOccasion = (): string | null => {
+  try { return localStorage.getItem(OCCASION_STORAGE_KEY) || null; } catch { return null; }
+};
+
+const writeStoredOccasion = (slug: string | null) => {
+  try {
+    if (slug) localStorage.setItem(OCCASION_STORAGE_KEY, slug);
+    else localStorage.removeItem(OCCASION_STORAGE_KEY);
+  } catch { /* ignore */ }
+};
+
 const Produtos = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const {
