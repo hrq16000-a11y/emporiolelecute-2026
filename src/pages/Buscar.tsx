@@ -172,27 +172,27 @@ const Buscar = () => {
   }, [dbProducts]);
 
   const filtered = useMemo(() => {
-    // Fase 2 (refactor server-side) — busca textual feita pela RPC `search_products`.
-    // O frontend só aplica filtros de categoria/preço sobre o resultado já ranqueado.
+    // Busca textual + filtros de categoria/preço rodam no Postgres (RPC `search_products`).
+    // O frontend só reordena pelo ranking recebido. Sem termo, filtra o catálogo local.
     const rawQuery = debouncedQuery.trim();
-    const range = PRICE_RANGES.find((r) => r.id === selectedPrice);
 
-    let base: any[] = products;
     if (rawQuery.length >= 2) {
       const ids = searchResult?.ids ?? [];
       const order = new Map(ids.map((id, idx) => [id, idx]));
-      base = products
+      return products
         .filter((p: any) => order.has(p.id))
         .sort((a: any, b: any) => (order.get(a.id)! - order.get(b.id)!));
     }
 
-    return base.filter((p: any) => {
-      const matchesCat = !selectedCategory || p._categoryId === selectedCategory;
+    return (products as any[]).filter((p: any) => {
+      const matchesCat = !selectedCategory || p._categorySlug === selectedCategory;
       const matchesPrice =
-        !range || (p._priceNum >= range.min && p._priceNum < range.max);
+        !selectedRange ||
+        (p._priceNum >= selectedRange.min && p._priceNum < selectedRange.max);
       return matchesCat && matchesPrice;
     });
-  }, [products, debouncedQuery, selectedCategory, selectedPrice, searchResult]);
+  }, [products, debouncedQuery, selectedCategory, selectedRange, searchResult]);
+
 
   // "Você quis dizer..." vem direto da RPC (similaridade trigram no servidor).
   const suggestion = useMemo(() => {
