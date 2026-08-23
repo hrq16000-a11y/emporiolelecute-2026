@@ -89,12 +89,21 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
       toast({ title: "Informe o termo e o produto", variant: "destructive" });
       return;
     }
+    const starts = fromLocalInput(startsAt);
+    const ends = fromLocalInput(endsAt);
+    if (starts && ends && new Date(ends) <= new Date(starts)) {
+      toast({ title: "Período inválido", description: "O fim deve ser depois do início.", variant: "destructive" });
+      return;
+    }
     try {
       await upsert.mutateAsync({
         term,
         product_id: productId,
         weight,
         is_active: isActive,
+        campaign_label: campaignLabel,
+        starts_at: starts,
+        ends_at: ends,
       });
       toast({ title: "Produto pinado", description: "Aparecerá no topo da busca por esse termo." });
       setProductId("");
@@ -103,6 +112,7 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
       toast({ title: "Erro ao pinar", description: e.message, variant: "destructive" });
     }
   };
+
 
   const remove = async (id: string) => {
     await del.mutateAsync(id);
