@@ -1,11 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Gauge, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Gauge, Loader2, RefreshCw, AlertTriangle, Download, BellRing } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+import { exportCsv, exportJson } from '@/lib/seoExport';
 
 /**
  * Core Web Vitals reais (RUM) coletados por `src/lib/webVitals.ts` e
@@ -63,11 +67,37 @@ interface Row {
   metrics: Partial<Record<MetricName, number>>;
 }
 
+interface Breach { pageType: string; metric: MetricName; value: number; limit: number; samples: number }
+
 const SeoWebVitalsPanel = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [ranAt, setRanAt] = useState<string | null>(null);
+  // Limites personalizados (padrão: limites oficiais do Google).
+  const [limits, setLimits] = useState<Record<MetricName, number>>({
+    LCP: THRESHOLDS.LCP[0], CLS: THRESHOLDS.CLS[0], INP: THRESHOLDS.INP[0],
+  });
+  const [alertsOn, setAlertsOn] = useState(true);
+  const [breaches, setBreaches] = useState<Breach[] | null>(null);
+  const [alerting, setAlerting] = useState(false);
+
+  // Carrega os limites salvos em store_settings.seo_vitals_thresholds.
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase
+        .from('store_settings').select('value').eq('key', 'seo_vitals_thresholds').maybeSingle();
+      const v = data?.value as Partial<Record<MetricName, number>> | null;
+      if (v) setLimits((prev) => ({ ...prev, ...v }));
+    })();
+  }, []);
+
+  const detectBreaches = useCallback((current: Row[], lim: Record<MetricName, number>): Breach[] =>
+    current.flatMap((r) =>
+      METRICS.filter((m) => r.metrics[m] !== undefined && r.metrics[m]! > lim[m]).map((m) => ({
+        pageType: r.pageType, metric: m, value: r.metrics[m]!, limit: lim[m], samples: r.samples,
+      })),
+    ), []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -105,6 +135,26 @@ const SeoWebVitalsPanel = () => {
       next.sort((a, b) => b.samples - a.samples);
       setRows(next);
       setRanAt(new Date().toISOString());
+
+      const found = detectBreaches(next, limits);
+      setBreaches(found);
+      if (alertsOn) {
+        setAlerting(true);
+        try {
+          const { data: alertRes } = await supabase.functions.invoke('seo-vitals-alert', {
+            body: { breaches: found, thresholds: limits },
+          });
+          if (found.length) {
+            const sent = (alertRes as { alert?: { sent?: boolean; reason?: string } } | null)?.alert;
+            toast({
+              variant: 'destructive',
+              title: `${found.length} rota(s) acima do limite`,
+              description: sent?.sent ? 'Alerta enviado por e-mail.' : `E-mail não enviado (${sent?.reason ?? 'indisponível'}).`,
+            });
+          }
+        } catch { /* alerta é best-effort: nunca quebra a medição */ }
+        setAlerting(false);
+      }
     } catch (e) {
       toast({
         variant: 'destructive',
@@ -114,7 +164,7 @@ const SeoWebVitalsPanel = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, limits, alertsOn, detectBreaches]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -144,10 +194,29 @@ const SeoWebVitalsPanel = () => {
             {ranAt && ` Atualizado às ${new Date(ranAt).toLocaleTimeString('pt-BR')}.`}
           </CardDescription>
         </div>
-        <Button onClick={load} disabled={loading} variant="outline" className="min-h-11 shrink-0">
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-          Reexecutar medição
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" className="min-h-11"
+            onClick={() => exportCsv('core-web-vitals', (rows ?? []).map((r) => ({
+              tipo_pagina: r.pageType,
+              amostras: r.samples,
+              LCP_p75_ms: r.metrics.LCP ?? '',
+              CLS_p75: r.metrics.CLS ?? '',
+              INP_p75_ms: r.metrics.INP ?? '',
+              limite_LCP_ms: limits.LCP,
+              limite_CLS: limits.CLS,
+              limite_INP_ms: limits.INP,
+            })))}>
+            <Download className="mr-2 h-4 w-4" /> CSV
+          </Button>
+          <Button variant="ghost" className="min-h-11"
+            onClick={() => exportJson('core-web-vitals', { ran_at: ranAt, limits, rows, breaches })}>
+            <Download className="mr-2 h-4 w-4" /> JSON
+          </Button>
+          <Button onClick={load} disabled={loading} variant="outline" className="min-h-11 shrink-0">
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            Reexecutar medição
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading && !rows && (
@@ -164,6 +233,47 @@ const SeoWebVitalsPanel = () => {
             visitas reais ao site publicado.
           </p>
         )}
+
+        <div className="rounded-lg border p-3">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <BellRing className="h-4 w-4 text-primary" /> Limites e alertas
+            </p>
+            <div className="ml-auto flex items-center gap-2">
+              <Label htmlFor="cwv-alerts" className="text-xs text-muted-foreground">
+                Alertar por e-mail nas reexecuções
+              </Label>
+              <Switch id="cwv-alerts" checked={alertsOn} onCheckedChange={setAlertsOn} />
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {METRICS.map((m) => (
+              <div key={m} className="space-y-1">
+                <Label htmlFor={`lim-${m}`} className="text-xs">
+                  {m} {m === 'CLS' ? '(score)' : '(ms)'}
+                </Label>
+                <Input
+                  id={`lim-${m}`}
+                  type="number"
+                  step={m === 'CLS' ? 0.01 : 50}
+                  min={0}
+                  value={limits[m]}
+                  onChange={(e) => setLimits((p) => ({ ...p, [m]: Number(e.target.value) || 0 }))}
+                  className="min-h-11"
+                />
+              </div>
+            ))}
+          </div>
+          {breaches && (
+            <p className={`mt-2 text-xs ${breaches.length ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {alerting
+                ? 'Enviando alerta…'
+                : breaches.length
+                  ? `${breaches.length} rota(s) acima dos limites definidos na última run.`
+                  : 'Nenhuma rota acima dos limites na última run.'}
+            </p>
+          )}
+        </div>
 
         {offenders.length > 0 && (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
