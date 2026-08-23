@@ -20,6 +20,13 @@ const FEATURES: FeatureItem[] = [
       "Assistente virtual flutuante no canto inferior direito (home, listagem e PDP). Quando desligado, o botão e o painel não são renderizados.",
     icon: MessageCircle,
   },
+  {
+    key: "pdp_reviews_expand_enabled",
+    title: "Avaliações: ver mais na página do produto",
+    description:
+      "Na página do produto sempre aparecem as 3 melhores avaliações verificadas. Com este recurso ligado, um botão “Ver mais avaliações” permite expandir a lista completa.",
+    icon: Star,
+  },
 ];
 
 export default function AdminFeatures() {
