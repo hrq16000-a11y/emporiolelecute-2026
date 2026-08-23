@@ -96,6 +96,8 @@ const AdminSEODashboard = lazyWithRetry(() => import("./pages/admin/AdminSEODash
 const AdminTelemetry = lazyWithRetry(() => import("./pages/admin/AdminTelemetry"), "AdminTelemetry");
 const AdminUsage = lazyWithRetry(() => import("./pages/admin/AdminUsage"), "AdminUsage");
 const AdminCronStatus = lazyWithRetry(() => import("./pages/admin/AdminCronStatus"), "AdminCronStatus");
+const AdminPerformance = lazyWithRetry(() => import("./pages/admin/AdminPerformance"), "AdminPerformance");
+const AdminSecurityScan = lazyWithRetry(() => import("./pages/admin/AdminSecurityScan"), "AdminSecurityScan");
 const AdminCloudflareGuide = lazyWithRetry(() => import("./pages/admin/AdminCloudflareGuide"), "AdminCloudflareGuide");
 const AdminDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminDiagnostics"), "AdminDiagnostics");
 const AdminSeoControlPlane = lazyWithRetry(() => import("./pages/admin/AdminSeoControlPlane"), "AdminSeoControlPlane");
@@ -761,6 +763,16 @@ const App = () => {
                   <Route path="cron" element={
                     <Suspense fallback={<AdminSkeleton />}>
                       <AdminCronStatus />
+                    </Suspense>
+                  } />
+                  <Route path="desempenho" element={
+                    <Suspense fallback={<AdminSkeleton />}>
+                      <AdminPerformance />
+                    </Suspense>
+                  } />
+                  <Route path="seguranca" element={
+                    <Suspense fallback={<AdminSkeleton />}>
+                      <AdminSecurityScan />
                     </Suspense>
                   } />
                   <Route path="seo-control-plane" element={

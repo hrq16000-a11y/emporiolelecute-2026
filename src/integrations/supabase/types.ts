@@ -998,6 +998,66 @@ export type Database = {
         }
         Relationships: []
       }
+      image_processing_jobs: {
+        Row: {
+          attempts: number
+          bucket: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          height: number | null
+          id: string
+          output_bytes: number | null
+          placeholder: string | null
+          processed_at: string | null
+          public_url: string | null
+          source_bytes: number | null
+          status: string
+          storage_path: string
+          updated_at: string
+          variants: Json
+          width: number | null
+        }
+        Insert: {
+          attempts?: number
+          bucket?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          height?: number | null
+          id?: string
+          output_bytes?: number | null
+          placeholder?: string | null
+          processed_at?: string | null
+          public_url?: string | null
+          source_bytes?: number | null
+          status?: string
+          storage_path: string
+          updated_at?: string
+          variants?: Json
+          width?: number | null
+        }
+        Update: {
+          attempts?: number
+          bucket?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          height?: number | null
+          id?: string
+          output_bytes?: number | null
+          placeholder?: string | null
+          processed_at?: string | null
+          public_url?: string | null
+          source_bytes?: number | null
+          status?: string
+          storage_path?: string
+          updated_at?: string
+          variants?: Json
+          width?: number | null
+        }
+        Relationships: []
+      }
       instagram_embed_failures: {
         Row: {
           id: string
@@ -3041,6 +3101,63 @@ export type Database = {
           id?: string
           notes?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      security_scan_runs: {
+        Row: {
+          alert_reason: string | null
+          alert_sent: boolean
+          created_at: string
+          critical_count: number
+          error: string | null
+          findings: Json
+          high_count: number
+          id: string
+          low_count: number
+          moderate_count: number
+          packages_scanned: number
+          regression: boolean
+          source: string
+          status: string
+          total_findings: number
+          trigger: string
+        }
+        Insert: {
+          alert_reason?: string | null
+          alert_sent?: boolean
+          created_at?: string
+          critical_count?: number
+          error?: string | null
+          findings?: Json
+          high_count?: number
+          id?: string
+          low_count?: number
+          moderate_count?: number
+          packages_scanned?: number
+          regression?: boolean
+          source?: string
+          status?: string
+          total_findings?: number
+          trigger?: string
+        }
+        Update: {
+          alert_reason?: string | null
+          alert_sent?: boolean
+          created_at?: string
+          critical_count?: number
+          error?: string | null
+          findings?: Json
+          high_count?: number
+          id?: string
+          low_count?: number
+          moderate_count?: number
+          packages_scanned?: number
+          regression?: boolean
+          source?: string
+          status?: string
+          total_findings?: number
+          trigger?: string
         }
         Relationships: []
       }
@@ -7414,6 +7531,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      web_vitals_reports: {
+        Row: {
+          base_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+          notes: string | null
+          pages: Json
+        }
+        Insert: {
+          base_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label: string
+          notes?: string | null
+          pages?: Json
+        }
+        Update: {
+          base_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          notes?: string | null
+          pages?: Json
+        }
+        Relationships: []
       }
       wishlist_shares: {
         Row: {

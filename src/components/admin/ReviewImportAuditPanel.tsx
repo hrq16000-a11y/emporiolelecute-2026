@@ -22,6 +22,8 @@ import {
   useCommitConfirmedReviews, useReviewImportAudit, useUpdateReviewAudit, type ReviewAuditRow,
 } from '@/hooks/useReviewImportAudit';
 import { explainMatch, findBestMatches, classifyScore } from '@/lib/fuzzyMatch';
+import FuzzyMatchExplanation from '@/components/admin/FuzzyMatchExplanation';
+
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendente',
@@ -379,6 +381,23 @@ function ReviewAuditDetailDialog({ row, onClose, productName, candidates, thresh
             </ul>
           </section>
         </div>
+
+        <section className="pt-2">
+          <h3 className="mb-2 text-sm font-semibold">Como o match foi calculado</h3>
+          {matches[0] || storeName ? (
+            <FuzzyMatchExplanation
+              source={row.elo7_product_name ?? ''}
+              target={storeName ?? matches[0]?.label ?? ''}
+              explanation={explainMatch(row.elo7_product_name ?? '', storeName ?? matches[0]?.label ?? '')}
+              threshold={threshold}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Sem produto vinculado nem candidato — nada a comparar.
+            </p>
+          )}
+        </section>
+
 
         <section className="pt-2">
           <h3 className="text-sm font-semibold mb-1">Histórico</h3>

@@ -178,6 +178,8 @@ export const EXECUTIVE_NAV: NavGroup[] = [
       { label: "SEO Dashboard", path: "/admin/seo-dashboard", icon: "BarChart3" },
       { label: "Telemetria", path: "/admin/telemetria", icon: "Activity" },
       { label: "Cron", path: "/admin/cron", icon: "Clock" },
+      { label: "Desempenho", path: "/admin/desempenho", icon: "Gauge" },
+      { label: "Segurança", path: "/admin/seguranca", icon: "ShieldAlert" },
       { label: "Usuários", path: "/admin/usuarios", icon: "ShieldCheck" },
       { label: "Solicitações", path: "/admin/usuarios/solicitacoes", icon: "ShieldCheck" },
       { label: "Auditoria", path: "/admin/auditoria", icon: "BarChart3" },
