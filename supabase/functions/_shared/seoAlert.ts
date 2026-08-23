@@ -14,7 +14,7 @@ type Client = any;
 const THROTTLE_MINUTES = 360;
 
 export interface SeoFailure {
-  channel: 'indexnow' | 'gsc' | 'merchant' | 'sitemap';
+  channel: 'indexnow' | 'gsc' | 'merchant' | 'sitemap' | 'vitals';
   target: string;
   reason: string;
   urls?: string[];
@@ -26,6 +26,7 @@ const LABEL: Record<SeoFailure['channel'], string> = {
   gsc: 'Google Search Console',
   merchant: 'Google Merchant (feed)',
   sitemap: 'Sitemap',
+  vitals: 'Core Web Vitals',
 };
 
 async function alertEmail(supabase: Client): Promise<string | null> {
