@@ -131,7 +131,7 @@ const Produtos = () => {
     setSelectedOccasion(null);
   }, [searchParams, setSearchParams]);
 
-  }, [searchParams]);
+
 
   // Reset to page 1 when filters change
   useEffect(() => {
