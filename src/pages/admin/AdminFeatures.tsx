@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2, MessageCircle, Power } from "lucide-react";
+import { Loader2, MessageCircle, Power, Star } from "lucide-react";
 import { useFeatureFlags, useUpdateFeatureFlags, FeatureFlags } from "@/hooks/useFeatureFlags";
 import { toast } from "sonner";
 
