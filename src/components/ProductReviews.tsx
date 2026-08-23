@@ -1,7 +1,8 @@
 // Fase 7 — Bloco visual de avaliações de produto (com fotos)
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Star, BadgeCheck, ExternalLink, X, ChevronDown, ChevronUp, Quote } from 'lucide-react';
 import { useProductReviews, useProductReviewStats } from '@/hooks/useProductReviews';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { optimizeImage } from '@/lib/image';
 import { event as gaEvent } from '@/lib/analytics';
 
