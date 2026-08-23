@@ -154,8 +154,14 @@ const ImageUploader = ({ images, onImagesChange, maxImages = 8 }: ImageUploaderP
     }
   };
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const uploadImage = async (original: File): Promise<string | null> => {
     try {
+      // Pipeline de otimização: redimensiona (máx. 1600px), converte para WebP
+      // e reduz o peso antes do upload. Tamanhos responsivos e placeholder são
+      // gerados na entrega (Supabase image transform + BlurImage).
+      const optimized = await optimizeImageFile(original);
+      const file = optimized.file;
+      savedBytesRef.current += Math.max(0, optimized.originalBytes - optimized.optimizedBytes);
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `products/${fileName}`;
