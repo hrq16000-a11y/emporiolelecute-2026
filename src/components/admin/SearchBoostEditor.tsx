@@ -17,11 +17,30 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useDbProducts } from "@/hooks/useProducts";
-import { useAdminBoosts, useDeleteBoost, useUpsertBoost } from "@/hooks/useSearchAdmin";
+import {
+  useAdminBoosts,
+  useDeleteBoost,
+  useUpsertBoost,
+  isBoostLive,
+} from "@/hooks/useSearchAdmin";
 
 interface Props {
   presetTerm?: string | null;
   onConsumePreset?: () => void;
+}
+
+/** ISO → valor aceito por <input type="datetime-local"> (horário local). */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(value: string): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props) {
@@ -36,6 +55,9 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
   const [productId, setProductId] = useState<string>("");
   const [weight, setWeight] = useState(100);
   const [isActive, setIsActive] = useState(true);
+  const [campaignLabel, setCampaignLabel] = useState("");
+  const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
 
   useEffect(() => {
     if (presetTerm) {
@@ -43,6 +65,7 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
       onConsumePreset?.();
     }
   }, [presetTerm]);
+
 
   const productOptions = useMemo(() => {
     const q = productSearch.trim().toLowerCase();
