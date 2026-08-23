@@ -84,7 +84,23 @@ const Buscar = () => {
   const debouncedQuery = useDebounce(query, 300);
   const { data: dbProducts, isLoading } = useDbProducts();
   const { data: dbCategories } = useDbCategories({ publicOnly: true });
-  const { data: searchResult, isFetching: isSearching } = useServerSearch(debouncedQuery);
+
+  // Filtros aplicados no Postgres (categoria/preço) — o frontend só ordena o resultado.
+  const selectedCategoryId = useMemo(
+    () => (dbCategories || []).find((c) => c.slug === selectedCategory)?.id ?? null,
+    [dbCategories, selectedCategory],
+  );
+  const selectedRange = useMemo(
+    () => PRICE_RANGES.find((r) => r.id === selectedPrice) ?? null,
+    [selectedPrice],
+  );
+
+  const { data: searchResult, isFetching: isSearching } = useServerSearch(debouncedQuery, {
+    categoryId: selectedCategoryId,
+    minPrice: selectedRange ? selectedRange.min : null,
+    maxPrice: selectedRange && Number.isFinite(selectedRange.max) ? selectedRange.max : null,
+  });
+
 
   // Autofoco no campo ao abrir a página (UX mobile)
   useEffect(() => {
