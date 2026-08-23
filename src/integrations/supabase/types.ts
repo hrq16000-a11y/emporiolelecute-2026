@@ -7415,6 +7415,39 @@ export type Database = {
           },
         ]
       }
+      wishlist_shares: {
+        Row: {
+          created_at: string
+          id: string
+          is_public: boolean
+          product_ids: string[]
+          title: string | null
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          product_ids?: string[]
+          title?: string | null
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          product_ids?: string[]
+          title?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wishlists: {
         Row: {
           created_at: string
