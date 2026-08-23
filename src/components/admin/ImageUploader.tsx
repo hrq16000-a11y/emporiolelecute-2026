@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { optimizeImageFile, formatBytes } from '@/lib/imagePipeline';
+import { enqueueImageJob } from '@/hooks/useImageJobs';
+import ImageJobsPanel from '@/components/admin/ImageJobsPanel';
 
 interface ImageUploaderProps {
   images: string[];
