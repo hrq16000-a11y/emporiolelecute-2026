@@ -221,7 +221,7 @@ const SearchEmptyState = ({
           <div className="flex flex-wrap gap-2">
             {campaigns!.map((c) =>
               c.product_slug ? (
-                <Link key={`${c.term}-${c.product_slug}`} to={`/produtos/${c.product_slug}`} className={chipClass}>
+                <Link key={`${c.term}-${c.product_slug}`} to={`/produto/${c.product_slug}`} className={chipClass}>
                   <Flame className="h-3.5 w-3.5 text-primary" />
                   {c.product_name || c.term}
                 </Link>
