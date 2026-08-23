@@ -42,15 +42,17 @@ interface PageReport {
 }
 
 // deno-lint-ignore no-explicit-any
-function extractLd(html: string): { blocks: any[]; invalid: number } {
+function extractLd(html: string): { blocks: any[]; invalid: number; raw: string[] } {
   // deno-lint-ignore no-explicit-any
   const blocks: any[] = [];
+  const raw: string[] = [];
   let invalid = 0;
   const re = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html))) {
     try {
       const parsed = JSON.parse(m[1].replace(/\\u003c/g, '<'));
+      raw.push(JSON.stringify(parsed, null, 2));
       const arr = Array.isArray(parsed) ? parsed : [parsed];
       for (const node of arr) {
         blocks.push(node);
@@ -58,9 +60,10 @@ function extractLd(html: string): { blocks: any[]; invalid: number } {
       }
     } catch {
       invalid += 1;
+      raw.push(`/* JSON inválido */\n${m[1].trim().slice(0, 4000)}`);
     }
   }
-  return { blocks, invalid };
+  return { blocks, invalid, raw };
 }
 
 // deno-lint-ignore no-explicit-any
@@ -84,11 +87,15 @@ async function auditPage(kind: PageReport['kind'], path: string): Promise<PageRe
   const checks: Check[] = [];
   let types: string[] = [];
   let source: PageReport['source'] = 'live';
+  let ldRaw: string[] = [];
+  let htmlHead = '';
 
   try {
     const r = await fetchHtml(path);
     source = r.source;
-    const { blocks, invalid } = extractLd(r.html);
+    const { blocks, invalid, raw } = extractLd(r.html);
+    ldRaw = raw;
+    htmlHead = (r.html.match(/<head[\s\S]*?<\/head>/i)?.[0] ?? r.html).slice(0, 12000);
     types = [...new Set(blocks.flatMap(typeOf))];
 
     checks.push({
@@ -156,6 +163,8 @@ async function auditPage(kind: PageReport['kind'], path: string): Promise<PageRe
     types,
     checks,
     duration_ms: Date.now() - started,
+    ld_raw: ldRaw,
+    html_head: htmlHead,
   };
 }
 
