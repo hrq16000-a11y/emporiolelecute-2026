@@ -381,6 +381,23 @@ function ReviewAuditDetailDialog({ row, onClose, productName, candidates, thresh
         </div>
 
         <section className="pt-2">
+          <h3 className="mb-2 text-sm font-semibold">Como o match foi calculado</h3>
+          {matches[0] || storeName ? (
+            <FuzzyMatchExplanation
+              source={row.elo7_product_name ?? ''}
+              target={storeName ?? matches[0]?.label ?? ''}
+              explanation={explainMatch(row.elo7_product_name ?? '', storeName ?? matches[0]?.label ?? '')}
+              threshold={threshold}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Sem produto vinculado nem candidato — nada a comparar.
+            </p>
+          )}
+        </section>
+
+
+        <section className="pt-2">
           <h3 className="text-sm font-semibold mb-1">Histórico</h3>
           <ul className="text-xs text-muted-foreground space-y-1">
             <li>Criado em {new Date(row.created_at).toLocaleString('pt-BR')} · lote {row.import_batch_id.slice(0, 8)}</li>
