@@ -381,6 +381,10 @@ const ImageUploader = ({ images, onImagesChange, maxImages = 8 }: ImageUploaderP
         </ul>
       )}
 
+      <ImageJobsPanel />
+
+
+
 
       {/* Instructions */}
       {validImages.length > 0 && (
