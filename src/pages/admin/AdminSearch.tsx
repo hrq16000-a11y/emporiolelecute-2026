@@ -77,6 +77,11 @@ export default function AdminSearch() {
             onConsumePreset={() => setPresetBoost(null)}
           />
         </TabsContent>
+
+        <TabsContent value="audit" className="mt-4">
+          <SearchAuditPanel />
+        </TabsContent>
+
       </Tabs>
     </div>
   );
