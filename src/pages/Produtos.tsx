@@ -180,6 +180,7 @@ const Produtos = () => {
 
   const handleOccasionChange = (occasionSlug: string | null) => {
     setSelectedOccasion(occasionSlug);
+    writeStoredOccasion(occasionSlug);
     const newParams = new URLSearchParams(searchParams);
     if (occasionSlug) {
       newParams.set('ocasiao', occasionSlug);
