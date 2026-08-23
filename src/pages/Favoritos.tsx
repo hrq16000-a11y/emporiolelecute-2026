@@ -8,6 +8,8 @@ import WhatsAppButton from '@/components/WhatsAppButton';
 import DynamicSEO from '@/components/DynamicSEO';
 import { ProductSkeleton } from '@/components/ProductSkeleton';
 import WishlistButton from '@/components/WishlistButton';
+import WishlistShareCard from '@/components/WishlistShareCard';
+
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -29,8 +31,9 @@ const formatPrice = (value: number | null) =>
 
 /** Lista de produtos salvos pelo cliente (favoritos / curtidas). */
 const Favoritos = () => {
-  const { items } = useWishlist();
+  const { items, isAuthenticated } = useWishlist();
   const ids = items.map((i) => i.product_id);
+
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['wishlist-products', ids.join(',')],
@@ -67,6 +70,13 @@ const Favoritos = () => {
             Salve as lembrancinhas que você gostou e retome a personalização quando quiser.
           </p>
         </header>
+
+        {ids.length > 0 && (
+          <div className="mb-6">
+            <WishlistShareCard productIds={ids} isAuthenticated={isAuthenticated} />
+          </div>
+        )}
+
 
         {ids.length === 0 ? (
           <div className="text-center py-16 border border-dashed rounded-2xl">

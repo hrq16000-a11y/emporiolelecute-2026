@@ -19,7 +19,8 @@
     "supabase:status": "supabase status",
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff -f",
-    "functions:serve": "supabase functions serve --no-verify-jwt --env-file supabase/.env.local"
+    "functions:serve": "supabase functions serve --no-verify-jwt --env-file supabase/.env.local",
+    "audit:vitals": "node scripts/web-vitals-audit.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
