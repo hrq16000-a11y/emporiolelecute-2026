@@ -51,7 +51,13 @@ const Produtos = () => {
 
   const [search, setSearch] = useState(searchParams.get('busca') || searchParams.get('search') || "");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(searchParams.get('categoria') || null);
-  const [selectedOccasion, setSelectedOccasion] = useState<string | null>(searchParams.get('ocasiao') || null);
+  const [selectedOccasion, setSelectedOccasion] = useState<string | null>(() => {
+    const fromUrl = searchParams.get('ocasiao');
+    if (fromUrl) return fromUrl;
+    try {
+      return localStorage.getItem(OCCASION_STORAGE_KEY) || null;
+    } catch { return null; }
+  });
   const [selectedSegment, setSelectedSegment] = useState<string | null>(searchParams.get('segmento') || null);
   const [selectedTag, setSelectedTag] = useState<string | null>(searchParams.get('tag') || null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
