@@ -110,25 +110,51 @@ export default function SearchInsights({ onCreateSynonym, onCreateBoost }: Props
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <CardTitle className="flex items-center gap-2">
-            <Search className="h-4 w-4" /> Insights de busca (90 dias)
+            <Search className="h-4 w-4" /> Insights de busca
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
             {totals.uniqueTerms} termos únicos · {totals.total} buscas · {totals.zero} sem resultado
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-        </Button>
+        <div className="flex items-center gap-1 flex-wrap">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCsv} disabled={!rows.length}>
+            <Download className="h-3.5 w-3.5" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handlePdf} disabled={!rows.length}>
+            <FileText className="h-3.5 w-3.5" /> PDF
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Input
-          placeholder="Filtrar termos…"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
+        <div className="grid gap-2 sm:grid-cols-3">
+          <Input
+            placeholder="Filtrar termos…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger><SelectValue placeholder="Período" /></SelectTrigger>
+            <SelectContent>
+              {PERIODS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={minZero} onValueChange={setMinZero}>
+            <SelectTrigger><SelectValue placeholder="Zero-results" /></SelectTrigger>
+            <SelectContent>
+              {ZERO_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {isLoading ? (
           <div className="flex items-center justify-center py-10 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
