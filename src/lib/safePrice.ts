@@ -51,3 +51,40 @@ export function formatSchemaPrice(value: unknown): string | null {
   const n = parseSafePrice(value);
   return n === null ? null : n.toFixed(2);
 }
+
+/** Contexto de diagnóstico para o monitoramento em runtime do JSON-LD. */
+export interface SafePriceContext {
+  /** Componente/local que gerou o schema (ex.: "ProductStructuredData"). */
+  source: string;
+  /** Identificador do item (slug/sku) para rastrear no log. */
+  ref?: string;
+  /** Campo lógico (ex.: "price" | "originalPrice"). */
+  field?: string;
+}
+
+/**
+ * Igual a {@link parseSafePrice}, porém emite um alerta silencioso no console
+ * quando o valor chega inválido (null/undefined/string não numérica) —
+ * o JSON-LD segue válido (campo omitido), mas o problema fica observável.
+ *
+ * Nunca lança: monitoramento jamais pode derrubar a renderização.
+ */
+export function parseSafePriceMonitored(
+  value: unknown,
+  context: SafePriceContext,
+): number | null {
+  const parsed = parseSafePrice(value);
+  if (parsed === null && value !== null && value !== undefined && value !== '') {
+    try {
+      console.error('[jsonld:invalid-price]', {
+        ...context,
+        received: typeof value === 'object' ? JSON.stringify(value) : String(value),
+        receivedType: typeof value,
+      });
+    } catch {
+      /* monitoramento nunca deve quebrar o render */
+    }
+  }
+  return parsed;
+}
+
