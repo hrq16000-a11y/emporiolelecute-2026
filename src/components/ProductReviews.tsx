@@ -63,7 +63,8 @@ const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Pr
     });
   };
 
-  const canExpand = Boolean(flags?.pdp_reviews_expand_enabled);
+  // Padrão: expansão ligada. Só desliga se a flag estiver explicitamente false.
+  const canExpand = flags?.pdp_reviews_expand_enabled !== false;
   const isCompact = variant === 'compact';
   const visibleReviews = canExpand && expanded ? reviews : reviews.slice(0, initialLimit);
   const remaining = reviews.length - visibleReviews.length;
@@ -177,7 +178,17 @@ const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Pr
       {canExpand && reviews.length > initialLimit && (
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          data-testid="reviews-expand-toggle"
+          onClick={() => {
+            const next = !expanded;
+            setExpanded(next);
+            gaEvent('pdp_reviews_expand', {
+              product_id: productId,
+              action: next ? 'expand' : 'collapse',
+              total_reviews: reviews.length,
+              visible_before: visibleReviews.length,
+            });
+          }}
           className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5
                      rounded-full border border-primary/30 text-primary text-sm font-semibold
                      hover:bg-primary/5 transition-colors"

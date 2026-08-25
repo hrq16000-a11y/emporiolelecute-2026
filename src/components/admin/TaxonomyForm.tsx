@@ -11,7 +11,16 @@ import LucideIconPicker from './LucideIconPicker';
 import ImagePickerWithLibrary from './ImagePickerWithLibrary';
 import DraftStatusBadge from './DraftStatusBadge';
 import { useFormDraft } from '@/hooks/useFormDraft';
+import { useSlugAvailability, type SlugCheckTable } from '@/hooks/useSlugAvailability';
 import { TAXONOMY_LABELS, TaxonomyEntity, TaxonomyKind, TaxonomyFaq, normalizeFaqs, slugify } from '@/lib/taxonomy';
+
+const SLUG_TABLE_BY_KIND: Record<TaxonomyKind, SlugCheckTable> = {
+  categoria: 'categories',
+  ocasiao: 'occasions',
+  segmento: 'segments',
+  tag: 'tags',
+};
+
 
 interface Props {
   kind: TaxonomyKind;
@@ -128,6 +137,12 @@ const TaxonomyForm = ({
   const sameKindMap = existingSlugsByKind[kind];
   const sameKindConflict = slug && sameKindMap.get(slug) && sameKindMap.get(slug) !== (initial?.name ?? null);
 
+  // Validação de unicidade direto no banco (debounced, apenas leitura).
+  const slugState = useSlugAvailability(SLUG_TABLE_BY_KIND[kind], slug, initial?.id ?? null);
+  const slugChanged = Boolean(initial?.id && initial?.slug && slug && slug !== initial.slug);
+
+
+
   const warnings: string[] = [];
   if (showSeo) {
     if (!metaTitle.trim()) warnings.push('Sem meta_title.');
@@ -204,7 +219,24 @@ const TaxonomyForm = ({
           <p className="text-xs text-muted-foreground">
             URL: {TAXONOMY_LABELS[kind].urlPrefix}{slug || 'slug'}
           </p>
+          {slugState.status === 'checking' && (
+            <p className="text-xs text-muted-foreground">Verificando disponibilidade…</p>
+          )}
+          {slugState.status === 'available' && (
+            <p className="text-xs text-emerald-600">Slug disponível.</p>
+          )}
+          {(slugState.status === 'taken' || slugState.status === 'invalid') && (
+            <p className="text-xs text-destructive">{slugState.message}</p>
+          )}
+          {slugChanged && (
+            <p className="text-xs text-amber-600">
+              Slug alterado: um redirect 301 de{' '}
+              <code>{TAXONOMY_LABELS[kind].urlPrefix}{initial?.slug}</code> será criado
+              automaticamente ao salvar.
+            </p>
+          )}
         </div>
+
       </div>
 
       {(conflicts.length > 0 || sameKindConflict) && (
@@ -297,12 +329,25 @@ const TaxonomyForm = ({
               <Label htmlFor="tx-indexed" className="cursor-pointer leading-tight">
                 Indexável
                 <span className="block text-xs font-normal text-muted-foreground">
-                  Aparece no sitemap e permite robots index. Requer "Publicado".
+                  Aparece no sitemap e permite robots index. Requer "Publicado". Padrão: ligado.
                 </span>
               </Label>
               <Switch id="tx-indexed" checked={isIndexed} onCheckedChange={setIsIndexed} />
             </div>
+            {!isIndexed && (
+              <div
+                role="alert"
+                className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 text-destructive shrink-0" />
+                <p className="text-destructive">
+                  Atenção: esta página nascerá como <strong>noindex</strong> — o Google não vai
+                  indexá-la e ela ficará fora do sitemap. Só desligue se for intencional.
+                </p>
+              </div>
+            )}
           </div>
+
 
           <div className="rounded-md border border-border p-4 space-y-4">
             <h4 className="font-medium text-sm">SEO</h4>

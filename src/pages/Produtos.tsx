@@ -31,6 +31,9 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import type { Product } from "@/data/products";
+import { toast } from "sonner";
+import { event as gaEvent } from "@/lib/analytics";
+
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -228,6 +231,13 @@ const Produtos = () => {
   };
 
   const handleClearFilters = () => {
+    const previous = {
+      categoria: selectedCategory,
+      ocasiao: selectedOccasion,
+      segmento: selectedSegment,
+      tag: selectedTag,
+      busca: search || null,
+    };
     setSearch("");
     setSelectedCategory(null);
     setSelectedOccasion(null);
@@ -236,7 +246,15 @@ const Produtos = () => {
     setSelectedTag(null);
     setCurrentPage(1);
     setSearchParams({});
+    toast.success('Filtros removidos');
+    gaEvent('catalog_clear_filters', {
+      cleared_count: Object.values(previous).filter(Boolean).length,
+      had_occasion: Boolean(previous.ocasiao),
+      previous_occasion: previous.ocasiao ?? undefined,
+      previous_category: previous.categoria ?? undefined,
+    });
   };
+
 
   // Count active filters (for UI)
   const activeFiltersCount = [resolvedCategory, resolvedOccasion, resolvedSegment, resolvedTag, debouncedSearch].filter(Boolean).length;
@@ -589,6 +607,7 @@ const Produtos = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleClearFilters}
+                  data-testid="clear-filters"
                   className="text-muted-foreground"
                 >
                   Limpar ({activeFiltersCount})
@@ -849,7 +868,7 @@ const Produtos = () => {
                       return parts.length ? ` para: ${parts.join(' + ')}` : '';
                     })()}
                   </p>
-                  <Button onClick={handleClearFilters}>
+                  <Button onClick={handleClearFilters} data-testid="clear-filters-empty">
                     Limpar filtros
                   </Button>
                 </div>
