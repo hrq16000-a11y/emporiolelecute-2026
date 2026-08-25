@@ -4,7 +4,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, Calendar, ArrowRight } from 'lucide-react';
+import { Activity, Calendar, ArrowRight, RefreshCw, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
 import TaxonomyManager from '@/components/admin/TaxonomyManager';
 import { TaxonomyEntity, TaxonomyKind } from '@/lib/taxonomy';
 import { invalidatePublicTaxonomy, markPublicTaxonomyDirty } from '@/lib/taxonomyAutomation';
