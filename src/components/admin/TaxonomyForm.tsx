@@ -11,7 +11,16 @@ import LucideIconPicker from './LucideIconPicker';
 import ImagePickerWithLibrary from './ImagePickerWithLibrary';
 import DraftStatusBadge from './DraftStatusBadge';
 import { useFormDraft } from '@/hooks/useFormDraft';
+import { useSlugAvailability, type SlugCheckTable } from '@/hooks/useSlugAvailability';
 import { TAXONOMY_LABELS, TaxonomyEntity, TaxonomyKind, TaxonomyFaq, normalizeFaqs, slugify } from '@/lib/taxonomy';
+
+const SLUG_TABLE_BY_KIND: Record<TaxonomyKind, SlugCheckTable> = {
+  categoria: 'categories',
+  ocasiao: 'occasions',
+  segmento: 'segments',
+  tag: 'tags',
+};
+
 
 interface Props {
   kind: TaxonomyKind;
