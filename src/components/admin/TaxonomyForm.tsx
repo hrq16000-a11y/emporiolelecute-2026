@@ -202,6 +202,9 @@ const TaxonomyForm = ({
             onChange={(e) => setName(e.target.value)}
             required
             maxLength={120}
+            aria-required="true"
+            aria-label={`Nome d${kind === 'ocasiao' ? 'a ocasião' : 'o item'} — ${TAXONOMY_LABELS[kind].singular}`}
+            className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
         <div className="space-y-1.5">
@@ -215,33 +218,45 @@ const TaxonomyForm = ({
             }}
             required
             maxLength={120}
+            aria-required="true"
+            aria-label={`Slug (URL) de ${TAXONOMY_LABELS[kind].singular}`}
+            aria-invalid={slugState.status === 'taken' || slugState.status === 'invalid' || sameKindConflict}
+            aria-describedby="tx-slug-help tx-slug-status"
+            className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
-          <p className="text-xs text-muted-foreground">
+          <p id="tx-slug-help" className="text-xs text-muted-foreground">
             URL: {TAXONOMY_LABELS[kind].urlPrefix}{slug || 'slug'}
           </p>
-          {slugState.status === 'checking' && (
-            <p className="text-xs text-muted-foreground">Verificando disponibilidade…</p>
-          )}
-          {slugState.status === 'available' && (
-            <p className="text-xs text-emerald-600">Slug disponível.</p>
-          )}
-          {(slugState.status === 'taken' || slugState.status === 'invalid') && (
-            <p className="text-xs text-destructive">{slugState.message}</p>
-          )}
-          {slugChanged && (
-            <p className="text-xs text-amber-600">
-              Slug alterado: um redirect 301 de{' '}
-              <code>{TAXONOMY_LABELS[kind].urlPrefix}{initial?.slug}</code> será criado
-              automaticamente ao salvar.
-            </p>
-          )}
+          {/* Região viva: leitores de tela anunciam disponibilidade/erro do slug */}
+          <div id="tx-slug-status" aria-live="polite" className="space-y-1">
+            {slugState.status === 'checking' && (
+              <p className="text-xs text-muted-foreground">Verificando disponibilidade…</p>
+            )}
+            {slugState.status === 'available' && (
+              <p className="text-xs text-emerald-600">Slug disponível.</p>
+            )}
+            {(slugState.status === 'taken' || slugState.status === 'invalid') && (
+              <p role="alert" className="text-xs text-destructive">{slugState.message}</p>
+            )}
+            {slugChanged && (
+              <p className="text-xs text-amber-600">
+                Slug alterado: um redirect 301 de{' '}
+                <code>{TAXONOMY_LABELS[kind].urlPrefix}{initial?.slug}</code> será criado
+                automaticamente ao salvar.
+              </p>
+            )}
+          </div>
         </div>
 
       </div>
 
       {(conflicts.length > 0 || sameKindConflict) && (
-        <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm"
+        >
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" aria-hidden="true" />
           <div className="text-amber-900 dark:text-amber-200 space-y-1">
             {sameKindConflict && (
               <p>Já existe outro(a) {TAXONOMY_LABELS[kind].singular.toLowerCase()} com este slug.</p>
@@ -254,6 +269,33 @@ const TaxonomyForm = ({
           </div>
         </div>
       )}
+
+      {/* Ação direta de indexação — só faz sentido para item já salvo e indexável */}
+      {showSeo && initial?.id && initial?.slug && (
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/30 p-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={reindexNow}
+            disabled={reindexing}
+            aria-label={`Reindexar ${TAXONOMY_LABELS[kind].singular.toLowerCase()} ${initial.name ?? initial.slug} agora`}
+          >
+            {reindexing ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
+            )}
+            Reindexar esta {TAXONOMY_LABELS[kind].singular.toLowerCase()} agora
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Regenera o sitemap e notifica o IndexNow para{' '}
+            <code>{TAXONOMY_LABELS[kind].urlPrefix}{initial.slug}</code>.
+          </p>
+          <span className="sr-only" aria-live="polite">{reindexStatus}</span>
+        </div>
+      )}
+
 
       {showSeo && (
         <>
