@@ -143,6 +143,29 @@ const TaxonomyForm = ({
   const slugState = useSlugAvailability(SLUG_TABLE_BY_KIND[kind], slug, initial?.id ?? null);
   const slugChanged = Boolean(initial?.id && initial?.slug && slug && slug !== initial.slug);
 
+  // Reindexação sob demanda: regenera o sitemap e dispara IndexNow/GSC.
+  const [reindexing, setReindexing] = useState(false);
+  const [reindexStatus, setReindexStatus] = useState('');
+  const reindexNow = async () => {
+    setReindexing(true);
+    setReindexStatus('Reindexando…');
+    try {
+      const { error } = await supabase.functions.invoke('generate-sitemap', {
+        body: { force: true, source: `admin-taxonomy:${kind}:${initial?.slug ?? ''}` },
+      });
+      if (error) throw error;
+      await supabase.functions.invoke('seo-sitemap-auto-resubmit', {
+        body: { force: true, reason: `admin-taxonomy:${kind}` },
+      });
+      setReindexStatus('Reindexação concluída.');
+      toast.success('Sitemap regenerado e IndexNow notificado');
+    } catch (err) {
+      setReindexStatus('Falha na reindexação.');
+      toast.error(err instanceof Error ? err.message : 'Falha ao reindexar');
+    } finally {
+      setReindexing(false);
+    }
+  };
 
 
   const warnings: string[] = [];
