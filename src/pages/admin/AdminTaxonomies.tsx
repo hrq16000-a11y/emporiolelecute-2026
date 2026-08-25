@@ -68,8 +68,29 @@ const AdminTaxonomies = () => {
     void markPublicTaxonomyDirty('categories');
   };
 
+  // Regeneração manual do sitemap + notificação IndexNow/GSC.
+  const [regenerating, setRegenerating] = useState(false);
+  const forceSitemapRegeneration = async () => {
+    setRegenerating(true);
+    try {
+      const { error } = await supabase.functions.invoke('generate-sitemap', {
+        body: { force: true, source: 'admin-taxonomias' },
+      });
+      if (error) throw error;
+      await supabase.functions.invoke('seo-sitemap-auto-resubmit', {
+        body: { force: true, reason: 'admin-taxonomias' },
+      });
+      toast.success('Sitemap regenerado e IndexNow notificado');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao regenerar o sitemap');
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   // Suppress unused-warnings for the original hooks (kept for compat; not used directly here)
   void createCat; void updCat; void createOcc; void updOcc; void delOcc;
+
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl">
