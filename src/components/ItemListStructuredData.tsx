@@ -1,11 +1,13 @@
 import { Helmet } from 'react-helmet-async';
 import { urls, CANONICAL_ORIGIN } from '@/lib/urls';
+import { parseSafePriceMonitored } from '@/lib/safePrice';
 
 interface ItemListProduct {
   name: string;
   description: string;
   image: string;
-  price: number;
+  /** Pode chegar como string do Supabase (numeric) ou legado "R$ 95,00". */
+  price: number | string | null | undefined;
   slug: string;
 }
 
