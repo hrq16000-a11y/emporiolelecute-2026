@@ -137,6 +137,12 @@ const TaxonomyForm = ({
   const sameKindMap = existingSlugsByKind[kind];
   const sameKindConflict = slug && sameKindMap.get(slug) && sameKindMap.get(slug) !== (initial?.name ?? null);
 
+  // Validação de unicidade direto no banco (debounced, apenas leitura).
+  const slugState = useSlugAvailability(SLUG_TABLE_BY_KIND[kind], slug, initial?.id ?? null);
+  const slugChanged = Boolean(initial?.id && initial?.slug && slug && slug !== initial.slug);
+
+
+
   const warnings: string[] = [];
   if (showSeo) {
     if (!metaTitle.trim()) warnings.push('Sem meta_title.');
