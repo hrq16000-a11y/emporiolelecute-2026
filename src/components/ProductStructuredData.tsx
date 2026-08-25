@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { urls, CANONICAL_ORIGIN } from '@/lib/urls';
-import { parseSafePrice } from '@/lib/safePrice';
+import { parseSafePrice, parseSafePriceMonitored } from '@/lib/safePrice';
 
 interface ReviewItem {
   author_name: string;
