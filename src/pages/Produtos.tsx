@@ -231,6 +231,7 @@ const Produtos = () => {
     setSearch("");
     setSelectedCategory(null);
     setSelectedOccasion(null);
+    writeStoredOccasion(null);
     setSelectedSegment(null);
     setSelectedTag(null);
     setCurrentPage(1);

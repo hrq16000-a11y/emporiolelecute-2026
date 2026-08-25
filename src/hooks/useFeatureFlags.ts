@@ -9,7 +9,8 @@ export interface FeatureFlags {
 
 export const defaultFeatureFlags: FeatureFlags = {
   chatbot_enabled: false,
-  pdp_reviews_expand_enabled: false,
+  // Default ON: shoppers must always be able to open the full review list.
+  pdp_reviews_expand_enabled: true,
 };
 
 const QUERY_KEY = ['feature_flags'];
