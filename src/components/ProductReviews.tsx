@@ -63,7 +63,8 @@ const ProductReviews = ({ productId, initialLimit = 3, variant = 'default' }: Pr
     });
   };
 
-  const canExpand = Boolean(flags?.pdp_reviews_expand_enabled);
+  // Padrão: expansão ligada. Só desliga se a flag estiver explicitamente false.
+  const canExpand = flags?.pdp_reviews_expand_enabled !== false;
   const isCompact = variant === 'compact';
   const visibleReviews = canExpand && expanded ? reviews : reviews.slice(0, initialLimit);
   const remaining = reviews.length - visibleReviews.length;
