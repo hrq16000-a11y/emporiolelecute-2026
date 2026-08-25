@@ -24,41 +24,8 @@ const ItemListStructuredData = ({ products, listName = "Produtos em Destaque" }:
   priceValidUntil.setFullYear(priceValidUntil.getFullYear() + 1);
   const priceValidUntilStr = priceValidUntil.toISOString().split('T')[0];
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": listName,
-    "numberOfItems": products.length,
-    "itemListElement": products.map((product, index) => ({
-      "@type": "ListItem",
-      "position": index + 1,
-      "item": {
-        "@type": "Product",
-        "name": product.name,
-        "description": product.description,
-        "image": product.image,
-        "url": urls.productCanonical(product.slug),
-        "sku": product.slug,
-        "brand": {
-          "@type": "Brand",
-          "name": "Empório LeleCute"
-        },
-        "offers": {
-          "@type": "Offer",
-          "url": urls.productCanonical(product.slug),
-          "priceCurrency": "BRL",
-          "price": Number(Number(product.price).toFixed(2)),
-          "priceValidUntil": priceValidUntilStr,
-          "availability": "https://schema.org/InStock",
-          "itemCondition": "https://schema.org/NewCondition",
-          "seller": {
-            "@type": "Organization",
-            "name": "Empório LeleCute"
-          }
-        }
-      }
-    }))
-  };
+  const structuredData = buildItemListJsonLd(products, listName, priceValidUntilStr);
+
 
   return (
     <Helmet>
