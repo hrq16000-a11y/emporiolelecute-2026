@@ -31,6 +31,9 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import type { Product } from "@/data/products";
+import { toast } from "sonner";
+import { event as gaEvent } from "@/lib/analytics";
+
 
 const PRODUCTS_PER_PAGE = 12;
 
