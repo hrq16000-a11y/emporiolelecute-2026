@@ -776,18 +776,12 @@ const ProductPage = () => {
                     </span>
                   )}
                 </p>
+                {/* Apoio: unitário. O "de" riscado e o mínimo já aparecem acima —
+                    não repetir para manter a hierarquia limpa. */}
                 <p className="text-sm text-muted-foreground mt-2 break-words">
-                  {product.originalPrice && product.originalPrice > product.price && (
-                    <span className="line-through mr-1.5">
-                      R$ {product.originalPrice.toFixed(2).replace(".", ",")}
-                    </span>
-                  )}
                   <span className="text-foreground">R$ {product.price.toFixed(2).replace(".", ",")}</span> / unidade
-                  <span className="text-muted-foreground/40 mx-2" aria-hidden="true">
-                    ·
-                  </span>
-                  {product.minQuantity} un. mín.
                 </p>
+
                 <p className="text-sm text-muted-foreground mt-1 break-words">
                   {installments}x sem juros de R$ {installmentValue.toFixed(2).replace(".", ",")}
                   <span className="text-muted-foreground/40 mx-2" aria-hidden="true">

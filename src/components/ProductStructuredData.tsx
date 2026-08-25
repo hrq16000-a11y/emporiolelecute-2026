@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { urls, CANONICAL_ORIGIN } from '@/lib/urls';
-import { parseSafePrice } from '@/lib/safePrice';
+import { parseSafePriceMonitored } from '@/lib/safePrice';
 
 interface ReviewItem {
   author_name: string;
@@ -64,8 +64,17 @@ export function buildProductJsonLd({
 }) {
   // Parse SAFE: o Supabase pode devolver numeric como string ("4.60") e
   // conteúdo legado pode chegar como "R$ 4,60". O schema.org exige número puro.
-  const safePrice = parseSafePrice(price);
-  const safeOriginal = parseSafePrice(originalPrice);
+  // Monitorado: preço inválido é logado (console.error) sem quebrar o render.
+  const safePrice = parseSafePriceMonitored(price, {
+    source: 'ProductStructuredData',
+    ref: sku || slug,
+    field: 'price',
+  });
+  const safeOriginal = parseSafePriceMonitored(originalPrice, {
+    source: 'ProductStructuredData',
+    ref: sku || slug,
+    field: 'originalPrice',
+  });
 
   return {
     "@context": "https://schema.org/",
