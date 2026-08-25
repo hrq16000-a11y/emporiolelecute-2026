@@ -78,9 +78,18 @@ const AdminTaxonomies = () => {
             Centro unificado para gerenciar categorias, ocasiões, segmentos e tags.
           </p>
         </div>
-        <Link to="/admin/taxonomias/health">
-          <Button variant="outline"><Activity className="w-4 h-4 mr-2" /> Healthcheck</Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={forceSitemapRegeneration} disabled={regenerating}>
+            {regenerating
+              ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              : <RefreshCw className="w-4 h-4 mr-2" />}
+            Forçar regeneração agora
+          </Button>
+          <Link to="/admin/taxonomias/health">
+            <Button variant="outline"><Activity className="w-4 h-4 mr-2" /> Healthcheck</Button>
+          </Link>
+        </div>
+
       </div>
 
       <Tabs
