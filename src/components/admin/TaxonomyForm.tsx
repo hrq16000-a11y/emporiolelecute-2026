@@ -204,7 +204,24 @@ const TaxonomyForm = ({
           <p className="text-xs text-muted-foreground">
             URL: {TAXONOMY_LABELS[kind].urlPrefix}{slug || 'slug'}
           </p>
+          {slugState.status === 'checking' && (
+            <p className="text-xs text-muted-foreground">Verificando disponibilidade…</p>
+          )}
+          {slugState.status === 'available' && (
+            <p className="text-xs text-emerald-600">Slug disponível.</p>
+          )}
+          {(slugState.status === 'taken' || slugState.status === 'invalid') && (
+            <p className="text-xs text-destructive">{slugState.message}</p>
+          )}
+          {slugChanged && (
+            <p className="text-xs text-amber-600">
+              Slug alterado: um redirect 301 de{' '}
+              <code>{TAXONOMY_LABELS[kind].urlPrefix}{initial?.slug}</code> será criado
+              automaticamente ao salvar.
+            </p>
+          )}
         </div>
+
       </div>
 
       {(conflicts.length > 0 || sameKindConflict) && (
