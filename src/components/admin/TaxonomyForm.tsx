@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { FileEdit, Globe } from 'lucide-react';
+import { FileEdit, Globe, Loader2, RefreshCw } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Info } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import SeoPreview from './SeoPreview';
 import LucideIconPicker from './LucideIconPicker';
 import ImagePickerWithLibrary from './ImagePickerWithLibrary';
