@@ -607,6 +607,7 @@ const Produtos = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleClearFilters}
+                  data-testid="clear-filters"
                   className="text-muted-foreground"
                 >
                   Limpar ({activeFiltersCount})
@@ -867,7 +868,7 @@ const Produtos = () => {
                       return parts.length ? ` para: ${parts.join(' + ')}` : '';
                     })()}
                   </p>
-                  <Button onClick={handleClearFilters}>
+                  <Button onClick={handleClearFilters} data-testid="clear-filters-empty">
                     Limpar filtros
                   </Button>
                 </div>
