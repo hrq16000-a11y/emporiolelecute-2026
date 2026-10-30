@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   ShieldCheck, RefreshCw, AlertTriangle, XCircle, CheckCircle2,
-  ExternalLink, Rss, Loader2, Search, GitCompare,
+  ExternalLink, Rss, Loader2, Search, GitCompare, Download,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import SeoForceActionsPanel from '@/components/admin/SeoForceActionsPanel';
 import SeoGscTrendsPanel from '@/components/admin/SeoGscTrendsPanel';
 import SeoBingPanel from '@/components/admin/SeoBingPanel';
 import SeoAlertLogPanel from '@/components/admin/SeoAlertLogPanel';
+import { buildAuditCsvRows, downloadAuditCsv } from '@/lib/seoAuditCsv';
+
 
 
 interface SiteCheck { name: string; ok: boolean; detail: string; severity: 'info' | 'warn' | 'error' }
@@ -130,7 +132,25 @@ const AdminSeoCheck = () => {
     }
   };
 
+  /** Flatten the audit results into a CSV file (status, slug, divergence reason). */
+  const exportAuditCsv = () => {
+    const rows = buildAuditCsvRows({ site, products, feed });
+    const count = downloadAuditCsv(rows, 'auditoria-seo');
+    if (count === 0) {
+      toast({
+        title: 'Nada para exportar',
+        description: 'Rode a auditoria antes de gerar o CSV.',
+      });
+      return;
+    }
+    toast({
+      title: 'CSV gerado',
+      description: `${count} linha(s) com status, slug e motivo da divergência.`,
+    });
+  };
+
   const totalErrors = (site?.summary.errors ?? 0) + (products?.summary.errors ?? 0) + (feed?.summary.errors ?? 0);
+
   const totalWarnings = (site?.summary.warnings ?? 0) + (products?.summary.warnings ?? 0) + (feed?.summary.warnings ?? 0);
 
   return (
@@ -158,6 +178,16 @@ const AdminSeoCheck = () => {
               <Rss className="mr-2 h-4 w-4" /> Feed Merchant
             </a>
           </Button>
+          <Button
+            variant="outline"
+            onClick={exportAuditCsv}
+            disabled={!site && !products && !feed}
+            className="min-h-11"
+            aria-label="Exportar resultados da auditoria em CSV"
+          >
+            <Download className="mr-2 h-4 w-4" /> Exportar CSV
+          </Button>
+
         </div>
       </div>
 
