@@ -9,14 +9,19 @@ import { downloadFile, toCsv } from './seoExport';
 
 export type AuditStatus = 'erro' | 'aviso' | 'ok';
 
-export interface AuditCsvRow {
+/**
+ * One audit finding. A type alias (not an interface) so the rows stay
+ * assignable to the generic CSV writer in `seoExport`.
+ */
+export type AuditCsvRow = {
   auditoria: string;
   status: AuditStatus;
   slug: string;
   url: string;
   motivo: string;
   codigo: string;
-}
+};
+
 
 interface IssueLike {
   severity: 'error' | 'warn';
