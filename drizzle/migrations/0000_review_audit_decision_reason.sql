@@ -1,0 +1,1 @@
+ALTER TABLE public.review_import_audit ADD COLUMN IF NOT EXISTS decision_reason text;
