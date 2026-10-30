@@ -96,10 +96,7 @@ const AdminOrders = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>(() => {
-    try { return localStorage.getItem('admin.orders.sort') || 'recent'; } catch { return 'recent'; }
-  });
-  useEffect(() => { try { localStorage.setItem('admin.orders.sort', sortBy); } catch {} }, [sortBy]);
+  const [sortBy, setSortBy] = useUserPreference<string>('admin.orders.sort', 'recent');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [trackingDialog, setTrackingDialog] = useState<{ order: Order; code: string; carrier: string; url: string } | null>(null);
