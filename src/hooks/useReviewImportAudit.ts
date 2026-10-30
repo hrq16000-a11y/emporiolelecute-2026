@@ -26,6 +26,7 @@ export interface ReviewAuditRow {
   manual_status: 'pending' | 'confirmed' | 'doubtful' | 'rejected' | 'no_match';
   manual_product_id: string | null;
   visual_notes: string | null;
+  decision_reason?: string | null;
   reviewed_by_email: string | null;
   reviewed_at: string | null;
   imported_review_id: string | null;

@@ -19,6 +19,8 @@ import { Plus, Pencil, Trash2, Eye, EyeOff, Star, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast';
 import ProductReviewForm from '@/components/admin/ProductReviewForm';
 import ReviewImportAuditPanel from '@/components/admin/ReviewImportAuditPanel';
+import ReviewUnmatchedQueue from '@/components/admin/ReviewUnmatchedQueue';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { urls } from '@/lib/urls';
@@ -89,6 +91,12 @@ const AdminProductReviews = () => {
         <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" /> Nova avaliação</Button>
       </div>
 
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="mb-4 max-w-full overflow-x-auto justify-start">
+          <TabsTrigger value="all">Avaliações</TabsTrigger>
+          <TabsTrigger value="unmatched">Revisar sem match</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all">
       <ReviewStrategicGaps />
 
       <ReviewImportAuditPanel />
@@ -226,6 +234,11 @@ const AdminProductReviews = () => {
           </div>
         </div>
       )}
+        </TabsContent>
+        <TabsContent value="unmatched">
+          <ReviewUnmatchedQueue />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
