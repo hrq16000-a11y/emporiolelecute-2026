@@ -375,6 +375,59 @@ export default function ReviewImportAuditPanel() {
           })
         }
       />
+
+      <AlertDialog open={confirmImport} onOpenChange={setConfirmImport}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Resumo antes de importar</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                {confirmedOnPage.length === 0 ? (
+                  <p>Nenhuma review confirmada nesta página — confirme ao menos uma antes de importar.</p>
+                ) : (
+                  <>
+                    <p>
+                      Serão processadas as <strong>{confirmedOnPage.length}</strong> review(s)
+                      confirmada(s) desta página:
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                      <li>
+                        <strong className="text-foreground">{importableOnPage}</strong> pronta(s)
+                        para importar (produto vinculado, ainda não importada)
+                      </li>
+                      <li>
+                        <strong className="text-foreground">{alreadyImportedOnPage}</strong> já
+                        importada(s) — serão puladas (import idempotente)
+                      </li>
+                      <li>
+                        <strong className="text-foreground">{noProductOnPage}</strong> sem produto
+                        vinculado — gerarão erro no import
+                      </li>
+                    </ul>
+                  </>
+                )}
+                {summary && (
+                  <p className="text-xs text-muted-foreground border-t pt-2">
+                    Na auditoria inteira: {summary.byStatus.confirmed ?? 0} confirmada(s)
+                    {' · '}{summary.readyToImport} pronta(s)
+                    {' · '}{summary.alreadyImported} já importada(s)
+                    {' · '}{summary.confirmedWithoutProduct} confirmada(s) sem produto
+                    {' · '}{MATCH_CLASS_LABEL.strong.toLowerCase()} {summary.byMatchClass.strong}
+                    {' / '}{MATCH_CLASS_LABEL.weak.toLowerCase()} {summary.byMatchClass.weak}
+                    {' / '}{MATCH_CLASS_LABEL.none.toLowerCase()} {summary.byMatchClass.none}
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={runCommit} disabled={commit.isPending}>
+              {commit.isPending ? 'Importando…' : 'Importar agora'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
