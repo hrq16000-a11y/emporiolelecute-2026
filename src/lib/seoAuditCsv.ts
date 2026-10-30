@@ -163,7 +163,7 @@ export function buildAuditCsvRows(input: AuditCsvInput): AuditCsvRow[] {
   }
 
   for (const page of input.index?.pages ?? []) {
-    const slug = slugFromUrl(page.path);
+    const slug = slugFromUrl(page.path) || page.path;
     if (page.issues.length === 0) {
       rows.push({
         auditoria: 'indexabilidade',

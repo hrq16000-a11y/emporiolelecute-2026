@@ -55,7 +55,17 @@ const index = {
       indexable: true,
       issues: [],
     },
+    {
+      kind: 'core',
+      path: '/',
+      url: 'https://emporiolelecute.com.br/',
+      status: 200,
+      canonical: 'https://emporiolelecute.com.br/',
+      indexable: true,
+      issues: [],
+    },
   ],
+
 };
 
 describe('slugFromUrl', () => {
@@ -105,6 +115,8 @@ describe('buildAuditCsvRows', () => {
   it('marks clean items as ok instead of dropping them', () => {
     expect(rows.find((r) => r.slug === 'difusor-lavanda' && r.auditoria === 'produtos')?.status).toBe('ok');
     expect(rows.find((r) => r.slug === 'loja')?.status).toBe('ok');
+    expect(rows.find((r) => r.auditoria === 'indexabilidade' && r.slug === '/')?.status).toBe('ok');
+
   });
 
   it('sorts errors before warnings and warnings before ok', () => {
