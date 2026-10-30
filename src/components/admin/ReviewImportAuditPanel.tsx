@@ -16,12 +16,20 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useDbProducts, useDbCategories } from '@/hooks/useProducts';
 import {
-  useCommitConfirmedReviews, useReviewImportAudit, useUpdateReviewAudit, type ReviewAuditRow,
+  useCommitConfirmedReviews, useReviewImportAudit, useReviewImportAuditSummary,
+  useUpdateReviewAudit, type ReviewAuditRow,
 } from '@/hooks/useReviewImportAudit';
 import { explainMatch, findBestMatches, classifyScore } from '@/lib/fuzzyMatch';
+import {
+  MATCH_CLASS_LABEL, matchClassFor, matchClassReason, type MatchClass,
+} from '@/lib/reviewAuditSummary';
 import FuzzyMatchExplanation from '@/components/admin/FuzzyMatchExplanation';
 
 
@@ -35,6 +43,12 @@ const STATUS_LABEL: Record<string, string> = {
 
 const statusVariant = (s: string) =>
   s === 'confirmed' ? 'default' : s === 'rejected' ? 'destructive' : 'secondary';
+
+const MATCH_CLASS_BADGE: Record<MatchClass, string> = {
+  strong: 'text-emerald-600 border-emerald-600/40',
+  weak: 'text-amber-600 border-amber-600/40 dark:text-amber-400',
+  none: 'text-muted-foreground',
+};
 
 const PAGE_SIZE = 20;
 
