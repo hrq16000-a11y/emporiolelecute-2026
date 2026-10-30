@@ -8,6 +8,13 @@
       "when": 1793400437273,
       "tag": "0000_review_audit_decision_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793400690023,
+      "tag": "0001_create_user_preferences",
+      "breakpoints": true
     }
   ]
 }
