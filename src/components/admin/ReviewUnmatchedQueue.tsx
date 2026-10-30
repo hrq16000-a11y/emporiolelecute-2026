@@ -132,7 +132,7 @@ const AuditCard = ({ row, candidates, products }: {
     <Card>
       <CardContent className="p-4 grid gap-4 md:grid-cols-[96px_1fr]">
         {row.elo7_image_url ? (
-          <img src={row.elo7_image_url} alt="" loading="lazy" className="w-24 h-24 rounded-md object-cover bg-muted" />
+          <img src={row.elo7_image_url} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} className="w-24 h-24 rounded-md object-cover bg-muted" />
         ) : <div className="w-24 h-24 rounded-md bg-muted" />}
         <div className="space-y-3 min-w-0">
           <div>
