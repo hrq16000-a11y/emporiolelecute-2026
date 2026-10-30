@@ -264,12 +264,25 @@ export default function ReviewImportAuditPanel() {
               const explanation = target
                 ? explainMatch(row.elo7_product_name ?? '', target)
                 : null;
+              const matchScore = explanation?.score ?? row.suggested_confidence;
+              const matchClass = matchClassFor(
+                matchScore != null ? Number(matchScore) : null,
+                threshold,
+              );
               return (
                 <li key={row.id} className="p-3 flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant={statusVariant(row.manual_status)}>
                         {STATUS_LABEL[row.manual_status]}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={MATCH_CLASS_BADGE[matchClass]}
+                        title={matchClassReason(matchClass, matchScore != null ? Number(matchScore) : null, threshold)}
+                      >
+                        {MATCH_CLASS_LABEL[matchClass]}
+                        {matchScore != null && ` ${(Number(matchScore) * 100).toFixed(0)}%`}
                       </Badge>
                       {row.imported_review_id && (
                         <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">
@@ -280,9 +293,12 @@ export default function ReviewImportAuditPanel() {
                         {row.elo7_product_name ?? row.feedback_id}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                    <p className="text-xs text-muted-foreground mt-1">
                       → {target ?? 'sem produto vinculado'}
-                      {explanation ? ` · ${(explanation.score * 100).toFixed(0)}% — ${explanation.reason}` : ''}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {matchClassReason(matchClass, matchScore != null ? Number(matchScore) : null, threshold)}
+                      {explanation ? ` · ${explanation.reason}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
