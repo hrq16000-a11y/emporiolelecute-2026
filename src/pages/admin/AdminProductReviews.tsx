@@ -94,7 +94,7 @@ const AdminProductReviews = () => {
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="mb-4 max-w-full overflow-x-auto justify-start">
           <TabsTrigger value="all">Avaliações</TabsTrigger>
-          <TabsTrigger value="unmatched">Revisar sem match</TabsTrigger>
+          <TabsTrigger value="unmatched">Auditoria Elo7 (não importadas)</TabsTrigger>
         </TabsList>
         <TabsContent value="all">
       <ReviewStrategicGaps />
