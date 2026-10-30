@@ -38,6 +38,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useUserPreference } from '@/hooks/useUserPreference';
 
 interface Order {
   id: string;
