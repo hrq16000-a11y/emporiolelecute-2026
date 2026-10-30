@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ExternalLink, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { buildAuditCsvRows, downloadAuditCsv } from '@/lib/seoAuditCsv';
+
 
 interface RobotsCheck { name: string; ok: boolean; severity: 'error' | 'warn' | 'info'; detail: string }
 interface PageAudit {
@@ -65,7 +67,23 @@ const SeoIndexAuditPanel = () => {
     }
   };
 
+  /** Export the indexability audit: one row per page/finding with status, slug and reason. */
+  const exportCsv = () => {
+    if (!data) return;
+    const rows = buildAuditCsvRows({ index: data });
+    const count = downloadAuditCsv(rows, 'auditoria-indexabilidade');
+    if (count === 0) {
+      toast({ title: 'Nada para exportar', description: 'Nenhuma página auditada.' });
+      return;
+    }
+    toast({
+      title: 'CSV gerado',
+      description: `${count} linha(s) com status, slug e motivo da divergência.`,
+    });
+  };
+
   const problems = data?.pages.filter((p) => p.issues.length > 0) ?? [];
+
 
   return (
     <Card>
@@ -78,10 +96,22 @@ const SeoIndexAuditPanel = () => {
             Valida robots.txt, cabeçalhos X-Robots-Tag e o HTML renderizado de theme hubs e páginas de combinação.
           </CardDescription>
         </div>
-        <Button variant="outline" onClick={run} disabled={loading} className="min-h-11">
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-          Validar indexabilidade
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={run} disabled={loading} className="min-h-11">
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+            Validar indexabilidade
+          </Button>
+          <Button
+            variant="outline"
+            onClick={exportCsv}
+            disabled={!data}
+            className="min-h-11"
+            aria-label="Exportar resultados da auditoria de indexabilidade em CSV"
+          >
+            <Download className="mr-2 h-4 w-4" /> Exportar CSV
+          </Button>
+        </div>
+
       </CardHeader>
       <CardContent className="space-y-3">
         {loading && !data && [...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
