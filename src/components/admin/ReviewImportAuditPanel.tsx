@@ -61,10 +61,12 @@ export default function ReviewImportAuditPanel() {
   const [page, setPage] = useState(0);
   const [threshold, setThreshold] = useState(0.45);
   const [detail, setDetail] = useState<ReviewAuditRow | null>(null);
+  const [confirmImport, setConfirmImport] = useState(false);
 
   const { data, isLoading } = useReviewImportAudit({
     status, categoryId, search, importedOnly, page, pageSize: PAGE_SIZE,
   });
+  const { data: summary } = useReviewImportAuditSummary(threshold);
   const { data: products = [] } = useDbProducts();
   const { data: categories = [] } = useDbCategories();
   const update = useUpdateReviewAudit();
