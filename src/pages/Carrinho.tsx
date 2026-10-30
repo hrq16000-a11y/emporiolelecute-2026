@@ -28,6 +28,7 @@ import CheckoutSkeleton from "@/components/CheckoutSkeleton";
 import { useCartStore } from "@/stores/cartStore";
 import { reportError, retryAsync, type ReportedError } from "@/lib/errorReporting";
 import CopyCorrelationId from "@/components/CopyCorrelationId";
+import { lookupPostalAddress } from "@/lib/postal-address";
 
 
 interface AddressData {
@@ -76,6 +77,9 @@ const Carrinho = () => {
   
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingGeo, setLoadingGeo] = useState(false);
+  const addressEditedRef = useRef(false);
+  const cepRequestRef = useRef(0);
+  const [addressNotice, setAddressNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
 
@@ -207,7 +211,7 @@ const Carrinho = () => {
     for (const term of tries) {
       try {
         const url = `https://viacep.com.br/ws/${encodeURIComponent(uf)}/${encodeURIComponent(city)}/${encodeURIComponent(term)}/json/`;
-        const r = await fetch(url);
+        const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
         if (!r.ok) continue;
         const list = await r.json();
         if (Array.isArray(list) && list.length > 0 && list[0].cep) {
@@ -222,6 +226,7 @@ const Carrinho = () => {
 
   // Aplica resultado preenchendo o estado e disparando a busca por CEP se houver
   const applyAddressResult = async (result: { cep?: string; city?: string; state?: string }) => {
+    if (addressEditedRef.current) return;
     let cleanCep = (result.cep || '').replace(/\D/g, '').slice(0, 8);
     const uf = normalizeUF(result.state);
     const city = result.city || '';
@@ -232,6 +237,7 @@ const Carrinho = () => {
       if (found && found.length === 8) cleanCep = found;
     }
 
+    if (addressEditedRef.current) return;
     setAddress(prev => ({
       cep: cleanCep || prev.cep,
       city: city || prev.city,
@@ -247,7 +253,7 @@ const Carrinho = () => {
   // Reverse geocode usando Nominatim (OpenStreetMap) – sem chave, retorna CEP no Brasil
   const reverseGeocode = async (lat: number, lon: number) => {
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=pt-BR&zoom=18&addressdetails=1`;
-    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(5000) });
     if (!r.ok) throw new Error('reverse geocode failed');
     const data = await r.json();
     const a = data.address || {};
@@ -262,19 +268,19 @@ const Carrinho = () => {
   const ipFallback = async () => {
     const providers: Array<() => Promise<{ cep?: string; city?: string; state?: string; country?: string }>> = [
       async () => {
-        const r = await fetch('https://ipwho.is/?fields=success,city,region_code,region,postal,country_code');
+        const r = await fetch('https://ipwho.is/?fields=success,city,region_code,region,postal,country_code', { signal: AbortSignal.timeout(4000) });
         const d = await r.json();
         if (!d || d.success === false) throw new Error('ipwho failed');
         return { cep: d.postal, city: d.city, state: d.region_code || d.region, country: d.country_code };
       },
       async () => {
-        const r = await fetch('https://ipapi.co/json/');
+        const r = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) });
         const d = await r.json();
         if (!d || d.error) throw new Error('ipapi failed');
         return { cep: d.postal, city: d.city, state: d.region_code || d.region, country: d.country_code || d.country };
       },
       async () => {
-        const r = await fetch('https://get.geojs.io/v1/ip/geo.json');
+        const r = await fetch('https://get.geojs.io/v1/ip/geo.json', { signal: AbortSignal.timeout(4000) });
         const d = await r.json();
         return { cep: undefined, city: d.city, state: d.region, country: d.country_code };
       },
@@ -282,7 +288,7 @@ const Carrinho = () => {
     for (const p of providers) {
       try {
         const res = await p();
-        if (res.city || res.cep) {
+        if (res.country === 'BR' && (res.city || res.cep)) {
           return { cep: res.cep, city: res.city, state: res.state };
         }
       } catch {
@@ -296,6 +302,7 @@ const Carrinho = () => {
 
   const handleAutoFillAddress = async () => {
     if (loadingGeo) return;
+    addressEditedRef.current = false;
     setLoadingGeo(true);
     const tryIpFallback = async (reason: string) => {
       try {
@@ -355,15 +362,20 @@ const Carrinho = () => {
   const autoFilledRef = useRef(false);
   useEffect(() => {
     if (autoFilledRef.current) return;
-    if (address.cep || address.city || address.state) return;
+    if (address.cep.replace(/\D/g, '').length === 8) return;
+    if (address.city && address.state) return;
     autoFilledRef.current = true;
+    setLoadingGeo(true);
 
     const silentIp = async () => {
       try {
         const res = await ipFallback();
         await applyAddressResult(res);
+        setAddressNotice('Região estimada automaticamente. Confira o CEP de entrega.');
       } catch {
-        // silencioso — usuário pode preencher manualmente
+        setAddressNotice('Não foi possível localizar seu endereço. Informe o CEP para preencher cidade e estado automaticamente.');
+      } finally {
+        setLoadingGeo(false);
       }
     };
 
@@ -378,6 +390,8 @@ const Carrinho = () => {
                 const res = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
                 if (res.cep || res.city) {
                   await applyAddressResult(res);
+                  setLoadingGeo(false);
+                  setAddressNotice('Endereço localizado automaticamente. Confira os dados de entrega.');
                   return;
                 }
                 await silentIp();
@@ -397,12 +411,6 @@ const Carrinho = () => {
     };
 
     trySilentGeo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Pula auto-fill por IP/GPS se já existe endereço em cache (evita chamadas repetidas)
-  useEffect(() => {
-    if (address.cep || address.city) autoFilledRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -432,40 +440,32 @@ const Carrinho = () => {
     }
   };
 
-  const handleCepChange = async (cep: string) => {
+  const handleCepChange = (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '').slice(0, 8);
     setAddress(prev => ({ ...prev, cep: cleanCep }));
-    
-    if (cleanCep.length === 8) {
-      setLoadingCep(true);
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-        const data = await response.json();
-        
-        if (!data.erro) {
-          setAddress(prev => ({
-            ...prev,
-            city: data.localidade || '',
-            state: data.uf || '',
-          }));
-        } else {
-          toast({
-            title: "CEP não encontrado",
-            description: "Verifique o CEP digitado",
-            variant: "destructive",
-          });
-        }
-      } catch {
-        toast({
-          title: "Erro ao buscar CEP",
-          description: "Tente novamente",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingCep(false);
-      }
-    }
   };
+
+  useEffect(() => {
+    const requestId = ++cepRequestRef.current;
+    const cep = address.cep.replace(/\D/g, '').slice(0, 8);
+    if (cep.length !== 8) {
+      setLoadingCep(false);
+      return;
+    }
+    let active = true;
+    setLoadingCep(true);
+    void lookupPostalAddress(cep).then(result => {
+      if (!active || requestId !== cepRequestRef.current) return;
+      setAddress(prev => prev.cep.replace(/\D/g, '') === cep ? { ...prev, city: result.city, state: result.state } : prev);
+      setInvalidFields(prev => new Set([...prev].filter(field => field !== 'city' && field !== 'state')));
+      setAddressNotice('');
+    }).catch(() => {
+      if (active) setAddressNotice('Não foi possível consultar o CEP. Confira os dados ou preencha cidade e estado.');
+    }).finally(() => {
+      if (active) setLoadingCep(false);
+    });
+    return () => { active = false; };
+  }, [address.cep]);
 
   const formatWhatsAppMessage = (code: string) => {
     // Sprint 3 — agrupa itens por kit (bundleName) quando aplicável
@@ -1064,7 +1064,7 @@ const Carrinho = () => {
                         autoComplete="postal-code"
                         placeholder="00000-000"
                         value={address.cep}
-                        onChange={(e) => { handleCepChange(e.target.value); clearInvalid('cep'); }}
+                        onChange={(e) => { addressEditedRef.current = true; handleCepChange(e.target.value); clearInvalid('cep'); }}
                         maxLength={9}
                       />
                       {loadingCep && (
@@ -1076,9 +1076,10 @@ const Carrinho = () => {
                     <Label htmlFor="city">Cidade *</Label>
                     <Input
                       id="city"
+                      autoComplete="address-level2"
                       placeholder="Cidade"
                       value={address.city}
-                      onChange={(e) => { setAddress(prev => ({ ...prev, city: e.target.value })); clearInvalid('city'); }}
+                      onChange={(e) => { addressEditedRef.current = true; cepRequestRef.current += 1; setAddress(prev => ({ ...prev, city: e.target.value })); clearInvalid('city'); }}
                       className={fieldClass('city')}
                     />
                   </div>
@@ -1086,14 +1087,16 @@ const Carrinho = () => {
                     <Label htmlFor="state">Estado *</Label>
                     <Input
                       id="state"
+                      autoComplete="address-level1"
                       placeholder="UF"
                       value={address.state}
-                      onChange={(e) => { setAddress(prev => ({ ...prev, state: e.target.value })); clearInvalid('state'); }}
+                      onChange={(e) => { addressEditedRef.current = true; cepRequestRef.current += 1; setAddress(prev => ({ ...prev, state: e.target.value.toUpperCase() })); clearInvalid('state'); }}
                       className={fieldClass('state')}
                       maxLength={2}
                     />
                   </div>
                 </div>
+                {addressNotice && <p role="status" className="mt-2 text-xs text-muted-foreground">{addressNotice}</p>}
               </div>
 
               {/* Simulador de Frete */}
