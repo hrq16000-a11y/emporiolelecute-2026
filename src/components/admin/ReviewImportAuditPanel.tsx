@@ -103,7 +103,15 @@ export default function ReviewImportAuditPanel() {
     toast({ title: `Match sugerido: ${best.label}`, description: best.explanation.reason });
   };
 
-  const handleCommit = async () => {
+  const confirmedOnPage = rows.filter((r) => r.manual_status === 'confirmed');
+  const importableOnPage = confirmedOnPage.filter(
+    (r) => (r.manual_product_id ?? r.suggested_product_id) && !r.imported_review_id,
+  ).length;
+  const alreadyImportedOnPage = confirmedOnPage.filter((r) => r.imported_review_id).length;
+  const noProductOnPage = confirmedOnPage.length - importableOnPage - alreadyImportedOnPage;
+
+  const runCommit = async () => {
+    setConfirmImport(false);
     const confirmed = rows.filter((r) => r.manual_status === 'confirmed');
     if (confirmed.length === 0) {
       toast({ title: 'Nada a importar', description: 'Nenhuma review confirmada nesta página.' });
