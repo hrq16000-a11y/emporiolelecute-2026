@@ -139,7 +139,7 @@ export default function ReviewImportAuditPanel() {
               Matching fuzzy com limiar configurável, revisão manual e import idempotente.
             </p>
           </div>
-          <Button onClick={handleCommit} disabled={commit.isPending}>
+          <Button onClick={() => setConfirmImport(true)} disabled={commit.isPending}>
             {commit.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
@@ -148,6 +148,41 @@ export default function ReviewImportAuditPanel() {
             Importar confirmadas
           </Button>
         </div>
+
+        {summary && (
+          <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {Object.entries(STATUS_LABEL).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => { setStatus(key); setPage(0); }}
+                  className={`flex flex-col items-center rounded-md border bg-background px-2 py-1.5 transition-colors hover:border-primary/50 ${
+                    status === key ? 'border-primary ring-1 ring-primary/40' : ''
+                  }`}
+                  aria-pressed={status === key}
+                >
+                  <span className="text-lg font-semibold tabular-nums leading-tight">
+                    {summary.byStatus[key] ?? 0}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {MATCH_CLASS_LABEL.strong}: <strong>{summary.byMatchClass.strong}</strong>
+              {' · '}{MATCH_CLASS_LABEL.weak}: <strong>{summary.byMatchClass.weak}</strong>
+              {' · '}{MATCH_CLASS_LABEL.none}: <strong>{summary.byMatchClass.none}</strong>
+              {' — '}Prontas para importar: <strong>{summary.readyToImport}</strong>
+              {' · '}já importadas: {summary.alreadyImported}
+              {summary.confirmedWithoutProduct > 0 && (
+                <span className="text-amber-600 dark:text-amber-400">
+                  {' · '}⚠ {summary.confirmedWithoutProduct} confirmada(s) sem produto vinculado
+                </span>
+              )}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div className="md:col-span-2">
