@@ -2826,6 +2826,7 @@ export type Database = {
       review_import_audit: {
         Row: {
           created_at: string
+          decision_reason: string | null
           elo7_buyer_name: string | null
           elo7_comment: string | null
           elo7_image_url: string | null
@@ -2852,6 +2853,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          decision_reason?: string | null
           elo7_buyer_name?: string | null
           elo7_comment?: string | null
           elo7_image_url?: string | null
@@ -2878,6 +2880,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          decision_reason?: string | null
           elo7_buyer_name?: string | null
           elo7_comment?: string | null
           elo7_image_url?: string | null
