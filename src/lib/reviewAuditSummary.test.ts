@@ -33,9 +33,9 @@ describe('matchClassFor', () => {
     expect(matchClassFor(NaN, 0.45)).toBe('none');
   });
 
-  it('respeita limiar customizado acima de 0.75', () => {
+  it('com limiar acima de 0.75 a faixa fraca desaparece (acima do limiar = forte)', () => {
     expect(matchClassFor(0.8, 0.85)).toBe('none');
-    expect(matchClassFor(0.86, 0.85)).toBe('weak');
+    expect(matchClassFor(0.86, 0.85)).toBe('strong');
     expect(matchClassFor(0.9, 0.85)).toBe('strong');
   });
 });
