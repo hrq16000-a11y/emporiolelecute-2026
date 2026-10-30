@@ -16,12 +16,20 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useDbProducts, useDbCategories } from '@/hooks/useProducts';
 import {
-  useCommitConfirmedReviews, useReviewImportAudit, useUpdateReviewAudit, type ReviewAuditRow,
+  useCommitConfirmedReviews, useReviewImportAudit, useReviewImportAuditSummary,
+  useUpdateReviewAudit, type ReviewAuditRow,
 } from '@/hooks/useReviewImportAudit';
 import { explainMatch, findBestMatches, classifyScore } from '@/lib/fuzzyMatch';
+import {
+  MATCH_CLASS_LABEL, matchClassFor, matchClassReason, type MatchClass,
+} from '@/lib/reviewAuditSummary';
 import FuzzyMatchExplanation from '@/components/admin/FuzzyMatchExplanation';
 
 
@@ -36,6 +44,12 @@ const STATUS_LABEL: Record<string, string> = {
 const statusVariant = (s: string) =>
   s === 'confirmed' ? 'default' : s === 'rejected' ? 'destructive' : 'secondary';
 
+const MATCH_CLASS_BADGE: Record<MatchClass, string> = {
+  strong: 'text-emerald-600 border-emerald-600/40',
+  weak: 'text-amber-600 border-amber-600/40 dark:text-amber-400',
+  none: 'text-muted-foreground',
+};
+
 const PAGE_SIZE = 20;
 
 export default function ReviewImportAuditPanel() {
@@ -47,10 +61,12 @@ export default function ReviewImportAuditPanel() {
   const [page, setPage] = useState(0);
   const [threshold, setThreshold] = useState(0.45);
   const [detail, setDetail] = useState<ReviewAuditRow | null>(null);
+  const [confirmImport, setConfirmImport] = useState(false);
 
   const { data, isLoading } = useReviewImportAudit({
     status, categoryId, search, importedOnly, page, pageSize: PAGE_SIZE,
   });
+  const { data: summary } = useReviewImportAuditSummary(threshold);
   const { data: products = [] } = useDbProducts();
   const { data: categories = [] } = useDbCategories();
   const update = useUpdateReviewAudit();
@@ -87,7 +103,15 @@ export default function ReviewImportAuditPanel() {
     toast({ title: `Match sugerido: ${best.label}`, description: best.explanation.reason });
   };
 
-  const handleCommit = async () => {
+  const confirmedOnPage = rows.filter((r) => r.manual_status === 'confirmed');
+  const importableOnPage = confirmedOnPage.filter(
+    (r) => (r.manual_product_id ?? r.suggested_product_id) && !r.imported_review_id,
+  ).length;
+  const alreadyImportedOnPage = confirmedOnPage.filter((r) => r.imported_review_id).length;
+  const noProductOnPage = confirmedOnPage.length - importableOnPage - alreadyImportedOnPage;
+
+  const runCommit = async () => {
+    setConfirmImport(false);
     const confirmed = rows.filter((r) => r.manual_status === 'confirmed');
     if (confirmed.length === 0) {
       toast({ title: 'Nada a importar', description: 'Nenhuma review confirmada nesta página.' });
@@ -115,7 +139,7 @@ export default function ReviewImportAuditPanel() {
               Matching fuzzy com limiar configurável, revisão manual e import idempotente.
             </p>
           </div>
-          <Button onClick={handleCommit} disabled={commit.isPending}>
+          <Button onClick={() => setConfirmImport(true)} disabled={commit.isPending}>
             {commit.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
@@ -124,6 +148,41 @@ export default function ReviewImportAuditPanel() {
             Importar confirmadas
           </Button>
         </div>
+
+        {summary && (
+          <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {Object.entries(STATUS_LABEL).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => { setStatus(key); setPage(0); }}
+                  className={`flex flex-col items-center rounded-md border bg-background px-2 py-1.5 transition-colors hover:border-primary/50 ${
+                    status === key ? 'border-primary ring-1 ring-primary/40' : ''
+                  }`}
+                  aria-pressed={status === key}
+                >
+                  <span className="text-lg font-semibold tabular-nums leading-tight">
+                    {summary.byStatus[key] ?? 0}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {MATCH_CLASS_LABEL.strong}: <strong>{summary.byMatchClass.strong}</strong>
+              {' · '}{MATCH_CLASS_LABEL.weak}: <strong>{summary.byMatchClass.weak}</strong>
+              {' · '}{MATCH_CLASS_LABEL.none}: <strong>{summary.byMatchClass.none}</strong>
+              {' — '}Prontas para importar: <strong>{summary.readyToImport}</strong>
+              {' · '}já importadas: {summary.alreadyImported}
+              {summary.confirmedWithoutProduct > 0 && (
+                <span className="text-amber-600 dark:text-amber-400">
+                  {' · '}⚠ {summary.confirmedWithoutProduct} confirmada(s) sem produto vinculado
+                </span>
+              )}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div className="md:col-span-2">
@@ -205,12 +264,25 @@ export default function ReviewImportAuditPanel() {
               const explanation = target
                 ? explainMatch(row.elo7_product_name ?? '', target)
                 : null;
+              const matchScore = explanation?.score ?? row.suggested_confidence;
+              const matchClass = matchClassFor(
+                matchScore != null ? Number(matchScore) : null,
+                threshold,
+              );
               return (
                 <li key={row.id} className="p-3 flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant={statusVariant(row.manual_status)}>
                         {STATUS_LABEL[row.manual_status]}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={MATCH_CLASS_BADGE[matchClass]}
+                        title={matchClassReason(matchClass, matchScore != null ? Number(matchScore) : null, threshold)}
+                      >
+                        {MATCH_CLASS_LABEL[matchClass]}
+                        {matchScore != null && ` ${(Number(matchScore) * 100).toFixed(0)}%`}
                       </Badge>
                       {row.imported_review_id && (
                         <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">
@@ -221,9 +293,12 @@ export default function ReviewImportAuditPanel() {
                         {row.elo7_product_name ?? row.feedback_id}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                    <p className="text-xs text-muted-foreground mt-1">
                       → {target ?? 'sem produto vinculado'}
-                      {explanation ? ` · ${(explanation.score * 100).toFixed(0)}% — ${explanation.reason}` : ''}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {matchClassReason(matchClass, matchScore != null ? Number(matchScore) : null, threshold)}
+                      {explanation ? ` · ${explanation.reason}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -300,6 +375,59 @@ export default function ReviewImportAuditPanel() {
           })
         }
       />
+
+      <AlertDialog open={confirmImport} onOpenChange={setConfirmImport}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Resumo antes de importar</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                {confirmedOnPage.length === 0 ? (
+                  <p>Nenhuma review confirmada nesta página — confirme ao menos uma antes de importar.</p>
+                ) : (
+                  <>
+                    <p>
+                      Serão processadas as <strong>{confirmedOnPage.length}</strong> review(s)
+                      confirmada(s) desta página:
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                      <li>
+                        <strong className="text-foreground">{importableOnPage}</strong> pronta(s)
+                        para importar (produto vinculado, ainda não importada)
+                      </li>
+                      <li>
+                        <strong className="text-foreground">{alreadyImportedOnPage}</strong> já
+                        importada(s) — serão puladas (import idempotente)
+                      </li>
+                      <li>
+                        <strong className="text-foreground">{noProductOnPage}</strong> sem produto
+                        vinculado — gerarão erro no import
+                      </li>
+                    </ul>
+                  </>
+                )}
+                {summary && (
+                  <p className="text-xs text-muted-foreground border-t pt-2">
+                    Na auditoria inteira: {summary.byStatus.confirmed ?? 0} confirmada(s)
+                    {' · '}{summary.readyToImport} pronta(s)
+                    {' · '}{summary.alreadyImported} já importada(s)
+                    {' · '}{summary.confirmedWithoutProduct} confirmada(s) sem produto
+                    {' · '}{MATCH_CLASS_LABEL.strong.toLowerCase()} {summary.byMatchClass.strong}
+                    {' / '}{MATCH_CLASS_LABEL.weak.toLowerCase()} {summary.byMatchClass.weak}
+                    {' / '}{MATCH_CLASS_LABEL.none.toLowerCase()} {summary.byMatchClass.none}
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={runCommit} disabled={commit.isPending}>
+              {commit.isPending ? 'Importando…' : 'Importar agora'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

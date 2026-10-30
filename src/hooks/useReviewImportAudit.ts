@@ -1,6 +1,11 @@
 // Auditoria de import de reviews (Elo7 → catálogo da loja)
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  summarizeAuditRows,
+  type AuditSummary,
+  type AuditSummaryRow,
+} from '@/lib/reviewAuditSummary';
 
 export interface ReviewAuditRow {
   id: string;
@@ -84,9 +89,30 @@ export function useReviewImportAudit(filters: ReviewAuditFilters = {}) {
 
 const invalidate = (qc: ReturnType<typeof useQueryClient>) => {
   qc.invalidateQueries({ queryKey: ['review-import-audit'] });
+  qc.invalidateQueries({ queryKey: ['review-import-audit-summary'] });
   qc.invalidateQueries({ queryKey: ['admin-reviews'] });
   qc.invalidateQueries({ queryKey: ['product-reviews'] });
 };
+
+/**
+ * Totais da auditoria inteira (sem paginação): contagens por status e por
+ * classe de match, para o resumo exibido antes de reimportar.
+ */
+export function useReviewImportAuditSummary(threshold = 0.45) {
+  return useQuery({
+    queryKey: ['review-import-audit-summary', threshold],
+    staleTime: 30_000,
+    queryFn: async (): Promise<AuditSummary> => {
+      const { data, error } = await table()
+        .select(
+          'manual_status, suggested_confidence, suggested_product_id, manual_product_id, imported_review_id',
+        )
+        .limit(5000);
+      if (error) throw error;
+      return summarizeAuditRows((data ?? []) as unknown as AuditSummaryRow[], threshold);
+    },
+  });
+}
 
 /** Atualiza status / produto vinculado / notas da linha auditada. */
 export function useUpdateReviewAudit() {
