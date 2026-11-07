@@ -1,5 +1,9 @@
 # Boutique editorial
 
+## Search pinning
+- [ ] Add draft preview and explicit publication to the existing boost editor.
+- [ ] Validate ranking preview, permissions, and publication without changing public search behavior.
+
 - [x] Guide for design tokens, visual QA checklist and prioritized Sprint 3 backlog.
 - [x] Side-by-side Home/Search/Category ProductCard mockups, clearly labeled as proposals.
 - [x] Admin-managed Como é feito draft with five editable sections.
