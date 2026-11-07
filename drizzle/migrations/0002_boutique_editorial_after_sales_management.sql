@@ -1,0 +1,18 @@
+CREATE TABLE public.after_sales_rules (scope_key text PRIMARY KEY, enabled boolean NOT NULL DEFAULT false, trigger_event text NOT NULL DEFAULT 'delivered' CHECK (trigger_event IN ('paid','customer_confirmed','delivered')), delay_days integer NOT NULL DEFAULT 3 CHECK (delay_days BETWEEN 1 AND 365), subject text NOT NULL DEFAULT 'Seu pedido chegou bem? — Empório LeleCute', message text NOT NULL DEFAULT 'Olá, {nome}! Seu pedido {pedido} chegou bem? Responda e me conte como foi receber sua encomenda.', repurchase_enabled boolean NOT NULL DEFAULT false, repurchase_text text NOT NULL DEFAULT '', updated_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.after_sales_rules TO authenticated;
+GRANT ALL ON public.after_sales_rules TO service_role;
+ALTER TABLE public.after_sales_rules ENABLE ROW LEVEL SECURITY;
+CREATE POLICY after_sales_rules_admin ON public.after_sales_rules FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE TABLE public.after_sales_followups (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), order_id uuid NOT NULL REFERENCES public.orders(id), event text NOT NULL CHECK (event IN ('paid','customer_confirmed','delivered')), occurred_at timestamptz NOT NULL, due_at timestamptz NOT NULL, status text NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','cancelled','sent','blocked')), note text NOT NULL DEFAULT '', created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(order_id,event));
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.after_sales_followups TO authenticated;
+GRANT ALL ON public.after_sales_followups TO service_role;
+ALTER TABLE public.after_sales_followups ENABLE ROW LEVEL SECURITY;
+CREATE POLICY after_sales_followups_admin ON public.after_sales_followups FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE TABLE public.editorial_stories (story_key text PRIMARY KEY, title text NOT NULL, body text NOT NULL DEFAULT '', image_url text, is_published boolean NOT NULL DEFAULT false, updated_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.editorial_stories TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.editorial_stories TO authenticated;
+GRANT ALL ON public.editorial_stories TO service_role;
+ALTER TABLE public.editorial_stories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY editorial_stories_public ON public.editorial_stories FOR SELECT TO anon, authenticated USING (is_published);
+CREATE POLICY editorial_stories_admin ON public.editorial_stories FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE INDEX after_sales_followups_due ON public.after_sales_followups(due_at) WHERE status='scheduled';

@@ -125,6 +125,83 @@ export type Database = {
         }
         Relationships: []
       }
+      after_sales_followups: {
+        Row: {
+          created_at: string
+          due_at: string
+          event: string
+          id: string
+          note: string
+          occurred_at: string
+          order_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          due_at: string
+          event: string
+          id?: string
+          note?: string
+          occurred_at: string
+          order_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          due_at?: string
+          event?: string
+          id?: string
+          note?: string
+          occurred_at?: string
+          order_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "after_sales_followups_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      after_sales_rules: {
+        Row: {
+          delay_days: number
+          enabled: boolean
+          message: string
+          repurchase_enabled: boolean
+          repurchase_text: string
+          scope_key: string
+          subject: string
+          trigger_event: string
+          updated_at: string
+        }
+        Insert: {
+          delay_days?: number
+          enabled?: boolean
+          message?: string
+          repurchase_enabled?: boolean
+          repurchase_text?: string
+          scope_key: string
+          subject?: string
+          trigger_event?: string
+          updated_at?: string
+        }
+        Update: {
+          delay_days?: number
+          enabled?: boolean
+          message?: string
+          repurchase_enabled?: boolean
+          repurchase_text?: string
+          scope_key?: string
+          subject?: string
+          trigger_event?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author: string | null
@@ -785,6 +862,33 @@ export type Database = {
           user_agent?: string | null
           visitor_id?: string | null
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      editorial_stories: {
+        Row: {
+          body: string
+          image_url: string | null
+          is_published: boolean
+          story_key: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          image_url?: string | null
+          is_published?: boolean
+          story_key: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          image_url?: string | null
+          is_published?: boolean
+          story_key?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
