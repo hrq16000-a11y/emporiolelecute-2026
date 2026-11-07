@@ -7853,6 +7853,18 @@ export type Database = {
         Args: { _threshold?: number; _window_hours?: number }
         Returns: Json
       }
+      admin_search_preview_rank: {
+        Args: {
+          _category_id?: string
+          _draft?: Json
+          _limit?: number
+          _max_price?: number
+          _min_price?: number
+          _offset?: number
+          _q: string
+        }
+        Returns: Json
+      }
       apply_default_weight: { Args: { _default_kg?: number }; Returns: Json }
       audit_system_dump: { Args: never; Returns: Json }
       check_resend_email_cooldown: {
@@ -7999,6 +8011,7 @@ export type Database = {
         Args: { _from?: string; _to?: string }
         Returns: Json
       }
+      preview_search_boost: { Args: { _draft: Json }; Returns: Json }
       promote_user_to_admin: { Args: { _email: string }; Returns: Json }
       rebuild_media_inventory: { Args: never; Returns: Json }
       rebuild_media_inventory_internal: { Args: never; Returns: Json }
