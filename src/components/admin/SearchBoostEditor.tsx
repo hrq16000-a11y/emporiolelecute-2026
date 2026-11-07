@@ -4,7 +4,10 @@
 // trigram. Toda alteração invalida o cache da busca pública.
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Save, Loader2, Pin } from "lucide-react";
+import { Pencil, Eye, Trash2, Save, Loader2, Pin } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import SearchBoostPreview from './SearchBoostPreview';
+import { boostDraftKey, canPublishBoost, validBoostDraft, type BoostPreviewResult } from '@/lib/search-boost-preview';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -58,6 +61,24 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
   const [campaignLabel, setCampaignLabel] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
+  const [preview, setPreview] = useState<BoostPreviewResult | null>(null);
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const draft = { term: term.trim(), product_id: productId, weight, is_active: isActive, campaign_label: campaignLabel, starts_at: fromLocalInput(startsAt), ends_at: fromLocalInput(endsAt) };
+  const publishReady = canPublishBoost(draft, previewKey);
+  const previewResults = async () => {
+    if (!validBoostDraft(draft)) { toast({ title: 'Confira termo, produto, peso e período', variant: 'destructive' }); return; }
+    const key = boostDraftKey(draft);
+    setPreviewing(true);
+    setPreviewKey(null);
+    try {
+      const { data, error } = await supabase.rpc('preview_search_boost', { _draft: draft });
+      if (error) throw error;
+      setPreview(data as unknown as BoostPreviewResult);
+      setPreviewKey(key);
+    } catch (error) { toast({ title: 'Não foi possível gerar a prévia', description: error instanceof Error ? error.message : 'Tente novamente.', variant: 'destructive' }); }
+    finally { setPreviewing(false); }
+  };
 
   useEffect(() => {
     if (presetTerm) {
@@ -85,6 +106,7 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
   }, [boosts]);
 
   const save = async () => {
+    if (!publishReady) return;
     if (!term.trim() || !productId) {
       toast({ title: "Informe o termo e o produto", variant: "destructive" });
       return;
@@ -105,7 +127,9 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
         starts_at: starts,
         ends_at: ends,
       });
-      toast({ title: "Produto pinado", description: "Aparecerá no topo da busca por esse termo." });
+      toast({ title: "Ajuste publicado", description: "A busca foi atualizada conforme a vigência configurada." });
+      setPreview(null);
+      setPreviewKey(null);
       setProductId("");
       setProductSearch("");
     } catch (e: any) {
@@ -164,17 +188,19 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
                 <p className="text-xs text-muted-foreground p-3">Nenhum produto encontrado.</p>
               ) : (
                 productOptions.map((p) => (
-                  <button
+                  <Button
                     key={p.id}
                     type="button"
                     onClick={() => setProductId(p.id)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted ${
+                    variant="ghost"
+                    aria-pressed={productId === p.id}
+                    className={`h-auto min-h-11 w-full flex-col items-start whitespace-normal text-left px-3 py-2 text-sm hover:bg-muted ${
                       productId === p.id ? "bg-primary/10 font-medium" : ""
                     }`}
                   >
                     {p.name}
                     <span className="block text-xs text-muted-foreground">{p.slug}</span>
-                  </button>
+                  </Button>
                 ))
               )}
             </div>
@@ -215,16 +241,21 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
               <Label htmlFor="boost-active">Ativo</Label>
             </div>
 
-            <Button onClick={save} disabled={upsert.isPending}>
+            <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" onClick={previewResults} disabled={previewing || upsert.isPending || !validBoostDraft(draft)}>{previewing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}Prévia do impacto</Button>
+            <Button onClick={save} disabled={upsert.isPending || previewing || !publishReady}>
               {upsert.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              Pinar produto
+              Publicar ajuste
             </Button>
+            </div>
           </div>
         </div>
+        {preview && publishReady && <SearchBoostPreview result={preview} products={products ?? []} />}
+        {preview && !publishReady && <p role="status" className="text-sm text-muted-foreground">Configuração alterada. Gere uma nova prévia antes de publicar.</p>}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8 text-muted-foreground">
@@ -275,8 +306,11 @@ export default function SearchBoostEditor({ presetTerm, onConsumePreset }: Props
                       </div>
 
                       <AlertDialog>
+                        <Button variant="ghost" size="icon" aria-label={`Editar pin de ${b.product_name ?? b.product_id}`} title="Editar pin" onClick={() => {
+                          setTerm(b.term); setProductId(b.product_id); setProductSearch(b.product_name ?? ''); setWeight(b.weight); setIsActive(b.is_active); setCampaignLabel(b.campaign_label ?? ''); setStartsAt(toLocalInput(b.starts_at)); setEndsAt(toLocalInput(b.ends_at)); setPreview(null); setPreviewKey(null);
+                        }}><Pencil className="h-4 w-4" /></Button>
                         <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="ghost" className="text-destructive">
+                          <Button size="sm" variant="ghost" className="text-destructive" aria-label="Remover pin" title="Remover pin">
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </AlertDialogTrigger>

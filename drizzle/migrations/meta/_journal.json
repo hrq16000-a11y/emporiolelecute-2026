@@ -29,6 +29,20 @@
       "when": 1794032789855,
       "tag": "0003_validate_followup_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794033090905,
+      "tag": "0004_admin_search_boost_preview",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794033302334,
+      "tag": "0005_align_boost_preview_normalization",
+      "breakpoints": true
     }
   ]
 }

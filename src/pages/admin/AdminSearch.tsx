@@ -24,7 +24,7 @@ export default function AdminSearch() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Veja o que os visitantes procuram, crie sinônimos para cobrir gírias e erros, e fixe
-          produtos em campanhas. Toda mudança é refletida na vitrine imediatamente.
+          produtos em campanhas. Os pins podem ser comparados antes da publicação.
         </p>
       </div>
 
