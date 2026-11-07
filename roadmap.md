@@ -1,8 +1,8 @@
 # Boutique editorial
 
 ## Search pinning
-- [ ] Add draft preview and explicit publication to the existing boost editor.
-- [ ] Validate ranking preview, permissions, and publication without changing public search behavior.
+- [x] Add draft preview and explicit publication to the existing boost editor.
+- [x] Validate ranking preview, permissions, and publication without changing public search behavior; six tests pass, temporary pin removed after storefront verification.
 
 - [x] Guide for design tokens, visual QA checklist and prioritized Sprint 3 backlog.
 - [x] Side-by-side Home/Search/Category ProductCard mockups, clearly labeled as proposals.
