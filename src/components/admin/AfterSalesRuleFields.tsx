@@ -17,7 +17,7 @@ const AfterSalesRuleFields = ({ value, onChange }: { value: AfterSalesRule; onCh
     <div className="flex items-center gap-3"><Switch id="followup-repurchase" checked={value.repurchase_enabled} onCheckedChange={repurchase_enabled => onChange({ ...value, repurchase_enabled })} /><Label htmlFor="followup-repurchase">Preparar sugestão de recompra</Label></div>
     {value.repurchase_enabled && <div><Label htmlFor="followup-repurchase-text">Texto de recompra (marketing separado)</Label><Textarea id="followup-repurchase-text" value={value.repurchase_text} onChange={e => onChange({ ...value, repurchase_text: e.target.value })} /></div>}
     <p className="text-sm text-muted-foreground">Envio aguarda domínio remetente configurado. Recompra por email requer serviço de marketing e consentimento.</p>
-    <div className="border-l-2 border-primary/30 pl-4"><p className="font-display text-lg">{value.subject}</p><p className="mt-2 whitespace-pre-line text-muted-foreground">{value.message.replaceAll('{nome}', 'Cliente').replaceAll('{pedido}', 'LC123456')}</p></div>
+    <div className="border-l-2 border-primary/30 pl-4"><p className="font-display text-lg">{value.subject}</p><p className="mt-2 whitespace-pre-line text-muted-foreground">{value.message.split('{nome}').join('Cliente').split('{pedido}').join('LC123456')}</p></div>
   </div>
 );
 export default AfterSalesRuleFields;
