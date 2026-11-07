@@ -173,6 +173,7 @@ export const EXECUTIVE_NAV: NavGroup[] = [
       { label: "Recursos do site", path: "/admin/recursos", icon: "Power" },
       { label: "Merchant Feed", path: "/admin/merchant-feed", icon: "Rss" },
       { label: "SEO & Sitemap", path: "/admin/seo", icon: "Search" },
+      { label: "SEO global", path: "/admin/seo-global", icon: "Globe" },
       { label: "SEO Check", path: "/admin/seo-check", icon: "ShieldCheck" },
 
       { label: "Sitemap → Google", path: "/admin/sitemap-status", icon: "Activity" },
