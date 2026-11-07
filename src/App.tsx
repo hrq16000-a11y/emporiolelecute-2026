@@ -120,6 +120,7 @@ const AdminAuthority = lazyWithRetry(() => import("./pages/admin/AdminAuthority"
 const AdminEditorialExecution = lazyWithRetry(() => import("./pages/admin/AdminEditorialExecution"), "AdminEditorialExecution");
 const Colecao = lazyWithRetry(() => import("./pages/Colecao"), "Colecao");
 const AdminCollections = lazyWithRetry(() => import("./pages/admin/AdminCollections"), "AdminCollections");
+const AdminBoutique = lazyWithRetry(() => import("./pages/admin/AdminBoutique"), "AdminBoutique");
 const AdminCollectionForm = lazyWithRetry(() => import("./pages/admin/AdminCollectionForm"), "AdminCollectionForm");
 const KitPage = lazyWithRetry(() => import("./pages/KitPage"), "KitPage");
 const AdminKits = lazyWithRetry(() => import("./pages/admin/AdminKits"), "AdminKits");
@@ -841,6 +842,7 @@ const App = () => {
                       <AdminCollections />
                     </Suspense>
                   } />
+                  <Route path="atelie" element={<Suspense fallback={<AdminSkeleton />}><AdminBoutique /></Suspense>} />
                   <Route path="colecoes/nova" element={
                     <Suspense fallback={<AdminSkeleton />}>
                       <AdminCollectionForm />

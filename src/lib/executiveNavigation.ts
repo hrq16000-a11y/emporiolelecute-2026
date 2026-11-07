@@ -41,6 +41,7 @@ export const EXECUTIVE_NAV: NavGroup[] = [
     items: [
       { label: "Dashboard", path: "/admin", icon: "LayoutDashboard" },
       { label: "Pedidos", path: "/admin/pedidos", icon: "ShoppingCart" },
+      { label: "Ateliê e pós-venda", path: "/admin/atelie", icon: "Package" },
       { label: "Pagamentos", path: "/admin/pagamentos", icon: "CreditCard" },
       { label: "Clientes", path: "/admin/clientes", icon: "Users" },
       { label: "Teste de notificações", path: "/admin/notificacoes-teste", icon: "BellRing" },
