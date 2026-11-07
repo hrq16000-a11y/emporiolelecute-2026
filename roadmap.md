@@ -1,5 +1,9 @@
 # Boutique editorial
 
+## Global SEO
+- [ ] Add unified metadata, robots editing and sitemap status/count/regeneration at /admin/seo-global.
+- [ ] Verify saves and regeneration, distinguishing generated content from public files.
+
 ## Search pinning
 - [x] Add draft preview and explicit publication to the existing boost editor.
 - [x] Validate ranking preview, permissions, and publication without changing public search behavior; six tests pass, temporary pin removed after storefront verification.
