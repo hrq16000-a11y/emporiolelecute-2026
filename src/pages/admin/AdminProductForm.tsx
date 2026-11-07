@@ -56,6 +56,8 @@ import type { PdpBadgeConfig } from '@/hooks/useConversionCtaConfig';
 import ProductFaqEditor from '@/components/admin/ProductFaqEditor';
 import { useFormDraft } from '@/hooks/useFormDraft';
 import DraftStatusBadge from '@/components/admin/DraftStatusBadge';
+import AfterSalesRuleFields from '@/components/admin/AfterSalesRuleFields';
+import { defaultAfterSalesRule, followupDueAt, type AfterSalesRule } from '@/lib/after-sales';
 
 const DEFAULT_BADGE_OVERRIDE: PdpBadgeConfig = {
   enabled: true,
@@ -82,6 +84,19 @@ const AdminProductForm = () => {
   const { data: tags } = useTags();
   const { data: segments } = useSegments();
   const saveProduct = useSaveProductFull();
+  const [afterSalesRule, setAfterSalesRule] = useState<AfterSalesRule>(defaultAfterSalesRule);
+  const [useCustomAfterSales, setUseCustomAfterSales] = useState(false);
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    void supabase.from('after_sales_rules').select('*').eq('scope_key', id).maybeSingle().then(({ data, error }) => {
+      if (!active) return;
+      if (error) { toast({ title: 'Não foi possível carregar o pós-venda', variant: 'destructive' }); return; }
+      setUseCustomAfterSales(!!data);
+      setAfterSalesRule(data ? data as AfterSalesRule : defaultAfterSalesRule);
+    });
+    return () => { active = false; };
+  }, [id]);
 
 
   const [formData, setFormData] = useState({
@@ -352,6 +367,7 @@ const AdminProductForm = () => {
     setIsSaving(true);
 
     try {
+      if (useCustomAfterSales) followupDueAt(new Date().toISOString(), afterSalesRule.delay_days);
       // Payload único — todos os campos de products + flags + badge + pivôs.
       // Substitui: 1 update products + 2 round-trips de occasions + 2 hooks de tag/segment + 1 update redundante.
       const productPayload: Record<string, unknown> = {
@@ -413,6 +429,13 @@ const AdminProductForm = () => {
       // Sincroniza lock otimista local imediatamente — não depende do refetch
       // assíncrono do React Query. Cobre o cenário "salvar duas vezes rápido".
       setExpectedUpdatedAt(result.updated_at);
+      const ruleResult = useCustomAfterSales
+        ? await supabase.from('after_sales_rules').upsert({ ...afterSalesRule, scope_key: result.id })
+        : await supabase.from('after_sales_rules').delete().eq('scope_key', result.id);
+      if (ruleResult.error) {
+        toast({ title: 'Produto salvo; regra de pós-venda não foi salva', description: 'Tente salvar novamente antes de agendar acompanhamento.', variant: 'destructive' });
+        return;
+      }
 
       toast({ title: isEditing ? 'Produto atualizado!' : 'Produto criado!' });
       usage.markSubmitted();
@@ -1443,6 +1466,12 @@ const AdminProductForm = () => {
           )}
         </Card>
 
+        <section className="border-t border-border py-6 space-y-5">
+          <h2 className="font-display text-xl">Pós-venda deste produto</h2>
+          <div className="flex items-center gap-3"><Switch id="custom-after-sales" checked={useCustomAfterSales} onCheckedChange={setUseCustomAfterSales} /><Label htmlFor="custom-after-sales">Usar regra específica (caso contrário, regra geral)</Label></div>
+          {useCustomAfterSales && <AfterSalesRuleFields value={afterSalesRule} onChange={setAfterSalesRule} />}
+          <Button asChild variant="outline"><Link to="/admin/atelie">Gestão de pós-venda e agendamentos</Link></Button>
+        </section>
         {/* FAQ por produto (apenas ao editar — precisa do ID) */}
         {isEditing && id && (
           <ProductFaqEditor

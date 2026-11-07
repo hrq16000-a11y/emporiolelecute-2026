@@ -6,6 +6,7 @@ import ProductBundleBelongsTo from "@/components/ProductBundleBelongsTo";
 import VisualComposition from "@/components/VisualComposition";
 import ProductReviews from "@/components/ProductReviews";
 import RelatedSmart from "@/components/RelatedSmart";
+import PackagingStory from "@/components/PackagingStory";
 
 export interface PdpSectionContext {
   product: {
@@ -55,6 +56,7 @@ const pickEditorialFallback = (seed: string): string => {
 };
 
 export const pdpSectionRegistry: Record<string, Renderer> = {
+  packaging: () => <PackagingStory />,
   description: ({ product }) => (
     <section className="mb-14 md:mb-16" key="description" aria-labelledby="pdp-description-title">
       <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/70 mb-2">Sobre o produto</p>
@@ -155,6 +157,7 @@ export const pdpSectionRegistry: Record<string, Renderer> = {
 };
 
 export const PDP_SECTION_LABELS: Record<string, string> = {
+  packaging: "Embalagem e unboxing",
   description: "Descrição do produto",
   cross_sell_complete: "Complete o kit",
   bundle_belongs_to: "Kits relacionados",

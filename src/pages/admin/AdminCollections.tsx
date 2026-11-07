@@ -76,7 +76,7 @@ export default function AdminCollections() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {data!.map((c) => (
+          {(data ?? []).map((c) => (
             <Card key={c.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
@@ -84,7 +84,7 @@ export default function AdminCollections() {
                     <CardTitle className="text-base font-display flex items-center gap-2 flex-wrap">
                       {c.name}
                       <Badge variant="secondary" className="text-[10px]">/{c.slug}</Badge>
-                      {!c.is_active && <Badge variant="outline" className="text-[10px]">Inativa</Badge>}
+                      {!c.is_active && <Badge variant="outline" className="text-[10px]">Rascunho</Badge>}
                       {c.show_on_home && <Badge className="text-[10px]"><Home className="h-3 w-3 mr-1" />Home</Badge>}
                     </CardTitle>
                     {c.description && (
