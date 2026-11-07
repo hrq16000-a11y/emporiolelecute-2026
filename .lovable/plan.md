@@ -1,79 +1,41 @@
-# Backup total + referência estável `img_ref` para todas as imagens
+# Boutique editorial e gestão de pós-venda
 
-Objetivo: criar um registro central de mídia onde cada imagem tem uma chave própria e portável (`img_ref`), independente do UID/ID do storage do Lovable, com integridade verificável e exportação completa do cloud para um arquivo local seguro. E fechar a porta que apagou as imagens.
+## Direção
+Para quem procura presentes e lembrancinhas artesanais, tornar a escolha clara e a autoria reconhecível. Preservar Quicksand/DM Sans, fundo claro, cinza quente para texto, coral para ação principal, neutros para apoios e cores de estado apenas quando necessárias. Fotografias reais, seções abertas e luz lateral discreta, sem novos selos decorativos. A identidade da loja prevalece sobre presets genéricos.
 
-## Princípio central
+## 1. Guia, mockups e auditoria visual
+- Guia simples dos tokens existentes: cores por função, sombras, bordas, badges e CTAs.
+- Checklist pós-Sprint 1 para ProductCards e ações em Home/Busca/Categoria/PDP, incluindo celular, foco, hover, carregamento e erros.
+- Três mockups lado a lado, com os mesmos produtos e fotos: aparência atual versus proposta editorial de ProductCard. Identificar como proposta; não afirmar que a atualização já foi publicada.
+- Backlog Sprint 3 com FeaturedKits, TrustBadges e seções, estimando impacto perceptivo, esforço e risco de refinamento excessivo.
 
-Hoje cada tabela guarda a `image_url` "crua" do storage. Se o path/ID muda (ou o arquivo é apagado pelo GC), a referência morre. A correção é inverter a dependência: as entidades passam a apontar para um **`img_ref` estável**, e o `img_ref` resolve para a URL atual via um registro central. Assim a identidade da imagem nunca depende da infraestrutura.
+## 2. Conteúdo autoral gerenciável
+- Criar “Como é feito” como rascunho no editor de páginas existente, com cinco seções editáveis e estrutura em primeira pessoa.
+- Deixar processo real e fotos de bastidores pendentes para uma conversa futura; não inventar etapas ou perguntar novamente agora.
+- Criar conteúdo gerenciável “Embalagem e unboxing” no site e bloco reordenável na PDP: selo, cartão escrito à mão e papel de seda.
+- Permitir edição de título, texto, imagem e visibilidade, preservando publicação controlada e seções existentes.
 
-```text
-ANTES:  occasions.image_url  ── (URL crua, frágil) ──>  storage object (some → 404)
-DEPOIS: occasions.image_ref ──> media_assets.img_ref ──> { storage_path, public_url, checksum }
-                                       │
-                                       └── manifest exportável (backup local externo)
-```
+## 3. Quatro coleções em rascunho
+- Propostas de nomes: Gestos de carinho, Memórias para celebrar, Pausas que acolhem e Luz para pequenos encontros.
+- Selecionar e ordenar produtos existentes compatíveis com cada narrativa; usar fotos reais disponíveis.
+- Reutilizar a gestão administrativa de coleções e manter todas inativas até sua revisão.
+- Não remover categorias, produtos, URLs, estoque ou preços; a coleção é curadoria adicional.
 
-## Etapa 1 — Tabela registro `media_assets`
+## 4. Pós-venda com gestão geral e por produto
+- Adicionar regras na criação/edição administrativa do produto e gestão geral: ativação, marco inicial, intervalo padrão de três dias, assunto, mensagem, recomendação e prévia.
+- Marcos configuráveis: pagamento confirmado, confirmação manual do cliente ou entrega registrada; permitir ajuste/reagendamento por pedido.
+- Não presumir chegada pelo pagamento: a pergunta “como chegou?” só é adequada após chegada confirmada. Outros marcos devem usar mensagem coerente com o evento.
+- Separar acompanhamento de recompra. Ofertas ficam gerenciáveis no admin, mas envio promocional requer serviço de marketing e consentimento; não usar o serviço de emails do app para upsell.
+- Automação inicialmente desativada, sem atingir pedidos antigos; agendamento, cancelamento, resultados e proteção contra duplicidade.
 
-Nova tabela `public.media_assets` (admin-only, RLS estrito):
-- `img_ref` (text, PK) — chave estável e legível, ex.: `occ_cha-de-bebe_a1b2c3`. Gerada por nós, nunca reutilizada, **não derivada do UID do storage**.
-- `bucket`, `storage_path` (path relativo dentro do bucket), `public_url`.
-- `content_type`, `size_bytes`, `checksum_sha256` (integridade), `width`/`height` (quando aplicável).
-- `entity_type` + `entity_id` (quem usa: `occasion`, `product`, `hero_slide`, `kit`, `category`, `segment`…), `field` (coluna de origem).
-- `source` (`storage` | `src_assets` | `external`), `status` (`active` | `missing` | `archived`).
-- `created_at`, `updated_at`, `last_verified_at`, `backed_up_at`.
+## Dependências e itens pendentes
+- Domínio remetente ainda não configurado: preparar gestão/templates, mas ativar envio apenas após configuração.
+- Serviço de marketing necessário para sugestões de recompra por email; isso não bloqueia a gestão administrativa.
+- “Como é feito” permanece rascunho até receber o processo real em outra conversa.
+- Mockups são validação visual, não remodelação automática da loja inteira.
 
-Coluna opcional `image_ref` adicionada às tabelas que hoje usam imagem, para migração gradual (sem quebrar o `image_url` atual, que vira fallback).
-
-## Etapa 2 — Backfill (inventário completo)
-
-Função/edge que monta o inventário inicial:
-1. Varre **todas** as tabelas com colunas de imagem (`products.images[]`, `occasions.image_url`, `hero_slides.image_url`, `kits`, `categories`, `segments`, `elo7-review-images` etc.).
-2. Varre **os objetos reais** do storage (todos os buckets).
-3. Cruza os dois: cada arquivo vira uma linha em `media_assets` com `img_ref` gerado, `checksum` calculado e `status`:
-   - `active` (referenciado e existe no storage),
-   - `missing` (referenciado mas o arquivo sumiu — vai listar exatamente as 8 ocasiões perdidas),
-   - `archived` (existe no storage mas ninguém referencia — candidato real a limpeza, sem apagar).
-
-Resultado: um mapa auditável de 100% das mídias e do que está são/quebrado.
-
-## Etapa 3 — Export "cloud → local seguro"
-
-Estender a página admin de Backup existente (`/admin/backup`, edge `admin-backup-export`) para um **export binário completo**:
-- Edge function gera um **ZIP** contendo:
-  - `/manifest.json` → todo o `media_assets` (img_ref → metadados + checksum).
-  - `/files/<img_ref>.<ext>` → o binário de cada imagem, nomeado pelo `img_ref` (não pelo nome do storage). Assim o pacote é auto-suficiente e re-importável em qualquer ambiente.
-- Download direto pelo admin e cópia para `/mnt/documents/` (artefato baixável).
-- `backed_up_at` é carimbado em cada asset exportado.
-- **Re-import**: rotina espelho que lê o manifest, re-sobe os binários e recria os `img_ref` — recuperação total mesmo após desastre.
-
-## Etapa 4 — Resolver por `img_ref` no app
-
-Helper único (`resolveImageRef(img_ref)`) que devolve a URL atual a partir de `media_assets`, com fallback para `image_url` legado. Componentes de imagem passam a aceitar `img_ref`. Migração incremental, sem big-bang.
-
-## Etapa 5 — Fechar a porta (corrigir o GC)
-
-A `cleanup-orphan-product-images` **não pode mais** decidir órfão olhando só `products.images`. Correções:
-- Passa a consultar `media_assets` (todas as referências de todas as entidades) como allowlist.
-- `dry_run` por padrão; deleção real exige flag explícita.
-- Nunca apaga nada com `status <> 'archived'`.
-- Antes de qualquer deleção, exige que o asset tenha `backed_up_at` recente (sem backup → não deleta).
-- Log de auditoria de tudo que for removido.
-
-## Ordem de execução proposta
-
-1. Migration: `media_assets` + grants + RLS + colunas `image_ref`.
-2. Backfill + checksums (inventário e diagnóstico do que está `missing`).
-3. Export ZIP completo (primeiro backup seguro) — **antes** de mexer em qualquer limpeza.
-4. Endurecer o GC.
-5. (Depois, separado) Re-upload das 8 imagens de ocasião perdidas e correção do hero `/src/assets`.
-
-## Notas técnicas
-
-- `media_assets` é dado sensível de operação → RLS admin-only, `service_role` para edges; sem acesso `anon`.
-- `checksum_sha256` permite detectar corrupção e deduplicar.
-- `img_ref` legível + único via `gen_external_ref`-style (slug + sufixo aleatório), seguindo o padrão `external_ref` que o projeto já usa em products/categories/occasions.
-- Export usa `service_role` para baixar binários ignorando RLS; ZIP em streaming para aguentar centenas de arquivos.
-- Nenhuma correção de dados é feita nesta fase — primeiro inventariar e fazer backup, depois restaurar.
-
-Quer que eu já comece pela Etapa 1 + 2 (criar o `media_assets` e rodar o inventário/backfill para listar exatamente o que está são e o que está perdido), ou prefere que eu priorize a Etapa 3 (gerar imediatamente o primeiro ZIP de backup do que ainda existe no cloud)?
+## Detalhes técnicos
+- Reutilizar pages, collections e registros Home/PDP, sem substituir o CMS.
+- Configurações sensíveis acessíveis apenas a administradores, com validação no servidor, regras por produto e ajustes por pedido.
+- Testar intervalo de três dias, marco correto, configuração desativada, deduplicação, consentimento e pedidos cancelados.
+- Verificar salvar/reabrir no admin com sessão real; confirmar que rascunhos não aparecem publicamente.
