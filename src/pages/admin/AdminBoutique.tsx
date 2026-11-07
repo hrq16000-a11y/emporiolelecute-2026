@@ -65,8 +65,16 @@ const AdminBoutique = () => {
         <Label htmlFor="schedule-note">Motivo / confirmação recebida</Label><Textarea id="schedule-note" value={note} onChange={e => setNote(e.target.value)} />
         <Button disabled={saving || !eventAt || !orderCode || !note.trim()} onClick={() => runSave(async () => {
           const { data: order, error } = await supabase.from('orders').select('id,status').eq('order_code', orderCode).single(); if (error) throw error;
-          if (!canScheduleFollowup(rule, event, order.status ?? '')) throw new Error('Ative a regra e selecione o marco correspondente. Pedidos cancelados não são elegíveis.');
-          const occurred_at = new Date(eventAt).toISOString(); const { error: saveError } = await supabase.from('after_sales_followups').upsert({ order_id: order.id, event, occurred_at, due_at: followupDueAt(occurred_at, rule.delay_days), note, status: 'blocked' }, { onConflict: 'order_id,event' }); if (saveError) throw saveError;
+          const { data: items, error: itemError } = await supabase.from('order_items').select('product_slug').eq('order_id', order.id); if (itemError) throw itemError;
+          const slugs = (items ?? []).map(item => item.product_slug).filter((slug): slug is string => !!slug);
+          const { data: products, error: productError } = await supabase.from('products').select('id').in('slug', slugs); if (productError) throw productError;
+          const ids = (products ?? []).map(product => product.id);
+          const { data: overrides, error: ruleError } = await supabase.from('after_sales_rules').select('*').in('scope_key', ids); if (ruleError) throw ruleError;
+          const override = overrides?.[0];
+          if ((overrides?.length ?? 0) > 1 && overrides?.some(candidate => candidate.trigger_event !== override?.trigger_event || candidate.delay_days !== override?.delay_days || candidate.enabled !== override?.enabled)) throw new Error('O pedido contém regras diferentes. Revise as regras dos produtos antes de agendar.');
+          const effectiveRule = override ? override as AfterSalesRule : rule;
+          if (!canScheduleFollowup(effectiveRule, event, order.status ?? '')) throw new Error('Ative a regra e selecione o marco correspondente. Pedidos cancelados não são elegíveis.');
+          const occurred_at = new Date(eventAt).toISOString(); const { error: saveError } = await supabase.from('after_sales_followups').upsert({ order_id: order.id, event, occurred_at, due_at: followupDueAt(occurred_at, effectiveRule.delay_days), note, status: 'blocked' }, { onConflict: 'order_id,event' }); if (saveError) throw saveError;
         })}>Registrar / reagendar</Button>
         <ul className="divide-y divide-border">{data?.follows?.map(item => <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4"><div><strong>{item.orders?.order_code}</strong><p className="text-sm text-muted-foreground">{new Date(item.due_at).toLocaleString('pt-BR')} · {item.status === 'blocked' ? 'Envio bloqueado: remetente pendente' : item.status === 'cancelled' ? 'Cancelado' : item.status}</p><p className="text-sm">{item.note}</p></div><Button variant="outline" disabled={saving || item.status === 'cancelled'} onClick={() => runSave(async () => { const { error } = await supabase.from('after_sales_followups').update({ status: 'cancelled' }).eq('id', item.id); if (error) throw error; })}>Cancelar</Button></li>)}</ul>
       </TabsContent>
