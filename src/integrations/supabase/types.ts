@@ -292,6 +292,35 @@ export type Database = {
         }
         Relationships: []
       }
+      catalog_security_approvals: {
+        Row: {
+          approved_by: string
+          created_at: string
+          reason: string
+          scan_id: string
+        }
+        Insert: {
+          approved_by: string
+          created_at?: string
+          reason: string
+          scan_id: string
+        }
+        Update: {
+          approved_by?: string
+          created_at?: string
+          reason?: string
+          scan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_security_approvals_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: true
+            referencedRelation: "security_scan_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -1872,6 +1901,45 @@ export type Database = {
         }
         Relationships: []
       }
+      operational_settings: {
+        Row: {
+          alert_email: string
+          alert_failures: boolean
+          alert_high: boolean
+          alert_regressions: boolean
+          block_catalog: boolean
+          email_enabled: boolean
+          id: boolean
+          retention_days: number
+          slack_channel: string
+          slack_enabled: boolean
+        }
+        Insert: {
+          alert_email?: string
+          alert_failures?: boolean
+          alert_high?: boolean
+          alert_regressions?: boolean
+          block_catalog?: boolean
+          email_enabled?: boolean
+          id?: boolean
+          retention_days?: number
+          slack_channel?: string
+          slack_enabled?: boolean
+        }
+        Update: {
+          alert_email?: string
+          alert_failures?: boolean
+          alert_high?: boolean
+          alert_regressions?: boolean
+          block_catalog?: boolean
+          email_enabled?: boolean
+          id?: boolean
+          retention_days?: number
+          slack_channel?: string
+          slack_enabled?: boolean
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -3220,6 +3288,7 @@ export type Database = {
           error: string | null
           findings: Json
           high_count: number
+          high_regression: boolean
           id: string
           low_count: number
           moderate_count: number
@@ -3238,6 +3307,7 @@ export type Database = {
           error?: string | null
           findings?: Json
           high_count?: number
+          high_regression?: boolean
           id?: string
           low_count?: number
           moderate_count?: number
@@ -3256,6 +3326,7 @@ export type Database = {
           error?: string | null
           findings?: Json
           high_count?: number
+          high_regression?: boolean
           id?: string
           low_count?: number
           moderate_count?: number
@@ -7866,7 +7937,12 @@ export type Database = {
         Returns: Json
       }
       apply_default_weight: { Args: { _default_kg?: number }; Returns: Json }
+      approve_catalog_security: {
+        Args: { _reason: string; _scan_id: string }
+        Returns: undefined
+      }
       audit_system_dump: { Args: never; Returns: Json }
+      catalog_security_status: { Args: never; Returns: Json }
       check_resend_email_cooldown: {
         Args: { _order_id: string }
         Returns: Json
@@ -7875,6 +7951,7 @@ export type Database = {
       cleanup_pdp_funnel_events: { Args: never; Returns: undefined }
       cleanup_seo_url_status: { Args: never; Returns: undefined }
       cleanup_stale_bundle_logs: { Args: never; Returns: Json }
+      cleanup_web_vitals_history: { Args: never; Returns: number }
       create_order_with_items: {
         Args: { _items: Json; _order: Json }
         Returns: Json
@@ -8032,6 +8109,7 @@ export type Database = {
           product_id: string
         }[]
       }
+      retry_image_processing_job: { Args: { _id: string }; Returns: undefined }
       revert_product_version: {
         Args: { _fields?: string[]; _version_id: string }
         Returns: Json

@@ -73,6 +73,7 @@ export function useImageJobs(limit = 12) {
       return (data ?? []) as unknown as ImageJob[];
     },
     staleTime: 15_000,
+    refetchInterval: 3000,
   });
 
   // Atualização em tempo real do status de processamento.
@@ -94,10 +95,7 @@ export function useImageJobs(limit = 12) {
 }
 
 export async function retryImageJob(id: string) {
-  const { error } = await supabase
-    .from('image_processing_jobs')
-    .update({ status: 'pending', attempts: 0, error: null })
-    .eq('id', id);
+  const { error } = await supabase.rpc('retry_image_processing_job', { _id: id });
   if (error) throw error;
   void supabase.functions.invoke('process-image-jobs').catch(() => {});
 }

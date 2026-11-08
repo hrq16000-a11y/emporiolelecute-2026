@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { OperationalSettingsPanel } from '@/components/admin/OperationalSettingsPanel';
+import ImageJobsPanel from '@/components/admin/ImageJobsPanel';
 import { ShieldAlert, RefreshCw, Loader2, ExternalLink, MailCheck, MailX } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,8 +51,7 @@ const AdminSecurityScan = () => {
             <ShieldAlert className="h-6 w-6 text-primary" /> Scan de vulnerabilidades
           </h1>
           <p className="text-sm text-muted-foreground">
-            Varredura diária das dependências na base pública OSV.dev, com alerta por e-mail em
-            achados críticos/altos ou regressão.
+            Varredura das dependências na base pública OSV.dev, com histórico de falhas e regressões.
           </p>
         </div>
         <Button onClick={handleRun} disabled={run.isPending} className="min-h-11">
@@ -62,6 +63,8 @@ const AdminSecurityScan = () => {
           Rodar agora
         </Button>
       </header>
+      <OperationalSettingsPanel />
+      <section className="space-y-3"><h2 className="font-display text-xl">Fila de imagens</h2><ImageJobsPanel limit={100} /></section>
 
       {isLoading && (
         <div className="space-y-3" aria-busy>

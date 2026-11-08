@@ -5,11 +5,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useImageJobs, retryImageJob, type ImageJobStatus } from '@/hooks/useImageJobs';
 import { formatBytes } from '@/lib/imagePipeline';
+import { useState } from 'react';
 
 const STATUS: Record<ImageJobStatus, { label: string; className: string }> = {
   pending: { label: 'Na fila', className: 'bg-muted text-muted-foreground' },
-  processing: { label: 'Processando', className: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
-  retry: { label: 'Retentando', className: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
+  processing: { label: 'Processando', className: 'bg-muted text-muted-foreground' },
+  retry: { label: 'Retentando', className: 'bg-muted text-muted-foreground' },
   done: { label: 'Concluído', className: 'bg-primary/10 text-primary' },
   error: { label: 'Falhou', className: 'bg-destructive/10 text-destructive' },
 };
@@ -18,7 +19,7 @@ const Icon = ({ status }: { status: ImageJobStatus }) => {
   if (status === 'done') return <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />;
   if (status === 'error') return <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />;
   if (status === 'pending') return <Clock className="h-4 w-4 text-muted-foreground" aria-hidden />;
-  return <Loader2 className="h-4 w-4 animate-spin text-amber-600" aria-hidden />;
+  return <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden />;
 };
 
 /**
@@ -26,7 +27,8 @@ const Icon = ({ status }: { status: ImageJobStatus }) => {
  * (variantes WebP responsivas + placeholder blur gerados em background).
  */
 export const ImageJobsPanel = ({ limit = 8 }: { limit?: number }) => {
-  const { data: jobs, isLoading } = useImageJobs(limit);
+  const { data: jobs, isLoading, error, refetch } = useImageJobs(limit);
+  const [retrying, setRetrying] = useState<string | null>(null);
   const { toast } = useToast();
 
   if (isLoading) {
@@ -38,7 +40,8 @@ export const ImageJobsPanel = ({ limit = 8 }: { limit?: number }) => {
     );
   }
 
-  if (!jobs?.length) return null;
+  if (error) return <p role="alert">Fila indisponível. <Button variant="outline" onClick={() => refetch()}>Tentar novamente</Button></p>;
+  if (!jobs?.length) return <p className="text-sm text-muted-foreground">Nenhuma imagem na fila.</p>;
 
   return (
     <div className="animate-fade-in space-y-2 rounded-lg border p-3">
@@ -62,16 +65,19 @@ export const ImageJobsPanel = ({ limit = 8 }: { limit?: number }) => {
                 {job.output_bytes ? ` · ${formatBytes(job.output_bytes)}` : ''}
               </span>
             )}
-            {job.status === 'error' && (
+            {(job.status === 'error' || job.status === 'retry') && (
               <>
                 <span className="w-full text-destructive">{job.error}</span>
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={retrying === job.id}
                   className="min-h-9"
                   onClick={async () => {
+                    setRetrying(job.id);
                     try {
                       await retryImageJob(job.id);
+                      await refetch();
                       toast({ title: 'Reprocessamento solicitado' });
                     } catch (e) {
                       toast({
@@ -79,7 +85,7 @@ export const ImageJobsPanel = ({ limit = 8 }: { limit?: number }) => {
                         title: 'Não foi possível reprocessar',
                         description: e instanceof Error ? e.message : 'Erro desconhecido',
                       });
-                    }
+                    } finally { setRetrying(null); }
                   }}
                 >
                   <RefreshCw className="mr-1 h-3 w-3" /> Reprocessar
