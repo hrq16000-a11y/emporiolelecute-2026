@@ -8,6 +8,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { isLocalEnv, mockIntegration } from '../_shared/localEnv.ts';
 import deps from './deps.json' with { type: 'json' };
+import { hasHighRegression } from '../_shared/security-regression.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -125,24 +126,28 @@ Deno.serve(async (req) => {
 
     const { data: last } = await admin
       .from('security_scan_runs')
-      .select('total_findings, critical_count, high_count')
+      .select('total_findings, critical_count, high_count, findings')
+      .eq('status', 'ok')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     const critical = count('critical');
     const high = count('high');
+    const highRegression = hasHighRegression(findings, last ? last.findings as Finding[] : null);
     const regression =
       !!last &&
-      (critical > (last.critical_count ?? 0) ||
+      (highRegression || critical > (last.critical_count ?? 0) ||
         high > (last.high_count ?? 0) ||
         findings.length > (last.total_findings ?? 0));
 
     let alert = { sent: false, reason: 'sem motivo para alertar' };
-    if (critical > 0 || high > 0 || regression) {
+    const { data: policy } = await admin.from('operational_settings').select('*').maybeSingle();
+    const wantsAlert = (policy?.alert_high !== false && (critical > 0 || high > 0)) || (policy?.alert_regressions !== false && regression);
+    if (wantsAlert && policy?.email_enabled) {
       const { data: cfg } = await admin
         .from('store_settings').select('value').eq('key', 'seo_config').maybeSingle();
-      const to =
+      const to = policy.alert_email ||
         (cfg?.value as { alert_email?: string; sitemap_notification_email?: string } | null)
           ?.alert_email ??
         (cfg?.value as { sitemap_notification_email?: string } | null)?.sitemap_notification_email ??
@@ -156,6 +161,8 @@ Deno.serve(async (req) => {
               `<td><a href="${f.url}">${f.id}</a></td><td>${f.summary}</td></tr>`,
           )
           .join('');
+        alert = { sent: false, reason: 'Domínio remetente não configurado; envio pendente' };
+        /* External email remains blocked until a verified sender is provisioned.
         alert = await sendAlert(
           `[Segurança] ${findings.length} vulnerabilidade(s) — ${critical} crítica(s), ${high} alta(s)`,
           `<h2>Scan de vulnerabilidades</h2>
@@ -164,11 +171,12 @@ Deno.serve(async (req) => {
              <tr><th>Severidade</th><th>Pacote</th><th>ID</th><th>Resumo</th></tr>${rows}
            </table>`,
           to,
-        );
+        ); */
       } else {
         alert = { sent: false, reason: 'e-mail de alerta não configurado' };
       }
     }
+    if (wantsAlert && policy?.slack_enabled) alert.reason += '; Slack não conectado';
 
     const { data: run, error } = await admin
       .from('security_scan_runs')
@@ -183,6 +191,7 @@ Deno.serve(async (req) => {
         moderate_count: count('moderate'),
         low_count: count('low'),
         regression,
+        high_regression: highRegression,
         alert_sent: alert.sent,
         alert_reason: alert.reason,
         findings,

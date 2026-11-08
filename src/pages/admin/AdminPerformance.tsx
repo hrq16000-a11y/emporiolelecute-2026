@@ -14,6 +14,9 @@ import {
   type WebVitalsPage,
 } from '@/hooks/useWebVitalsReports';
 import SeoWebVitalsPanel from '@/components/admin/SeoWebVitalsPanel';
+import { OperationalSettingsPanel } from '@/components/admin/OperationalSettingsPanel';
+import { downloadBlob } from '@/lib/download-blob';
+import { supabase } from '@/integrations/supabase/client';
 
 type MetricKey = 'score' | 'lcp' | 'cls' | 'tbt' | 'fcp';
 
@@ -35,7 +38,8 @@ const fmt = (key: MetricKey, v?: number | null) => {
 const delta = (key: MetricKey, before?: number | null, after?: number | null) => {
   if (before == null || after == null) return null;
   const diff = after - before;
-  const metric = METRICS.find((m) => m.key === key)!;
+  const metric = METRICS.find((m) => m.key === key);
+  if (!metric) return null;
   const better = metric.higherIsBetter ? diff > 0 : diff < 0;
   return { diff, better: Math.abs(diff) < 1e-6 ? null : better };
 };
@@ -51,6 +55,21 @@ const AdminPerformance = () => {
   const save = useSaveWebVitalsReport();
   const remove = useDeleteWebVitalsReport();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [exportData, setExportData] = useState<string | null>(null);
+  const [csvData, setCsvData] = useState<string | null>(null);
+  const [exporting,setExporting] = useState(false);
+  const prepareExport = async () => {
+    setExporting(true);
+    try {
+      const all: unknown[]=[];
+      for(let start=0;;start+=500){const {data,error}=await supabase.from('web_vitals_reports').select('*').order('created_at',{ascending:false}).order('id').range(start,start+499);if(error)throw error;all.push(...(data??[]));if((data?.length??0)<500)break;}
+      setExportData(JSON.stringify(all,null,2));
+      const cell=(v:unknown)=>`"${String(v??'').replace(/"/g,'""')}"`;
+      const rows=(all as typeof list).flatMap(r=>r.pages.map(p=>[r.id,r.label,r.created_at,p.name,p.score,p.lcp,p.cls,p.tbt,p.fcp].map(cell).join(',')));
+      setCsvData('\uFEFF'+['id,label,created_at,page,score,lcp,cls,tbt,fcp',...rows].join('\r\n'));
+      toast({title:'Exportação preparada',description:`${all.length} relatórios completos`});
+    }catch{toast({title:'Falha ao preparar exportação',variant:'destructive'});}finally{setExporting(false);}
+  };
 
   const [beforeId, setBeforeId] = useState<string>('');
   const [afterId, setAfterId] = useState<string>('');
@@ -96,6 +115,8 @@ const AdminPerformance = () => {
           Histórico de auditorias Lighthouse (antes × depois) e Core Web Vitals de usuários reais.
         </p>
       </header>
+      <OperationalSettingsPanel retentionOnly />
+      <div className="flex flex-wrap gap-3"><Button variant="outline" disabled={exporting} onClick={prepareExport}>Preparar exportação completa</Button>{exportData!==null&&<Button variant="outline" onClick={()=>downloadBlob(new Blob([exportData],{type:'application/json'}),'web-vitals.json')}>Baixar JSON</Button>}{csvData!==null&&<Button variant="outline" onClick={()=>downloadBlob(new Blob([csvData],{type:'text/csv;charset=utf-8'}),'web-vitals.csv')}>Baixar CSV</Button>}</div>
 
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

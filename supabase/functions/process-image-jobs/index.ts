@@ -107,10 +107,12 @@ Deno.serve(async (req) => {
     const results: Array<{ id: string; status: string; error?: string }> = [];
 
     for (const job of (jobs ?? []) as Job[]) {
-      await admin
+      const { data: claimed, error: claimError } = await admin
         .from('image_processing_jobs')
         .update({ status: 'processing', attempts: job.attempts + 1 })
-        .eq('id', job.id);
+        .eq('id', job.id).in('status', ['pending','retry']).eq('attempts',job.attempts).select('id').maybeSingle();
+      if (claimError) throw claimError;
+      if (!claimed) continue;
       try {
         await processJob(job);
         results.push({ id: job.id, status: 'done' });

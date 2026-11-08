@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { OperationalSettingsPanel } from '@/components/admin/OperationalSettingsPanel';
+import ImageJobsPanel from '@/components/admin/ImageJobsPanel';
 import { ShieldAlert, RefreshCw, Loader2, ExternalLink, MailCheck, MailX } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,6 +64,8 @@ const AdminSecurityScan = () => {
           Rodar agora
         </Button>
       </header>
+      <OperationalSettingsPanel />
+      <section className="space-y-3"><h2 className="font-display text-xl">Fila de imagens</h2><ImageJobsPanel limit={100} /></section>
 
       {isLoading && (
         <div className="space-y-3" aria-busy>
