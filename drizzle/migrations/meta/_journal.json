@@ -50,6 +50,13 @@
       "when": 1794167677740,
       "tag": "0006_operational_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794167831844,
+      "tag": "0007_precise_catalog_regression_gate",
+      "breakpoints": true
     }
   ]
 }
