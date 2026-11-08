@@ -43,6 +43,13 @@
       "when": 1794033302334,
       "tag": "0005_align_boost_preview_normalization",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794167677740,
+      "tag": "0006_operational_controls",
+      "breakpoints": true
     }
   ]
 }
