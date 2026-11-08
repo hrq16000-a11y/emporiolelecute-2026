@@ -1,5 +1,11 @@
 # Boutique editorial
 
+## Operational controls
+- [ ] Harden manual image retries and queue monitoring.
+- [ ] Add scan alert destination/rule settings and catalog approval gate.
+- [ ] Add full Web Vitals CSV/JSON exports and configurable retention.
+- [ ] Verify operational controls; Slack connection declined and email sender not configured.
+
 ## Global SEO
 - [x] Add unified metadata, robots editing and sitemap status/count/regeneration at /admin/seo-global.
 - [x] Verify saves and regeneration, distinguishing generated content from public files; authenticated readback and XML download verified, two count/validation tests pass.
