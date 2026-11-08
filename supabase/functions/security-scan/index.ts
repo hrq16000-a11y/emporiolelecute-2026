@@ -6,13 +6,11 @@
 // (Resend) em caso de achado crítico/alto ou regressão frente à última run.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { isLocalEnv, mockIntegration } from '../_shared/localEnv.ts';
 import deps from './deps.json' with { type: 'json' };
 import { hasHighRegression } from '../_shared/security-regression.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 

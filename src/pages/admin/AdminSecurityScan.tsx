@@ -51,8 +51,7 @@ const AdminSecurityScan = () => {
             <ShieldAlert className="h-6 w-6 text-primary" /> Scan de vulnerabilidades
           </h1>
           <p className="text-sm text-muted-foreground">
-            Varredura diária das dependências na base pública OSV.dev, com alerta por e-mail em
-            achados críticos/altos ou regressão.
+            Varredura das dependências na base pública OSV.dev, com histórico de falhas e regressões.
           </p>
         </div>
         <Button onClick={handleRun} disabled={run.isPending} className="min-h-11">
