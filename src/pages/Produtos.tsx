@@ -17,6 +17,7 @@ import DynamicSEO from "@/components/DynamicSEO";
 import BreadcrumbStructuredData from "@/components/BreadcrumbStructuredData";
 import CatalogFilters, { useCatalogFiltersFromUrl } from "@/components/CatalogFilters";
 import { applyCatalogFilters, sortByFeatured, priceBoundsFrom } from "@/lib/catalogFilter";
+import { normalizeSearchText } from "@/lib/searchText";
 import { useDbProducts, useDbCategories, useDbOccasions } from "@/hooks/useProducts";
 import { useTags } from "@/hooks/useTags";
 import { useSegments } from "@/hooks/useSegments";
@@ -326,16 +327,17 @@ const Produtos = () => {
 
   // Filter products — text search + structural badges + sidebar filters (price/prazo/personalizável/tags-multi)
   const filteredProducts = useMemo(() => {
-    const q = debouncedSearch.trim().toLowerCase();
-    const matchesText = (product: typeof products[number]) => !q ||
-      product.name.toLowerCase().includes(q) ||
-      product.description.toLowerCase().includes(q) ||
-      (product.longDescriptionRaw?.toLowerCase().includes(q) ?? false) ||
-      product.keywords.some(k => k.toLowerCase().includes(q)) ||
-      (product.categoryName?.toLowerCase().includes(q) ?? false) ||
-      product.occasionNames.some(n => n.toLowerCase().includes(q)) ||
-      product.tagNames.some(n => n.toLowerCase().includes(q)) ||
-      product.segmentNames.some(n => n.toLowerCase().includes(q));
+    const q = normalizeSearchText(debouncedSearch);
+    const matchesText = (product: typeof products[number]) => !q || [
+      product.name,
+      product.description,
+      product.longDescriptionRaw,
+      ...(product.keywords || []),
+      product.categoryName,
+      ...product.occasionNames,
+      ...product.tagNames,
+      ...product.segmentNames,
+    ].some((field) => normalizeSearchText(field ?? "").includes(q));
 
     const base = products.filter((product) => {
       const matchesCategory = !resolvedCategory || product.categoryId === resolvedCategory.id;
