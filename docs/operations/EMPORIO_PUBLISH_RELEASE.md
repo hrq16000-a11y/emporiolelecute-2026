@@ -13,8 +13,14 @@ Data: 2026-11-09 | Projeto Vercel: msolus/emporiolelecute | GitHub: hrq16000-a11
 - Em novas publicações, arquivos JS usam nomes hash; não forçar recarregar consumidores em checkout.
 
 ## Economia e segurança
-- Previews automáticos do projeto Empório desativados na Vercel a pedido; GitHub PRs + testes, Vercel somente para versão liberada em main. Isso não protege contra commits diretos no main vindos do Lovable; exigir disciplina de branches/revisão ou regra de release adicional.
+- Previews automáticos do projeto Empório desativados na Vercel. A configuração **Ignored Build Step** só permite build quando o assunto do último commit começa por `release:` ou `[publish]`; todos os demais commits (inclusive os do Lovable no `main`) são ignorados pela Vercel. Isto não impede os commits no GitHub, apenas evita builds prematuros. Publicar versão final exige commit de release explícito, CI e verificação prévia.
 - Retenção: Vercel > Settings > Security > Deployment Retention; preservar a produção atual, o último rollback e deployments com aliases/branches ativos; remover somente o que puder ser descartado.
 - Storage de deployment Hobby é acumulado por versões e projetos da equipe; não equivale ao peso de um site individual. A limpeza não necessariamente reduz imediatamente o valor do período medido em GB-mês.
 - Não executar exclusão em massa nem apagar projetos/staging. Sem API de exclusão de deployments no conector disponível, fazer limpeza controlada pelo painel ou Work autorizado.
 - Preparar uma release apenas após CI, inspeção do Preview quando disponível e verificação do domínio, SEO e fluxo de compra.
+
+## Release manual aprovada (sem builds de prévia)
+- Abrir PR e validar gates no GitHub; não executar agentes externos nem alterar DNS.
+- Mesclar a versão revisada na `main` somente após homologação.
+- Para liberar build de produção: criar commit em `main` com assunto começando em `release:` ou `[publish]`. É intencional que commits comuns do Lovable não publiquem.
+- Conferir Deployment READY do SHA de release, domínios/aliases, página /natal, busca, produto, carrinho e fluxo de orçamento; manter rollback anterior.

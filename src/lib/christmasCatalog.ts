@@ -1,8 +1,11 @@
-import type { DbProduct } from "@/hooks/useProducts";
-
-type ChristmasProduct = Pick<
-  DbProduct, "id" | "name" | "slug" | "is_active" | "images" | "occasions" | "category" | "tags"
->;
+type ChristmasProduct = {
+  id: string;
+  slug: string;
+  is_active: boolean;
+  category?: { slug?: string | null } | null;
+  occasions?: ReadonlyArray<{ slug?: string | null }>;
+  tags?: ReadonlyArray<{ slug?: string | null }>;
+};
 
 const containsChristmasSlug = (slug: string | null | undefined): boolean =>
   /(^|-)natal($|-)/.test((slug ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
