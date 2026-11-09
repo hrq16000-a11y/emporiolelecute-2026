@@ -117,7 +117,7 @@ export const DEFAULT_CONVERSION_CTA: ConversionCtaConfig = {
   },
   whatsappTemplate: {
     template:
-      "Oi, aqui é da LeleCute. Vi seu interesse em *{produto}*.{contexto}\n\nQuantidade pensada: {qtd} unidades.\n{personalizacao_linha}Link: {link}{imagem_linha}\n\nMe conta um pouco da ocasião para eu te orientar melhor.",
+      "Olá! Vi o produto *{produto}* no site e gostaria de solicitar um orçamento.{contexto}\n\nQuantidade desejada: {qtd} unidades.\n{personalizacao_linha}Link: {link}{imagem_linha}\n\nPoderia me informar as opções de personalização, o prazo de produção e o valor do frete?",
   },
   toast: {
     enabled: true,
