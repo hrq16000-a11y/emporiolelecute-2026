@@ -28,7 +28,7 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navLinks = menuItems
+  const baseNavLinks = menuItems
     ?.filter(item => item.is_visible)
     .map(item => ({
       href: item.url || '/',
@@ -42,6 +42,12 @@ const Header = () => {
       { href: "/orcamento", label: "Orçamento", isExternal: false },
       { href: "/contato", label: "Contato", isExternal: false },
     ];
+
+  // Campanha sazonal: destaque sempre disponível no menu, sem sobrescrever itens do admin.
+  const navLinks = [
+    { href: "/natal", label: "Natal ✨", isExternal: false },
+    ...baseNavLinks.filter((item) => item.href.split("?")[0] !== "/natal"),
+  ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, link: { href: string; isExternal: boolean }) => {
     if (link.isExternal) return;

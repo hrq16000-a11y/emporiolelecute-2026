@@ -35,6 +35,7 @@ const Sobre = lazy(() => import("./pages/Sobre"));
 const Contato = lazy(() => import("./pages/Contato"));
 const Depoimentos = lazy(() => import("./pages/Depoimentos"));
 const Ocasioes = lazy(() => import("./pages/Ocasioes"));
+const Natal = lazy(() => import("./pages/Natal"));
 const Orcamento = lazy(() => import("./pages/Orcamento"));
 const DynamicPage = lazy(() => import("./pages/DynamicPage"));
 const Loja = lazy(() => import("./pages/Loja"));
@@ -423,6 +424,11 @@ const App = () => {
                 <Route path="/ocasioes" element={
                   <Suspense fallback={<PageSkeleton />}>
                     <Ocasioes />
+                  </Suspense>
+                } />
+                <Route path="/natal" element={
+                  <Suspense fallback={<PageSkeleton />}>
+                    <Natal />
                   </Suspense>
                 } />
                 <Route path="/orcamento" element={

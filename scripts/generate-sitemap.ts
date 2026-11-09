@@ -89,6 +89,17 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Página editorial sazonal pública, adicionada sem modificar a fonte dinâmica dos produtos.
+  const natalUrl = "https://emporiolelecute.com.br/natal";
+  if (!xml.includes(`<loc>${natalUrl}</loc>`) && xml.includes("</urlset>")) {
+    xml = xml.replace("</urlset>", `  <url>
+    <loc>${natalUrl}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+</urlset>`);
+  }
+
   // Validação: deve conter o marcador de origem (anti-corrupção).
   if (!xml.includes(SOURCE_MARKER)) {
     console.warn(
