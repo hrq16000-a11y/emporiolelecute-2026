@@ -41,10 +41,7 @@ const SectionFallback = ({ name }: { name?: string }) => (
 
 const Index = () => {
   const { data: sections, isLoading } = useHomeSectionsPublic();
-  // Insere a campanha logo após o hero configurável; fallback: primeiro bloco.
-  const heroIndex = sections?.findIndex((section) => section.component_name === "HeroSlider") ?? -1;
-  const firstSectionIndex = sections?.findIndex((section) => Boolean(HOME_SECTIONS_REGISTRY[section.component_name])) ?? -1;
-  const christmasAfter = heroIndex >= 0 ? heroIndex : firstSectionIndex;
+  // O destaque de Natal aparece antes do hero, inclusive enquanto as seções carregam.
 
   return (
     // Layout vertical rígido: header + main flex-1 + footer fixo no fim.
@@ -57,10 +54,11 @@ const Index = () => {
       {/* flex-1 garante que o footer fique sempre no fim, sem subir antes do conteúdo carregar */}
       <main className="flex-1 min-h-[100vh]">
         <HomeRegistryProvider>
+          <NatalHomeSpotlight />
           {isLoading || !sections
             ? // Reserva visual enquanto sections carregam — evita o pop do footer.
               <div className="min-h-[100vh] animate-pulse bg-muted/20" aria-hidden />
-            : sections.map((section, index) => {
+            : sections.map((section) => {
                 const Component = HOME_SECTIONS_REGISTRY[section.component_name];
                 if (!Component) {
                   if (import.meta.env.DEV) {
@@ -75,11 +73,9 @@ const Index = () => {
                     <Suspense fallback={<SectionFallback name={section.component_name} />}>
                       <Component {...(section.editable_props || {})} />
                     </Suspense>
-                    {index === christmasAfter && <NatalHomeSpotlight />}
                   </Fragment>
                 );
               })}
-          {!isLoading && sections && christmasAfter < 0 && <NatalHomeSpotlight />}
         </HomeRegistryProvider>
       </main>
       <NatalWelcomeInvite />

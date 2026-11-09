@@ -46,6 +46,8 @@ export const useHomeSectionsPublic = () =>
       return (data || []) as unknown as HomeSection[];
     },
     staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: true,
   });
 
 /** Todas as seções (admin) */
