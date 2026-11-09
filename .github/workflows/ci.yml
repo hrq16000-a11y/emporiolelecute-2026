@@ -15,9 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
+      - name: Install Bun 1.3.14 from npm registry
+        run: |
+          npm install --global bun@1.3.14
+          test "$(bun --version)" = "1.3.14"
       - run: bun install --frozen-lockfile
       - name: Shop safety gates (offline and read-only)
         run: |
@@ -37,9 +38,10 @@ jobs:
         project: [desktop-chromium, tablet, mobile]
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
+      - name: Install Bun 1.3.14 from npm registry
+        run: |
+          npm install --global bun@1.3.14
+          test "$(bun --version)" = "1.3.14"
       - run: bun install --frozen-lockfile
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium webkit
