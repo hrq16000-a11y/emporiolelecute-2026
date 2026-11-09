@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import StaleBundleOverlay from "@/components/StaleBundleOverlay";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SocialProofToast from "@/components/SocialProofToast";
+import Chatbot from "@/components/Chatbot";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RouteTransition, { GlobalProgressBar } from "@/components/RouteTransition";
@@ -182,6 +183,7 @@ import CookieConsentBanner from "./components/CookieConsentBanner";
 import { useVisitorTracking } from "./hooks/useVisitorTracking";
 
 const VisitorTracker = () => { useVisitorTracking(); return null; };
+const SupportEntry = () => { const { pathname } = useLocation(); return pathname.startsWith('/admin') || pathname.startsWith('/suporte') ? null : <Chatbot />; };
 import { logSlugEvent } from "./lib/slugObservability";
 import { urls, PRODUCT_PATH_PREFIX, LEGACY_PRODUCT_PATH_PREFIX } from "./lib/urls";
 
@@ -385,6 +387,7 @@ const App = () => {
               <VisitorTracker />
               <CookieConsentBanner />
               <SocialProofToast />
+              <SupportEntry />
               <GlobalProgressBar />
 
               <RouteTransition>

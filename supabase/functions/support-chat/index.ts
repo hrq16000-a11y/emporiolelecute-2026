@@ -2,7 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { streamResponse, GatewayError, type ResponsesInputItem, type OpenAIAstraResponsesFields } from 'npm:@lovable.dev/ai-gateway@0.1.11';
 import { z } from 'npm:zod@3.25.76';
-import { wantsHuman } from './policy.ts';
+import { ownsOrder, wantsHuman } from './policy.ts';
 
 const schema = z.object({ threadId: z.string().uuid(), requestId: z.string().uuid(), text: z.string().trim().min(1).max(4000), action: z.enum(['send','handoff','reply','resolve']).default('send') });
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     const userMessage = { id: requestId, role: action === 'reply' ? 'assistant' : 'user', parts: [{ type: 'text', text: action === 'reply' ? `**Equipe LeleCute**\n\n${text}` : text }] };
     const { error: insertError } = await db.from('support_messages').insert({ thread_id: threadId, role: userMessage.role, author_id: auth.user.id, request_id: requestId, ui_message: userMessage });
     if (insertError) throw insertError;
-    if (action === 'reply') { await db.from('support_threads').update({ status: 'human', updated_at: new Date().toISOString() }).eq('id', threadId); await unlock(); return json({ saved: true }); }
+    if (action === 'reply') { const { error } = await db.from('support_threads').update({ status: 'human', updated_at: new Date().toISOString() }).eq('id', threadId); if (error) throw error; await unlock(); return json({ saved: true }); }
     const { data: history, error: historyError } = await db.from('support_messages').select('role,ui_message').eq('thread_id', threadId).order('created_at');
     if (historyError) throw historyError;
     const handoff = async (reason: string) => {
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     const encoder = new TextEncoder();
     const body = new ReadableStream({ async start(controller) {
       const emit = (event: unknown) => { controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`)); };
-      const parts: Array<Record<string, unknown>> = []; let answer = ''; let handed = false;
+      const parts: Array<Record<string, unknown>> = []; let answer = ''; let handed = false; let pendingTool: Record<string, unknown> | undefined; let finalized = false;
       try {
         for (let round=0; round<4; round++) {
           let completed = false; const calls: Array<{name:string; call_id:string; arguments:string}> = [];
@@ -69,8 +69,9 @@ Deno.serve(async (req) => {
             if (event.type === 'response.completed') completed = true;
           }
           if (!completed) throw new Error('incomplete_response');
-          if (!calls.length) break;
+          if (!calls.length) { finalized = true; break; }
           for (const call of calls) {
+            pendingTool = { type:'dynamic-tool', toolName:call.name, toolCallId:call.call_id, input:JSON.parse(call.arguments) };
             let output: unknown;
             if (call.name === 'search_help') {
               const [faqs,pages] = await Promise.all([db.from('faqs').select('question,answer').eq('is_visible',true),db.from('pages').select('title,slug,content').eq('status','published')]);
@@ -79,8 +80,8 @@ Deno.serve(async (req) => {
             } else if (call.name === 'get_orders') {
               if (!auth.user.email_confirmed_at || !auth.user.email) output = { error:'É necessário confirmar o e-mail da conta para consultar pedidos.' };
               else {
-                const orders = await db.from('orders').select('order_code,status,payment_status,tracking_code,tracking_carrier,shipping_days,created_at').eq('customer_email',auth.user.email).order('created_at',{ascending:false}).limit(20);
-                if (orders.error) throw orders.error; output = { orders:orders.data };
+                const orders = await db.from('orders').select('customer_email,order_code,status,payment_status,tracking_code,tracking_carrier,shipping_days,created_at').eq('customer_email',auth.user.email).order('created_at',{ascending:false}).limit(20);
+                if (orders.error) throw orders.error; output = { orders:orders.data?.filter(o=>ownsOrder(auth.user.email,o.customer_email)).map(({customer_email,...safe})=>safe) };
               }
             } else if (call.name === 'handoff') {
               const args = z.object({reason:z.string().min(1)}).parse(JSON.parse(call.arguments));
@@ -89,9 +90,10 @@ Deno.serve(async (req) => {
             input.push({ type:'function_call', ...call }, { type:'function_call_output', call_id:call.call_id, output:JSON.stringify(output) });
             const part = { type:'dynamic-tool', toolName:call.name, toolCallId:call.call_id, state:'output-available', input:JSON.parse(call.arguments), output };
             parts.push(part); emit({ type:'tool', part });
+            pendingTool = undefined;
           }
         }
-        if (!answer.trim()) { await handoff('Não foi possível concluir uma resposta confiável.'); handed=true; answer='Encaminhei sua conversa para a equipe LeleCute.'; emit({type:'delta',text:answer}); }
+        if (!finalized || !answer.trim()) { await handoff('Não foi possível concluir uma resposta confiável.'); handed=true; answer+='\n\nEncaminhei sua conversa para a equipe LeleCute.'; emit({type:'delta',text:'\n\nEncaminhei sua conversa para a equipe LeleCute.'}); }
         parts.push({type:'text',text:answer});
         const message = { id:crypto.randomUUID(), role:'assistant', parts };
         const { error } = await db.from('support_messages').insert({thread_id:threadId,role:'assistant',ui_message:message});
@@ -100,6 +102,7 @@ Deno.serve(async (req) => {
         if (updateError) throw updateError;
         emit({type:'done',message,handoff:handed});
       } catch (error) {
+        if (pendingTool) emit({type:'tool',part:{...pendingTool,state:'output-error',errorText:'Não foi possível confirmar as informações.'}});
         try { await handoff('Falha ao consultar informações ou concluir a resposta automática.'); } catch { /* Client keeps the explicit failure. */ }
         console.error('support_failure', error instanceof GatewayError ? {code:error.code,ids:error.ids} : 'application_failure');
         emit({type:'error',error:'Não consegui confirmar a resposta. A conversa foi encaminhada para a equipe; confira a fila ou fale pelo WhatsApp.'});
