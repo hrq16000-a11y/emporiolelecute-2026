@@ -24,6 +24,8 @@ const ListaCompartilhada = lazy(() => import("./pages/ListaCompartilhada"));
 
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const Carrinho = lazy(() => import("./pages/Carrinho"));
+const Suporte = lazy(() => import("./pages/Suporte"));
+const AdminSupport = lazy(() => import("./pages/admin/AdminSupport"));
 const Envio = lazy(() => import("./pages/Envio"));
 const RastrearPedido = lazy(() => import("./pages/RastrearPedido"));
 const PreferenciasNotificacao = lazy(() => import("./pages/PreferenciasNotificacao"));
@@ -388,6 +390,8 @@ const App = () => {
               <RouteTransition>
               <Routes>
                 {/* Public Routes */}
+                <Route path="/suporte" element={<Suspense fallback={<PageSkeleton />}><Suporte /></Suspense>} />
+                <Route path="/suporte/:threadId" element={<Suspense fallback={<PageSkeleton />}><Suporte /></Suspense>} />
                 <Route path="/" element={
                   <Suspense fallback={<PageSkeleton />}>
                     <Index />
@@ -586,6 +590,8 @@ const App = () => {
                       <AdminDashboard />
                     </Suspense>
                   } />
+                  <Route path="suporte" element={<Suspense fallback={<AdminSkeleton />}><AdminSupport /></Suspense>} />
+                  <Route path="suporte/:threadId" element={<Suspense fallback={<AdminSkeleton />}><AdminSupport /></Suspense>} />
                   <Route path="pedidos" element={
                     <Suspense fallback={<AdminSkeleton />}>
                       <AdminOrders />
