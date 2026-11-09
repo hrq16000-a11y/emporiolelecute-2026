@@ -94,6 +94,16 @@ describe("storefront search regressions", () => {
     expect(screen.getByTestId("location").textContent).toBe("/produto/soap-heart");
   });
 
+  it.each(["coracao", "coração"])("renders server-ranked results for the query %s", async (term) => {
+    mount(<Buscar />, `/buscar?q=${encodeURIComponent(term)}`);
+    expect(await screen.findByTestId("product-card")).toHaveTextContent("Sabonete Coração");
+    await waitFor(() => expect(fixtures.rpc).toHaveBeenCalledWith(
+      "search_products",
+      expect.objectContaining({ _q: term, _offset: 0 }),
+    ));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("shows a recoverable RPC error rather than a false empty result", async () => {
     fixtures.rpc
       .mockResolvedValueOnce({ data: null, error: { message: "Service unavailable", code: "XX001" } })

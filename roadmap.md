@@ -1,9 +1,13 @@
 # Boutique editorial
 
+## Operational and support production review
+- [x] Recheck deployed permissions and sticky catalog blocking; authenticated message forgery/lease attempts and anonymous chat/scan access denied; shared CSV formulas neutralized, 22 regression tests passed.
+- [x] Verify support on desktop/mobile: unknown answer and explicit handoff persisted, admin reply saved, resolved composer disabled, mobile send clears privacy banner; browser runtime errors absent and targeted lint/build clean.
+
 ## Address and customer support
 - [x] Test new and cached CEP without clicks; clear obsolete city/state on CEP changes and preserve manual corrections without canceling other fields.
 - [x] Add authenticated support threads saved to the customer account, grounded in published help and own orders, with human inbox.
-- [x] Verify separate threads, reload, order lookup, uncertainty handoff, human reply and mobile layout; new-file lint and build pass. Global lint retains pre-existing errors.
+- [x] Verify separate threads, reload, order lookup, uncertainty handoff, human reply and mobile layout; build passed; targeted lint status was not recorded. Global lint retains pre-existing errors.
 
 ## Production readiness and first campaign
 - [x] Review operational permissions, sticky catalog regression gate, leased retries and exports; authenticated scan/save/download and leased image retry verified, anonymous calls denied, rollback-only gate test passed. Clean local restore remains unverified.

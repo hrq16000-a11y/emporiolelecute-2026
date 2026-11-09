@@ -4,3 +4,6 @@ it('hands off an explicit request for a person',()=>expect(wantsHuman('Quero fal
 it('does not treat a help question as a human request',()=>expect(wantsHuman('Como funciona a entrega?')).toBe(false));
 it('does not disclose another customer order',()=>expect(ownsOrder('customer@example.com','other@example.com')).toBe(false));
 it('requires a verified account identity',()=>expect(ownsOrder(undefined,'customer@example.com')).toBe(false));
+
+it('hands off an accented complaint',()=>expect(wantsHuman('Tenho uma reclamação')).toBe(true));
+it('hands off cancellation questions',()=>expect(wantsHuman('Preciso de um cancelamento')).toBe(true));

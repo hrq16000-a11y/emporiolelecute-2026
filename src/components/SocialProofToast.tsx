@@ -150,6 +150,7 @@ export default function SocialProofToast() {
 
   const path = location.pathname;
   const blocked = (() => {
+    if (path === '/suporte' || path.startsWith('/suporte/')) return true;
     if (!settings) return true;
     if (!settings.is_enabled) return true;
     if (isMobile && !settings.show_on_mobile) return true;

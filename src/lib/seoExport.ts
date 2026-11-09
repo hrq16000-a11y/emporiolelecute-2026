@@ -6,14 +6,15 @@
 const escapeCsv = (value: unknown): string => {
   if (value === null || value === undefined) return '';
   const raw = typeof value === 'object' ? JSON.stringify(value) : String(value);
-  return /[",\n;]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+  const safe = typeof value === 'string' && /^[\s]*[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+  return /[",\r\n;]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 };
 
 export const toCsv = (rows: Array<Record<string, unknown>>): string => {
   if (!rows.length) return '';
   const headers = [...new Set(rows.flatMap((r) => Object.keys(r)))];
   return [
-    headers.join(','),
+    headers.map(escapeCsv).join(','),
     ...rows.map((r) => headers.map((h) => escapeCsv(r[h])).join(',')),
   ].join('\n');
 };
