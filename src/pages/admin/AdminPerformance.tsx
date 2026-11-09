@@ -17,6 +17,8 @@ import SeoWebVitalsPanel from '@/components/admin/SeoWebVitalsPanel';
 import { OperationalSettingsPanel } from '@/components/admin/OperationalSettingsPanel';
 import { downloadBlob } from '@/lib/download-blob';
 import { supabase } from '@/integrations/supabase/client';
+import { exportWebVitalsCsv } from '@/lib/web-vitals-export';
+import type { WebVitalsReport } from '@/hooks/useWebVitalsReports';
 
 type MetricKey = 'score' | 'lcp' | 'cls' | 'tbt' | 'fcp';
 
@@ -60,13 +62,13 @@ const AdminPerformance = () => {
   const [exporting,setExporting] = useState(false);
   const prepareExport = async () => {
     setExporting(true);
+    setExportData(null);
+    setCsvData(null);
     try {
       const all: unknown[]=[];
       for(let start=0;;start+=500){const {data,error}=await supabase.from('web_vitals_reports').select('*').order('created_at',{ascending:false}).order('id').range(start,start+499);if(error)throw error;all.push(...(data??[]));if((data?.length??0)<500)break;}
       setExportData(JSON.stringify(all,null,2));
-      const cell=(v:unknown)=>`"${String(v??'').replace(/"/g,'""')}"`;
-      const rows=(all as typeof list).flatMap(r=>r.pages.map(p=>[r.id,r.label,r.created_at,p.name,p.score,p.lcp,p.cls,p.tbt,p.fcp].map(cell).join(',')));
-      setCsvData('\uFEFF'+['id,label,created_at,page,score,lcp,cls,tbt,fcp',...rows].join('\r\n'));
+      setCsvData(exportWebVitalsCsv(all as WebVitalsReport[]));
       toast({title:'Exportação preparada',description:`${all.length} relatórios completos`});
     }catch{toast({title:'Falha ao preparar exportação',variant:'destructive'});}finally{setExporting(false);}
   };

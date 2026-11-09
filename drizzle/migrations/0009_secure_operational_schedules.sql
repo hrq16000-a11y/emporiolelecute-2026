@@ -1,0 +1,1 @@
+DO $$ BEGIN PERFORM cron.alter_job(job_id:=jobid, command:=replace(command, 'headers:=''{"Content-Type":"application/json"}''::jsonb', 'headers:=public.operational_worker_headers()')) FROM cron.job WHERE jobname IN ('security-scan-daily','process-image-jobs-worker'); END; $$;

@@ -57,6 +57,27 @@
       "when": 1794167831844,
       "tag": "0007_precise_catalog_regression_gate",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794191434769,
+      "tag": "0008_operational_production_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794191449424,
+      "tag": "0009_secure_operational_schedules",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794191600197,
+      "tag": "0010_verify_sticky_catalog_gate",
+      "breakpoints": true
     }
   ]
 }

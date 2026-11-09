@@ -1135,11 +1135,13 @@ export type Database = {
         Row: {
           attempts: number
           bucket: string
+          claim_token: string | null
           created_at: string
           created_by: string | null
           error: string | null
           height: number | null
           id: string
+          lease_expires_at: string | null
           output_bytes: number | null
           placeholder: string | null
           processed_at: string | null
@@ -1154,11 +1156,13 @@ export type Database = {
         Insert: {
           attempts?: number
           bucket?: string
+          claim_token?: string | null
           created_at?: string
           created_by?: string | null
           error?: string | null
           height?: number | null
           id?: string
+          lease_expires_at?: string | null
           output_bytes?: number | null
           placeholder?: string | null
           processed_at?: string | null
@@ -1173,11 +1177,13 @@ export type Database = {
         Update: {
           attempts?: number
           bucket?: string
+          claim_token?: string | null
           created_at?: string
           created_by?: string | null
           error?: string | null
           height?: number | null
           id?: string
+          lease_expires_at?: string | null
           output_bytes?: number | null
           placeholder?: string | null
           processed_at?: string | null
@@ -1937,6 +1943,21 @@ export type Database = {
           retention_days?: number
           slack_channel?: string
           slack_enabled?: boolean
+        }
+        Relationships: []
+      }
+      operational_worker_credentials: {
+        Row: {
+          id: boolean
+          token: string
+        }
+        Insert: {
+          id?: boolean
+          token?: string
+        }
+        Update: {
+          id?: boolean
+          token?: string
         }
         Relationships: []
       }
@@ -7947,6 +7968,36 @@ export type Database = {
         Args: { _order_id: string }
         Returns: Json
       }
+      claim_image_processing_jobs: {
+        Args: { _limit?: number }
+        Returns: {
+          attempts: number
+          bucket: string
+          claim_token: string | null
+          created_at: string
+          created_by: string | null
+          error: string | null
+          height: number | null
+          id: string
+          lease_expires_at: string | null
+          output_bytes: number | null
+          placeholder: string | null
+          processed_at: string | null
+          public_url: string | null
+          source_bytes: number | null
+          status: string
+          storage_path: string
+          updated_at: string
+          variants: Json
+          width: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "image_processing_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       cleanup_pdp_badge_events: { Args: never; Returns: undefined }
       cleanup_pdp_funnel_events: { Args: never; Returns: undefined }
       cleanup_seo_url_status: { Args: never; Returns: undefined }
@@ -8083,6 +8134,7 @@ export type Database = {
       normalize_phone_digits: { Args: { _v: string }; Returns: string }
       normalize_search: { Args: { _s: string }; Returns: string }
       normalize_slug: { Args: { _s: string }; Returns: string }
+      operational_worker_headers: { Args: never; Returns: Json }
       pdp_badge_stats: { Args: { _from?: string; _to?: string }; Returns: Json }
       pdp_funnel_stats: {
         Args: { _from?: string; _to?: string }
@@ -8157,6 +8209,7 @@ export type Database = {
       }
       track_pdp_funnel_batch: { Args: { _events: Json }; Returns: undefined }
       unaccent: { Args: { "": string }; Returns: string }
+      unresolved_catalog_security_scan: { Args: never; Returns: string }
       update_user_profile: {
         Args: { _full_name: string; _user_id: string }
         Returns: Json

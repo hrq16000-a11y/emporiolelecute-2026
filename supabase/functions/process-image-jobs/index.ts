@@ -8,6 +8,7 @@
 // dependências binárias no runtime do Deno.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -47,6 +48,7 @@ interface Job {
   bucket: string;
   storage_path: string;
   attempts: number;
+  claim_token: string;
 }
 
 async function processJob(job: Job) {
@@ -77,7 +79,7 @@ async function processJob(job: Job) {
   const ph = await fetchTransformed(bucket, path, PLACEHOLDER_WIDTH, 40);
   const placeholder = `data:${ph.type};base64,${toBase64(ph.bytes)}`;
 
-  await admin
+  const { data: completed, error: completionError } = await admin
     .from('image_processing_jobs')
     .update({
       status: 'done',
@@ -87,42 +89,36 @@ async function processJob(job: Job) {
       placeholder,
       variants,
       processed_at: new Date().toISOString(),
+      lease_expires_at: null,
     })
-    .eq('id', job.id);
+    .eq('id', job.id).eq('claim_token', job.claim_token).eq('status', 'processing').select('id').maybeSingle();
+  if (completionError) throw completionError;
+  if (!completed) throw new Error('Image job claim expired');
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const authorization = await authorizeOperationalRequest(req, true);
+  if (authorization instanceof Response) return authorization;
 
   try {
-    const { data: jobs, error } = await admin
-      .from('image_processing_jobs')
-      .select('id, bucket, storage_path, attempts')
-      .in('status', ['pending', 'retry'])
-      .lt('attempts', MAX_ATTEMPTS)
-      .order('created_at', { ascending: true })
-      .limit(BATCH_SIZE);
+    const { data: jobs, error } = await admin.rpc('claim_image_processing_jobs', { _limit: BATCH_SIZE });
     if (error) throw error;
 
     const results: Array<{ id: string; status: string; error?: string }> = [];
 
     for (const job of (jobs ?? []) as Job[]) {
-      const { data: claimed, error: claimError } = await admin
-        .from('image_processing_jobs')
-        .update({ status: 'processing', attempts: job.attempts + 1 })
-        .eq('id', job.id).in('status', ['pending','retry']).eq('attempts',job.attempts).select('id').maybeSingle();
-      if (claimError) throw claimError;
-      if (!claimed) continue;
       try {
         await processJob(job);
         results.push({ id: job.id, status: 'done' });
       } catch (e) {
         const message = e instanceof Error ? e.message : 'erro desconhecido';
-        const exhausted = job.attempts + 1 >= MAX_ATTEMPTS;
-        await admin
+        const exhausted = job.attempts >= MAX_ATTEMPTS;
+        const { error: failureError } = await admin
           .from('image_processing_jobs')
-          .update({ status: exhausted ? 'error' : 'retry', error: message })
-          .eq('id', job.id);
+          .update({ status: exhausted ? 'error' : 'retry', error: message, lease_expires_at: null })
+          .eq('id', job.id).eq('claim_token', job.claim_token).eq('status', 'processing');
+        if (failureError) throw failureError;
         results.push({ id: job.id, status: exhausted ? 'error' : 'retry', error: message });
       }
     }

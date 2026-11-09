@@ -8,6 +8,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import deps from './deps.json' with { type: 'json' };
 import { hasHighRegression } from '../_shared/security-regression.ts';
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -31,7 +32,7 @@ const cleanVersion = (raw: string) => raw.replace(/^[\^~>=<\s]*/, '').split(' ')
 const severityOf = (vuln: Record<string, unknown>): Severity => {
   const sev = (vuln.severity as Array<{ type?: string; score?: string }> | undefined) ?? [];
   const cvss = sev.find((s) => (s.type ?? '').startsWith('CVSS'))?.score ?? '';
-  const match = /\/AV:/.test(cvss) ? null : Number(cvss);
+  const match = !cvss || /\/AV:/.test(cvss) ? null : Number(cvss);
   if (match !== null && Number.isFinite(match)) {
     if (match >= 9) return 'critical';
     if (match >= 7) return 'high';
@@ -62,7 +63,8 @@ async function queryOsv(packages: Array<[string, string]>): Promise<Finding[]> {
 
   const ids = new Set<string>();
   const byId = new Map<string, { name: string; version: string }>();
-  (body.results ?? []).forEach((result, i) => {
+  if (!body.results || body.results.length !== packages.length) throw new Error('Incomplete OSV batch response');
+  body.results.forEach((result, i) => {
     for (const v of result.vulns ?? []) {
       ids.add(v.id);
       if (!byId.has(v.id)) byId.set(v.id, { name: packages[i][0], version: packages[i][1] });
@@ -71,11 +73,12 @@ async function queryOsv(packages: Array<[string, string]>): Promise<Finding[]> {
 
   // Detalha cada vulnerabilidade para obter severidade e resumo.
   const findings: Finding[] = [];
-  for (const id of [...ids].slice(0, 60)) {
-    try {
+  for (const id of ids) {
       const detail = await fetch(`https://api.osv.dev/v1/vulns/${id}`);
-      const vuln = detail.ok ? await detail.json() : {};
-      const pkg = byId.get(id)!;
+      if (!detail.ok) throw new Error(`Incomplete OSV detail (${detail.status})`);
+      const vuln = await detail.json();
+      const pkg = byId.get(id);
+      if (!pkg || vuln.id !== id) throw new Error('Invalid OSV detail response');
       findings.push({
         package: pkg.name,
         version: pkg.version,
@@ -84,9 +87,6 @@ async function queryOsv(packages: Array<[string, string]>): Promise<Finding[]> {
         severity: severityOf(vuln),
         url: `https://osv.dev/vulnerability/${id}`,
       });
-    } catch {
-      /* detalhe é best-effort */
-    }
   }
   return findings;
 }
@@ -94,8 +94,8 @@ async function queryOsv(packages: Array<[string, string]>): Promise<Finding[]> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  const body = await req.json().catch(() => ({}));
-  const trigger = body.trigger === 'manual' ? 'manual' : 'cron';
+  const trigger = await authorizeOperationalRequest(req);
+  if (trigger instanceof Response) return trigger;
   const packages = Object.entries(deps as Record<string, string>)
     .map(([name, range]) => [name, cleanVersion(range)] as [string, string])
     .filter(([, v]) => /^\d/.test(v));
@@ -104,13 +104,14 @@ Deno.serve(async (req) => {
     const findings = await queryOsv(packages);
     const count = (s: Severity) => findings.filter((f) => f.severity === s).length;
 
-    const { data: last } = await admin
+    const { data: last, error: baselineError } = await admin
       .from('security_scan_runs')
       .select('total_findings, critical_count, high_count, findings')
       .eq('status', 'ok')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (baselineError) throw baselineError;
 
     const critical = count('critical');
     const high = count('high');
