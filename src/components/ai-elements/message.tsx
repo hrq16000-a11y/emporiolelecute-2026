@@ -331,6 +331,7 @@ export const MessageResponse = memo(
         className
       )}
       plugins={streamdownPlugins}
+      rehypePlugins={[]}
       {...props}
     />
   ),
