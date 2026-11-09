@@ -1,0 +1,13 @@
+CREATE TABLE public.support_threads (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, title text NOT NULL DEFAULT 'Nova conversa', status text NOT NULL DEFAULT 'open' CHECK(status IN ('open','human','resolved')), handoff_reason text, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), processing_until timestamptz);
+GRANT SELECT,INSERT,DELETE ON public.support_threads TO authenticated; GRANT ALL ON public.support_threads TO service_role;
+ALTER TABLE public.support_threads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY support_threads_read ON public.support_threads FOR SELECT TO authenticated USING(user_id=auth.uid() OR public.has_role(auth.uid(),'admin'));
+CREATE POLICY support_threads_create ON public.support_threads FOR INSERT TO authenticated WITH CHECK(user_id=auth.uid() AND status='open' AND handoff_reason IS NULL AND processing_until IS NULL);
+CREATE POLICY support_threads_delete ON public.support_threads FOR DELETE TO authenticated USING(user_id=auth.uid());
+CREATE TABLE public.support_messages (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), thread_id uuid NOT NULL REFERENCES public.support_threads(id) ON DELETE CASCADE, role text NOT NULL CHECK(role IN ('user','assistant')), author_id uuid, ui_message jsonb NOT NULL, request_id uuid UNIQUE, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.support_messages TO authenticated; GRANT ALL ON public.support_messages TO service_role;
+ALTER TABLE public.support_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY support_messages_read ON public.support_messages FOR SELECT TO authenticated USING(EXISTS(SELECT 1 FROM public.support_threads t WHERE t.id=thread_id AND (t.user_id=auth.uid() OR public.has_role(auth.uid(),'admin'))));
+CREATE INDEX support_threads_owner ON public.support_threads(user_id,updated_at DESC); CREATE INDEX support_messages_thread ON public.support_messages(thread_id,created_at);
+CREATE OR REPLACE FUNCTION public.claim_support_thread(_thread_id uuid) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN UPDATE public.support_threads SET processing_until=now()+interval '3 minutes' WHERE id=_thread_id AND (processing_until IS NULL OR processing_until<now()); RETURN FOUND; END; $$;
+REVOKE ALL ON FUNCTION public.claim_support_thread(uuid) FROM PUBLIC,anon,authenticated; GRANT EXECUTE ON FUNCTION public.claim_support_thread(uuid) TO service_role;
