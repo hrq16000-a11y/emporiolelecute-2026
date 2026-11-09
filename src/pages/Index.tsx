@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -9,6 +9,7 @@ import LocalBusinessStructuredData from "@/components/LocalBusinessStructuredDat
 import { useHomeSectionsPublic } from "@/hooks/useHomeSections";
 import { HOME_SECTIONS_REGISTRY } from "@/lib/homeSectionsRegistry";
 import { HomeRegistryProvider } from "@/contexts/HomeRegistry";
+import { NatalHomeSpotlight, NatalWelcomeInvite } from "@/components/NatalHomeCampaign";
 
 /**
  * Altura realista de cada seção, usada no skeleton para reservar espaço
@@ -40,6 +41,10 @@ const SectionFallback = ({ name }: { name?: string }) => (
 
 const Index = () => {
   const { data: sections, isLoading } = useHomeSectionsPublic();
+  // Insere a campanha logo após o hero configurável; fallback: primeiro bloco.
+  const heroIndex = sections?.findIndex((section) => section.component_name === "HeroSlider") ?? -1;
+  const firstSectionIndex = sections?.findIndex((section) => Boolean(HOME_SECTIONS_REGISTRY[section.component_name])) ?? -1;
+  const christmasAfter = heroIndex >= 0 ? heroIndex : firstSectionIndex;
 
   return (
     // Layout vertical rígido: header + main flex-1 + footer fixo no fim.
@@ -55,7 +60,7 @@ const Index = () => {
           {isLoading || !sections
             ? // Reserva visual enquanto sections carregam — evita o pop do footer.
               <div className="min-h-[100vh] animate-pulse bg-muted/20" aria-hidden />
-            : sections.map((section) => {
+            : sections.map((section, index) => {
                 const Component = HOME_SECTIONS_REGISTRY[section.component_name];
                 if (!Component) {
                   if (import.meta.env.DEV) {
@@ -66,16 +71,18 @@ const Index = () => {
                   return null;
                 }
                 return (
-                  <Suspense
-                    key={section.id}
-                    fallback={<SectionFallback name={section.component_name} />}
-                  >
-                    <Component {...(section.editable_props || {})} />
-                  </Suspense>
+                  <Fragment key={section.id}>
+                    <Suspense fallback={<SectionFallback name={section.component_name} />}>
+                      <Component {...(section.editable_props || {})} />
+                    </Suspense>
+                    {index === christmasAfter && <NatalHomeSpotlight />}
+                  </Fragment>
                 );
               })}
+          {!isLoading && sections && christmasAfter < 0 && <NatalHomeSpotlight />}
         </HomeRegistryProvider>
       </main>
+      <NatalWelcomeInvite />
       <Footer />
       <WhatsAppButton />
     </div>
