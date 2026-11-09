@@ -1,0 +1,9 @@
+import { test, expect } from '@playwright/test';
+test.beforeEach(async ({page})=>{
+ await page.goto('/'); await page.waitForLoadState('domcontentloaded');
+ await page.evaluate(()=>{localStorage.setItem('emporio-cart-storage',JSON.stringify({version:1,state:{items:[{id:'address-test',slug:'test',name:'Teste de endereço',price:5,quantity:1,minQuantity:1,image:''}]}}));localStorage.setItem('lc_address_v1',JSON.stringify({cep:'01001000',city:'',state:'',savedAt:Date.now()}));});
+ await page.route('**/viacep.com.br/ws/**',async route=>{const cep=route.request().url().match(/ws\/(\d+)/)?.[1];await route.fulfill({json:cep==='01001000'?{localidade:'São Paulo',uf:'SP'}:{localidade:'Curitiba',uf:'PR'}});});
+});
+test('fills missing fields for a saved CEP without clicking',async({page})=>{await page.goto('/carrinho');await expect(page.locator('#city')).toHaveValue('São Paulo');await expect(page.locator('#state')).toHaveValue('SP');});
+test('replaces saved city and state automatically for a new CEP',async({page})=>{await page.goto('/carrinho');await expect(page.locator('#city')).toHaveValue('São Paulo');await page.locator('#cep').fill('80010000');await expect(page.locator('#city')).toHaveValue('Curitiba');await expect(page.locator('#state')).toHaveValue('PR');});
+test('editing one field does not cancel autofill of the other',async({page})=>{await page.goto('/carrinho');await expect(page.locator('#city')).toHaveValue('São Paulo');await page.route('**/viacep.com.br/ws/80010000/**',async route=>{await new Promise(resolve=>setTimeout(resolve,500));await route.fulfill({json:{localidade:'Curitiba',uf:'PR'}});});await page.locator('#cep').fill('80010000');await page.locator('#city').fill('Minha correção');await expect(page.locator('#state')).toHaveValue('PR');await expect(page.locator('#city')).toHaveValue('Minha correção');});
