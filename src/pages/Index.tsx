@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import Chatbot from "@/components/Chatbot";
 import DynamicSEO from "@/components/DynamicSEO";
 import OrganizationStructuredData from "@/components/OrganizationStructuredData";
 import WebSiteStructuredData from "@/components/WebSiteStructuredData";
@@ -79,7 +78,6 @@ const Index = () => {
       </main>
       <Footer />
       <WhatsAppButton />
-      <Chatbot />
     </div>
   );
 };

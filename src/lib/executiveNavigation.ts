@@ -146,6 +146,7 @@ export const EXECUTIVE_NAV: NavGroup[] = [
       { label: "Páginas", path: "/admin/paginas", icon: "Home" },
       { label: "Menus", path: "/admin/menus", icon: "Menu" },
       { label: "FAQs", path: "/admin/faqs", icon: "HelpCircle" },
+      { label: "Atendimentos", path: "/admin/suporte", icon: "MessageSquare" },
       { label: "Categorias", path: "/admin/categorias", icon: "Tags" },
       { label: "Ocasiões", path: "/admin/ocasioes", icon: "Calendar" },
       { label: "Tags", path: "/admin/tags", icon: "Tags" },

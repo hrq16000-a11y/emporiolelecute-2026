@@ -442,7 +442,7 @@ const Carrinho = () => {
 
   const handleCepChange = (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '').slice(0, 8);
-    setAddress(prev => ({ ...prev, cep: cleanCep }));
+    setAddress(prev => prev.cep.replace(/\D/g, '') === cleanCep ? { ...prev, cep: cleanCep } : { cep: cleanCep, city: '', state: '' });
   };
 
   useEffect(() => {
@@ -456,7 +456,7 @@ const Carrinho = () => {
     setLoadingCep(true);
     void lookupPostalAddress(cep).then(result => {
       if (!active || requestId !== cepRequestRef.current) return;
-      setAddress(prev => prev.cep.replace(/\D/g, '') === cep ? { ...prev, city: result.city, state: result.state } : prev);
+      setAddress(prev => prev.cep.replace(/\D/g, '') === cep ? { ...prev, city: prev.city || result.city, state: prev.state || result.state } : prev);
       setInvalidFields(prev => new Set([...prev].filter(field => field !== 'city' && field !== 'state')));
       setAddressNotice('');
     }).catch(() => {
@@ -1079,7 +1079,7 @@ const Carrinho = () => {
                       autoComplete="address-level2"
                       placeholder="Cidade"
                       value={address.city}
-                      onChange={(e) => { addressEditedRef.current = true; cepRequestRef.current += 1; setAddress(prev => ({ ...prev, city: e.target.value })); clearInvalid('city'); }}
+                      onChange={(e) => { addressEditedRef.current = true; setAddress(prev => ({ ...prev, city: e.target.value })); clearInvalid('city'); }}
                       className={fieldClass('city')}
                     />
                   </div>
@@ -1090,7 +1090,7 @@ const Carrinho = () => {
                       autoComplete="address-level1"
                       placeholder="UF"
                       value={address.state}
-                      onChange={(e) => { addressEditedRef.current = true; cepRequestRef.current += 1; setAddress(prev => ({ ...prev, state: e.target.value.toUpperCase() })); clearInvalid('state'); }}
+                      onChange={(e) => { addressEditedRef.current = true; setAddress(prev => ({ ...prev, state: e.target.value.toUpperCase() })); clearInvalid('state'); }}
                       className={fieldClass('state')}
                       maxLength={2}
                     />
