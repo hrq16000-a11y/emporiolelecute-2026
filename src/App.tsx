@@ -5,6 +5,7 @@ import StaleBundleOverlay from "@/components/StaleBundleOverlay";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SocialProofToast from "@/components/SocialProofToast";
 import Chatbot from "@/components/Chatbot";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RouteTransition, { GlobalProgressBar } from "@/components/RouteTransition";
@@ -1216,6 +1217,7 @@ const App = () => {
               </RouteTransition>
             </AnalyticsWrapper>
           </BrowserRouter>
+          <SpeedInsights />
       </TooltipProvider>
     </QueryClientProvider>
   );
