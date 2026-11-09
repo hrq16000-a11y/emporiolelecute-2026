@@ -20,6 +20,7 @@ export const newCorrelationId = (prefix = "ELC"): string => {
 };
 
 export type ErrorScope =
+  | "search"
   | "catalog"
   | "product"
   | "cart"
@@ -57,6 +58,7 @@ export const isNetworkError = (error: unknown): boolean => {
 };
 
 const SCOPE_COPY: Record<ErrorScope, string> = {
+  search: "Não conseguimos buscar produtos agora.",
   catalog: "Não conseguimos carregar o catálogo agora.",
   product: "Não conseguimos carregar este produto agora.",
   cart: "Não conseguimos atualizar seu carrinho agora.",
@@ -90,7 +92,7 @@ export const reportError = (
   return {
     correlationId,
     scope,
-    title: offline ? "Falha de conexão" : "Ops, algo falhou",
+    title: scope === "search" ? "Busca indisponível no momento" : offline ? "Falha de conexão" : "Ops, algo falhou",
     description,
     retryable: offline,
   };
