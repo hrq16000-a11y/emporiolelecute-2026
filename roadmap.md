@@ -1,12 +1,12 @@
 # Boutique editorial
 
 ## Production readiness and first campaign
-- [ ] Review operational permissions, catalog regression gate, retries and exports; fix evidenced issues and verify safely.
+- [x] Review operational permissions, sticky catalog regression gate, leased retries and exports; authenticated scan/save/download verified, anonymous calls denied, rollback-only gate test passed. New leased image retry and clean local restore still need a dedicated run.
 - [ ] Agree the first campaign goal and audience, then research/type choice, creative and tracking; no spending without explicit approval.
 
 ## Operational controls
 - [x] Harden manual image retries and queue monitoring; real image retry reached done.
-- [x] Add scan alert destination/rule settings and catalog approval gate; real successful scan and anonymous approval denial verified. Blocked-state approval remains unexercised to avoid injecting false production security reports.
+- [x] Add scan alert destination/rule settings and catalog approval gate; repeated-scan blocking, statement enforcement and approval verified with transaction rollback and no persistent fixtures.
 - [x] Add full Lighthouse Web Vitals CSV/JSON exports and configurable daily retention; downloads verified with temporary metrics, test data removed.
 - [ ] Activate external scan alerts — Slack connection declined and email sender not configured; destination settings and failure reasons are persisted, delivery not implemented.
 
