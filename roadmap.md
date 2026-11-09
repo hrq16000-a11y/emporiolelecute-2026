@@ -2,7 +2,7 @@
 
 ## Production readiness and first campaign
 - [x] Review operational permissions, sticky catalog regression gate, leased retries and exports; authenticated scan/save/download and leased image retry verified, anonymous calls denied, rollback-only gate test passed. Clean local restore remains unverified.
-- [ ] Agree the first campaign goal and audience, then research/type choice, creative and tracking; no spending without explicit approval.
+- [ ] Natal quote campaign: goal confirmed and Brazil research saved; choose buyer audience and campaign type, then creative and tracking. No spending without explicit approval.
 
 ## Operational controls
 - [x] Harden manual image retries and queue monitoring; real image retry reached done.
