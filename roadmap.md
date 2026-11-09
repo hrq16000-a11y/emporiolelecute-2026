@@ -1,7 +1,7 @@
 # Boutique editorial
 
 ## Production readiness and first campaign
-- [x] Review operational permissions, sticky catalog regression gate, leased retries and exports; authenticated scan/save/download verified, anonymous calls denied, rollback-only gate test passed. New leased image retry and clean local restore still need a dedicated run.
+- [x] Review operational permissions, sticky catalog regression gate, leased retries and exports; authenticated scan/save/download and leased image retry verified, anonymous calls denied, rollback-only gate test passed. Clean local restore remains unverified.
 - [ ] Agree the first campaign goal and audience, then research/type choice, creative and tracking; no spending without explicit approval.
 
 ## Operational controls
