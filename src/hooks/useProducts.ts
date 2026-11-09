@@ -93,7 +93,7 @@ export interface DbTag {
 }
 
 // Fetch all products with relations (optimized single query with nested selects)
-export function useDbProducts(options?: { refetchInterval?: number; refetchOnWindowFocus?: boolean }) {
+export function useDbProducts() {
   const catalogVersion = useCatalogVersion();
   return useQuery({
     queryKey: ['products', catalogVersion],
@@ -124,8 +124,6 @@ export function useDbProducts(options?: { refetchInterval?: number; refetchOnWin
           .filter(Boolean),
       })) as DbProduct[];
     },
-    refetchInterval: options?.refetchInterval,
-    refetchOnWindowFocus: options?.refetchOnWindowFocus,
   });
 }
 

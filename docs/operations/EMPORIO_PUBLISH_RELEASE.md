@@ -24,3 +24,8 @@ Data: 2026-11-09 | Projeto Vercel: msolus/emporiolelecute | GitHub: hrq16000-a11
 - Mesclar a versão revisada na `main` somente após homologação.
 - Para liberar build de produção: criar commit em `main` com assunto começando em `release:` ou `[publish]`. É intencional que commits comuns do Lovable não publiquem.
 - Conferir Deployment READY do SHA de release, domínios/aliases, página /natal, busca, produto, carrinho e fluxo de orçamento; manter rollback anterior.
+
+## Diferença visual Lovable × domínio
+- O banner/convite natalino é o primeiro bloco da home, antes do slider administrável, independente do carregamento de home_sections. Os demais blocos mantêm a ordem do painel.
+- home_sections atualiza a cada 5 minutos com página ativa e ao retornar à aba. O banner natalino não depende dessa resposta do banco.
+- Se o domínio parecer visualmente em miniatura num navegador, verifique zoom com Ctrl+0 e recarregue; isso é separado do hash de bundle.
