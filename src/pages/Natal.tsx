@@ -1,4 +1,7 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useDbProducts } from "@/hooks/useProducts";
+import { selectChristmasProducts } from "@/lib/christmasCatalog";
 import { Helmet } from "react-helmet-async";
 import { ArrowRight, Gift, Heart, Leaf, PackageCheck, PencilLine, Sparkles, Star, Truck, Users } from "lucide-react";
 import Header from "@/components/Header";
@@ -70,6 +73,19 @@ const canonical = "https://emporiolelecute.com.br/natal";
 const accents = ["Feito à mão com carinho", "Mensagens personalizadas", "Lembranças para equipes", "Pronto para encantar"];
 
 export default function Natal() {
+  // Atualiza a coleção sem publicar novo bundle quando o painel altera os produtos.
+  // React Query pausa intervalos em abas inativas e reaproveita o cache público.
+  const { data: dbProducts, isLoading, isError, refetch } = useDbProducts({
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: true,
+  });
+  const christmasProducts = useMemo(
+    () => selectChristmasProducts(dbProducts ?? []),
+    [dbProducts],
+  );
+  const formatPrice = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
   return (
     <div className="min-h-screen bg-[#fffaf4] text-[#543e3a]">
       <Helmet>
@@ -90,8 +106,9 @@ export default function Natal() {
           url: canonical,
           description: "Lembrancinhas natalinas artesanais e personalizadas para presentear clientes, equipes, parceiros e pessoas queridas.",
           isPartOf: { "@type": "WebSite", name: "Empório LeleCute", url: "https://emporiolelecute.com.br" },
-          mainEntity: { "@type": "ItemList", itemListElement: products.map((p, i) => ({
-            "@type": "ListItem", position: i + 1, name: p.title, url: p.href
+          mainEntity: { "@type": "ItemList", itemListElement: christmasProducts.slice(0, 24).map((p, i) => ({
+            "@type": "ListItem", position: i + 1, name: p.name,
+            url: "https://emporiolelecute.com.br/produto/" + encodeURIComponent(p.slug),
           })) }
         })}</script>
       </Helmet>
@@ -163,21 +180,35 @@ export default function Natal() {
               <h2 className="mt-4 font-serif text-4xl text-[#802b39] sm:text-5xl">Um Natal para <em>guardar no coração</em></h2>
               <p className="mt-4 text-[#73645b]">Conheça peças reais do nosso ateliê. Clique em cada opção para ver o produto e os detalhes de personalização.</p>
             </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {products.slice(0,6).map((p,i) => (
-                <Link key={p.id} to={p.href.replace("https://emporiolelecute.com.br", "")} className="group overflow-hidden rounded-3xl border border-[#e8d7cc] bg-white shadow-[0_12px_30px_-22px_rgba(76,36,30,.5)] transition hover:-translate-y-1 hover:shadow-xl">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-[#f2e8df]">
-                    <img src={p.image} alt={p.alt} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                    <span className="absolute left-4 top-4 rounded-full bg-[#fff9f0]/95 px-3 py-1.5 text-[.7rem] font-bold uppercase tracking-wide text-[#883a35]">{i%2 ? "Ideia de presente" : "Natal artesanal"}</span>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-serif text-[1.55rem] leading-tight text-[#802b39]">{p.title}</h3>
-                    <p className="mt-3 min-h-[3rem] text-sm leading-relaxed text-[#75665f]">{p.summary}</p>
-                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#8f3340]">Conhecer este produto <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            {isLoading && !dbProducts ? (
+              <p role="status" className="py-12 text-center text-[#75665f]">Carregando os produtos da coleção de Natal…</p>
+            ) : isError && !dbProducts ? (
+              <div role="alert" className="py-12 text-center text-[#75665f]">
+                Não foi possível carregar a coleção agora.
+                <button type="button" onClick={() => { void refetch(); }} className="ml-2 font-semibold text-[#8d2836] underline">Tentar novamente</button>
+              </div>
+            ) : christmasProducts.length === 0 ? (
+              <div role="status" className="py-12 text-center text-[#75665f]">
+                A coleção está sendo atualizada. Confira todas as opções no nosso catálogo.
+              </div>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {christmasProducts.slice(0, 24).map((p, i) => (
+                  <Link key={p.id} to={`/produto/${encodeURIComponent(p.slug)}`} className="group overflow-hidden rounded-3xl border border-[#e8d7cc] bg-white shadow-[0_12px_30px_-22px_rgba(76,36,30,.5)] transition hover:-translate-y-1 hover:shadow-xl">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-[#f2e8df]">
+                      <img src={p.images?.[0] || "/placeholder.svg"} alt={p.name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                      <span className="absolute left-4 top-4 rounded-full bg-[#fff9f0]/95 px-3 py-1.5 text-[.7rem] font-bold uppercase tracking-wide text-[#883a35]">{i % 2 ? "Ideia de presente" : "Natal artesanal"}</span>
+                    </div>
+                    <div className="p-6">
+                      <h3 className="font-serif text-[1.55rem] leading-tight text-[#802b39]">{p.name}</h3>
+                      <p className="mt-3 min-h-[3rem] text-sm leading-relaxed text-[#75665f]">{p.description || "Conheça este produto e seus detalhes no catálogo."}</p>
+                      <p className="mt-3 font-semibold text-[#8f3340]">{formatPrice(p.price)}</p>
+                      <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#8f3340]">Conhecer este produto <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
             <div className="mt-9 text-center">
               <Link to="/ocasiao/natal-e-ano-novo" className="inline-flex items-center gap-2 rounded-full border border-[#8d2836]/35 px-7 py-3 font-semibold text-[#8d2836] hover:bg-[#f6e9e4]">
                 Ver outras opções de Natal <ArrowRight className="h-4 w-4" />
