@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({page})=>{
- await page.goto('/'); await page.waitForLoadState('domcontentloaded');
+ await page.goto('/suporte'); await page.getByRole('heading', { name: 'Atendimento LeleCute' }).waitFor();
  await page.evaluate(()=>{localStorage.setItem('emporio-cart-storage',JSON.stringify({version:1,state:{items:[{id:'address-test',slug:'test',name:'Teste de endereço',price:5,quantity:1,minQuantity:1,image:''}]}}));localStorage.setItem('lc_address_v1',JSON.stringify({cep:'01001000',city:'',state:'',savedAt:Date.now()}));});
  await page.route('**/viacep.com.br/ws/**',async route=>{const cep=route.request().url().match(/ws\/(\d+)/)?.[1];await route.fulfill({json:cep==='01001000'?{localidade:'São Paulo',uf:'SP'}:{localidade:'Curitiba',uf:'PR'}});});
 });
