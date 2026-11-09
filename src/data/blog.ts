@@ -47,12 +47,12 @@ export const BLOG_POSTS: BlogPost[] = [
   // ────────────────────────────────────────────────────────────────
   {
     slug: "como-fazer-sabonete-artesanal-para-lembrancinhas",
-    title: "Como fazer sabonete artesanal para lembrancinhas: guia completo",
+    title: "Como fazer sabonete artesanal para lembrancinhas: passo a passo para iniciantes",
     excerpt:
       "Aprenda, com calma e cuidado, o passo a passo para produzir sabonetes artesanais delicados para suas lembrancinhas — materiais, técnica, fragrâncias, formas e acabamento de presente.",
-    seoTitle: "Como Fazer Sabonete Artesanal para Lembrancinhas | Passo a Passo",
+    seoTitle: "Como Fazer Sabonete Artesanal para Lembrancinhas (Passo a Passo)",
     seoDescription:
-      "Guia artesanal: materiais, técnica, aromas, formas e embalagem para fazer sabonetes em casa para lembrancinhas com cuidado e acabamento profissional.",
+      "Aprenda a fazer sabonete artesanal para lembrancinhas: materiais, passo a passo, aromas e embalagem. Sem tempo? Veja modelos prontos e personalizados.",
     publishedAt: "2026-05-13",
     readingMinutes: 9,
     category: "Tutoriais",
@@ -145,6 +145,12 @@ export const BLOG_POSTS: BlogPost[] = [
       <p><strong><a href="https://wa.me/5541992214299?text=${encodeURIComponent(
         "Olá! Vim do blog e gostaria de um orçamento de lembrancinhas artesanais.",
       )}" target="_blank" rel="noopener noreferrer">Falar agora com a artesã pelo WhatsApp →</a></strong></p>
+      <h3>Modelos prontos para encomendar</h3>
+      <ul>
+        <li><a href="/produto/lembrancinha-sabonete-coracao-amore">Sabonete Coração Amore</a> — delicado e perfeito para maternidade, casamento e chá de bebê.</li>
+        <li><a href="/produto/sabonete-cerejinha-letra">Sabonete Cerejinha + Letra</a> — com a inicial do homenageado.</li>
+        <li><a href="/produto/sabonete-cerejinha-letra-mini-coracao">Sabonete Cerejinha + Letra + Mini Coração</a> — versão com detalhe extra.</li>
+      </ul>
       <p>Você também pode explorar o <a href="/produtos">catálogo completo</a> ou começar pela página da sua ocasião acima.</p>
     `,
     faqs: [
