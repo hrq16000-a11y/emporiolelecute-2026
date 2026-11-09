@@ -8,7 +8,7 @@ test("baseline estática do Empório mantém gate aprovado", () => {
 
 test("alteração do banner gera falha na home", () => {
   const f = loadFiles();
-  f.home = f.home.replace("<NatalHomeSpotlight", "<RemovedSpotlight");
+  f.home = f.home.replaceAll("<NatalHomeSpotlight", "<RemovedSpotlight");
   assert.ok(auditStorefront(f).some((x) => x.code === "HOME"));
 });
 
