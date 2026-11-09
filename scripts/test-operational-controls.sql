@@ -17,6 +17,6 @@ BEGIN
   IF NOT denied THEN RAISE EXCEPTION 'Null approval reasons must be denied'; END IF;
   PERFORM public.approve_catalog_security(scan_id,'Approved isolated test fixture');
   IF public.unresolved_catalog_security_scan()=scan_id THEN RAISE EXCEPTION 'Explicit approval must release its own scan'; END IF;
-  DELETE FROM public.catalog_security_approvals WHERE scan_id=test_operational_controls.scan_id;
+  RAISE NOTICE 'Sticky regression and approval checks passed';
 END $$;
 ROLLBACK;
