@@ -57,8 +57,8 @@ export function auditStorefront(f) {
     problems.push({ code: "PACKAGE", reason: "package.json inválido." });
   }
   gate(!Object.keys(deps).some((name) =>
-    /^(rea-agents|@mendable\/firecrawl-js|@firecrawl\/)/i.test(name)),
-    "EXTERNAL_AGENTS", "REA e Firecrawl não podem entrar no runtime automaticamente.");
+    /^(rea-agents|@mendable\/firecrawl-js|@firecrawl\/|@hyperframes\/|hyperframes$|@remotion\/|remotion$|freellmapi$|claude-mem$|ai-memory$)/i.test(name)),
+    "EXTERNAL_AGENTS", "Agentes, pipelines de mídia e roteadores LLM não podem entrar no runtime do comércio automaticamente.");
   return problems;
 }
 

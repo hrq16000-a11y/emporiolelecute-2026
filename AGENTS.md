@@ -16,3 +16,11 @@ Leia .agents/skills/lelecute-storefront-qa/SKILL.md antes de concluir mudanças.
 Leia .agents/skills/lelecute-safe-research/SKILL.md para benchmarking externo.
 Critérios de adoção: docs/skills/COMPATIBILITY_0WEB.md.
 Não importar identidade, preços, credenciais, funis ou ferramentas pagas da 0WEB; não executar scripts de terceiros sem revisão e autorização específicas.
+
+## Adoção curada de ferramentas externas (09/11/2026)
+
+Para revisão visual consultiva do catálogo e campanhas, leia .agents/skills/lelecute-design-review/SKILL.md.
+Para identificar riscos de aplicações web, agentes e integrações, leia .agents/skills/lelecute-security-review/SKILL.md.
+Para planejar vídeos e conteúdo social, leia .agents/skills/lelecute-content-production/SKILL.md.
+Inventário e decisão por repositório: docs/skills/EXTERNAL_TOOLS_2026-11-09.md.
+Apenas métodos locais e mudanças verificáveis são adotados; nenhuma execução de terceiros, hooks de sessão, gravação de clientes, clonagem de voz, consumo pago ou instalação automática em runtime/CI sem revisão específica.

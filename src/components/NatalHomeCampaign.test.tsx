@@ -24,7 +24,9 @@ describe("Natal 2026 — convite da home", () => {
     act(() => { vi.advanceTimersByTime(8000); });
     expect(screen.getByRole("dialog", { name: /natal já floresceu/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /conhecer a coleção/i }).getAttribute("href")).toBe("/natal");
-    fireEvent.click(screen.getByRole("button", { name: /fechar convite de natal/i }));
+    const close = screen.getByRole("button", { name: /fechar convite de natal/i });
+    expect(close).toHaveClass("h-11", "w-11"); // área de toque mínima 44 × 44 px
+    fireEvent.click(close);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     first.unmount();
     render(<MemoryRouter><NatalWelcomeInvite /></MemoryRouter>);
