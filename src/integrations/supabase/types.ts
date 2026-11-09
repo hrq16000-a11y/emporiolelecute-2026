@@ -7152,6 +7152,77 @@ export type Database = {
         }
         Relationships: []
       }
+      support_messages: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          id: string
+          request_id: string | null
+          role: string
+          thread_id: string
+          ui_message: Json
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          request_id?: string | null
+          role: string
+          thread_id: string
+          ui_message: Json
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          request_id?: string | null
+          role?: string
+          thread_id?: string
+          ui_message?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "support_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_threads: {
+        Row: {
+          created_at: string
+          handoff_reason: string | null
+          id: string
+          processing_until: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          handoff_reason?: string | null
+          id?: string
+          processing_until?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          handoff_reason?: string | null
+          id?: string
+          processing_until?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           created_at: string | null
@@ -7998,6 +8069,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_support_thread: { Args: { _thread_id: string }; Returns: boolean }
       cleanup_pdp_badge_events: { Args: never; Returns: undefined }
       cleanup_pdp_funnel_events: { Args: never; Returns: undefined }
       cleanup_seo_url_status: { Args: never; Returns: undefined }

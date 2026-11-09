@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import StaleBundleOverlay from "@/components/StaleBundleOverlay";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SocialProofToast from "@/components/SocialProofToast";
+import Chatbot from "@/components/Chatbot";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RouteTransition, { GlobalProgressBar } from "@/components/RouteTransition";
@@ -24,6 +25,8 @@ const ListaCompartilhada = lazy(() => import("./pages/ListaCompartilhada"));
 
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const Carrinho = lazy(() => import("./pages/Carrinho"));
+const Suporte = lazy(() => import("./pages/Suporte"));
+const AdminSupport = lazy(() => import("./pages/admin/AdminSupport"));
 const Envio = lazy(() => import("./pages/Envio"));
 const RastrearPedido = lazy(() => import("./pages/RastrearPedido"));
 const PreferenciasNotificacao = lazy(() => import("./pages/PreferenciasNotificacao"));
@@ -180,6 +183,7 @@ import CookieConsentBanner from "./components/CookieConsentBanner";
 import { useVisitorTracking } from "./hooks/useVisitorTracking";
 
 const VisitorTracker = () => { useVisitorTracking(); return null; };
+const SupportEntry = () => { const { pathname } = useLocation(); return pathname.startsWith('/admin') || pathname.startsWith('/suporte') ? null : <Chatbot />; };
 import { logSlugEvent } from "./lib/slugObservability";
 import { urls, PRODUCT_PATH_PREFIX, LEGACY_PRODUCT_PATH_PREFIX } from "./lib/urls";
 
@@ -383,11 +387,14 @@ const App = () => {
               <VisitorTracker />
               <CookieConsentBanner />
               <SocialProofToast />
+              <SupportEntry />
               <GlobalProgressBar />
 
               <RouteTransition>
               <Routes>
                 {/* Public Routes */}
+                <Route path="/suporte" element={<Suspense fallback={<PageSkeleton />}><Suporte /></Suspense>} />
+                <Route path="/suporte/:threadId" element={<Suspense fallback={<PageSkeleton />}><Suporte /></Suspense>} />
                 <Route path="/" element={
                   <Suspense fallback={<PageSkeleton />}>
                     <Index />
@@ -586,6 +593,8 @@ const App = () => {
                       <AdminDashboard />
                     </Suspense>
                   } />
+                  <Route path="suporte" element={<Suspense fallback={<AdminSkeleton />}><AdminSupport /></Suspense>} />
+                  <Route path="suporte/:threadId" element={<Suspense fallback={<AdminSkeleton />}><AdminSupport /></Suspense>} />
                   <Route path="pedidos" element={
                     <Suspense fallback={<AdminSkeleton />}>
                       <AdminOrders />

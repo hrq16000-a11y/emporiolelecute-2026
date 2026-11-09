@@ -78,6 +78,13 @@
       "when": 1794191600197,
       "tag": "0010_verify_sticky_catalog_gate",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794193120446,
+      "tag": "0011_customer_support_threads",
+      "breakpoints": true
     }
   ]
 }

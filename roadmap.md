@@ -1,5 +1,10 @@
 # Boutique editorial
 
+## Address and customer support
+- [x] Test new and cached CEP without clicks; clear obsolete city/state on CEP changes and preserve manual corrections without canceling other fields.
+- [x] Add authenticated support threads saved to the customer account, grounded in published help and own orders, with human inbox.
+- [x] Verify separate threads, reload, order lookup, uncertainty handoff, human reply and mobile layout; new-file lint and build pass. Global lint retains pre-existing errors.
+
 ## Production readiness and first campaign
 - [x] Review operational permissions, sticky catalog regression gate, leased retries and exports; authenticated scan/save/download and leased image retry verified, anonymous calls denied, rollback-only gate test passed. Clean local restore remains unverified.
 - [ ] Natal quote campaign: goal confirmed and Brazil research saved; choose buyer audience and campaign type, then creative and tracking. No spending without explicit approval.
