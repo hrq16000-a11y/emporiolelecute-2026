@@ -15,6 +15,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useSearchCacheVersion } from "@/hooks/useSearchCacheVersion";
 import { supabase } from "@/integrations/supabase/client";
 import SearchEmptyState from "@/components/SearchEmptyState";
+import DataErrorState from "@/components/DataErrorState";
 import type { Product } from "@/data/products";
 
 // Fase 2 (refactor server-side) — Toda a busca tolerante (acento, typo,
@@ -68,7 +69,7 @@ function useServerSearch(term: string, filters: ServerSearchFilters) {
         _min_price: minPrice,
         _max_price: maxPrice,
       } as never);
-      if (error) return { ids: [], suggestion: null, total: 0, offset, hasMore: false };
+      if (error) throw error;
       const payload = (data ?? {}) as {
         ids?: string[];
         suggestion?: string | null;
@@ -127,6 +128,9 @@ const Buscar = () => {
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
+    isError: hasSearchError,
+    error: searchError,
+    refetch: retrySearch,
   } = useServerSearch(debouncedQuery, {
     categoryId: selectedCategoryId,
     minPrice: selectedRange ? selectedRange.min : null,
@@ -376,6 +380,16 @@ const Buscar = () => {
           </div>
 
           {/* Resultados */}
+          {hasSearchTerm && hasSearchError && !isSearching && (
+            <div className="mb-5">
+              <DataErrorState
+                scope="search"
+                error={searchError}
+                onRetry={() => { void retrySearch(); }}
+                hasCachedData={filtered.length > 0}
+              />
+            </div>
+          )}
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-muted-foreground">
               {isLoading || (isSearching && !isFetchingNextPage)
@@ -393,7 +407,7 @@ const Buscar = () => {
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : hasSearchTerm && hasSearchError && filtered.length === 0 ? null : filtered.length === 0 ? (
             <SearchEmptyState
               query={debouncedQuery}
               suggestion={suggestion}
@@ -410,7 +424,7 @@ const Buscar = () => {
           )}
 
           {/* Paginação: busca server-side usa offset/limit; catálogo local incrementa a fatia */}
-          {hasSearchTerm && hasNextPage && (
+          {hasSearchTerm && !hasSearchError && hasNextPage && (
             <div className="text-center mt-6">
               <Button
                 variant="outline"
