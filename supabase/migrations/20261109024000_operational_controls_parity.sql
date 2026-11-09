@@ -42,3 +42,5 @@ IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='operational_settings' 
 IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='catalog_security_approvals' AND policyname='admin_read_approvals') THEN CREATE POLICY admin_read_approvals ON public.catalog_security_approvals FOR SELECT TO authenticated USING(public.has_role(auth.uid(),'admin')); END IF;
 END $$;
 DO $$ DECLARE tbl text; BEGIN FOREACH tbl IN ARRAY ARRAY['products','product_tags','product_occasions','product_segments'] LOOP IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=('public.'||tbl)::regclass AND tgname='catalog_security_gate') THEN EXECUTE format('CREATE TRIGGER catalog_security_gate BEFORE INSERT OR UPDATE OR DELETE ON public.%I FOR EACH STATEMENT EXECUTE FUNCTION public.enforce_catalog_security()',tbl); END IF; END LOOP; END $$;
+
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_extension WHERE extname='pg_cron') THEN PERFORM cron.alter_job(job_id:=jobid,command:=replace(command,'headers:=''{"Content-Type":"application/json"}''::jsonb','headers:=public.operational_worker_headers()')) FROM cron.job WHERE jobname IN ('security-scan-daily','process-image-jobs-worker'); END IF; END $$;
