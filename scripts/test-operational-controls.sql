@@ -9,14 +9,14 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub',admin_id::text,true);
   INSERT INTO public.security_scan_runs(id,status,trigger,source,high_regression,findings,created_at)
   VALUES(scan_id,'ok','test','test',true,'[{"id":"qa-high","package":"qa-package","severity":"high"}]',now()+interval '1 day');
-  IF public.unresolved_catalog_security_scan() IS DISTINCT FROM scan_id THEN RAISE EXCEPTION 'New high regression must block'; END IF;
+  IF (public.catalog_security_status()->>'scan_id') IS DISTINCT FROM scan_id::text THEN RAISE EXCEPTION 'New high regression must block'; END IF;
   INSERT INTO public.security_scan_runs(id,status,trigger,source,high_regression,findings,created_at)
   VALUES(repeat_id,'ok','test','test',false,'[{"id":"qa-high","package":"qa-package","severity":"high"}]',now()+interval '2 days');
-  IF public.unresolved_catalog_security_scan() IS DISTINCT FROM scan_id THEN RAISE EXCEPTION 'Repeating an unchanged scan must not release the block'; END IF;
+  IF (public.catalog_security_status()->>'scan_id') IS DISTINCT FROM scan_id::text THEN RAISE EXCEPTION 'Repeating an unchanged scan must not release the block'; END IF;
   BEGIN PERFORM public.approve_catalog_security(scan_id,NULL); EXCEPTION WHEN OTHERS THEN denied:=true; END;
   IF NOT denied THEN RAISE EXCEPTION 'Null approval reasons must be denied'; END IF;
   PERFORM public.approve_catalog_security(scan_id,'Approved isolated test fixture');
-  IF public.unresolved_catalog_security_scan()=scan_id THEN RAISE EXCEPTION 'Explicit approval must release its own scan'; END IF;
+  IF (public.catalog_security_status()->>'scan_id')=scan_id::text THEN RAISE EXCEPTION 'Explicit approval must release its own scan'; END IF;
   RAISE NOTICE 'Sticky regression and approval checks passed';
 END $$;
 ROLLBACK;
