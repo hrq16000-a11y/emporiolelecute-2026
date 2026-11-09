@@ -1,8 +1,8 @@
 # Boutique editorial
 
 ## Operational and support production review
-- [ ] Recheck deployed permissions, catalog blocking and safe exports.
-- [ ] Verify support on desktop/mobile, unknown answers, human response and resolved state.
+- [x] Recheck deployed permissions and sticky catalog blocking; authenticated message forgery/lease attempts and anonymous chat/scan access denied; shared CSV formulas neutralized, 22 regression tests passed.
+- [x] Verify support on desktop/mobile: unknown answer and explicit handoff persisted, admin reply saved, resolved composer disabled, mobile send clears privacy banner; browser runtime errors absent and targeted lint/build clean.
 
 ## Address and customer support
 - [x] Test new and cached CEP without clicks; clear obsolete city/state on CEP changes and preserve manual corrections without canceling other fields.
