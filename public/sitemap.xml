@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- lovable:sitemap-source generate-sitemap@v2.1b -->
-<!-- lovable:sitemap-generated-at 2026-11-09T06:47:52.017Z -->
+<!-- lovable:sitemap-generated-at 2026-11-09T16:38:02.052Z -->
 <!-- lovable:sitemap-namespace /produto -->
-<!-- lovable:sitemap-products-count 80 -->
+<!-- lovable:sitemap-products-count 81 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   
@@ -23,6 +23,16 @@
   </url>
   
   <!-- Individual Product Pages -->
+  <url>
+    <loc>https://emporiolelecute.com.br/produto/lembrancinha-mini-vela-na-latinha-lembrancinha-de-natal-card</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://xfqffqxqiuqauefrrcxn.supabase.co/storage/v1/object/public/product-images/products/1794235227812-tju3jp.webp</image:loc>
+      <image:title>Lembrancinha Mini Vela na Latinha | Lembrancinha de Natal | Card</image:title>
+    </image:image>
+  </url>
   <url>
     <loc>https://emporiolelecute.com.br/produto/card-com-mini-vela-perfumada-natalina-lembrancinha-de-natal</loc>
     <lastmod>2026-11-08</lastmod>
@@ -191,16 +201,6 @@
     <image:image>
       <image:loc>https://xfqffqxqiuqauefrrcxn.supabase.co/storage/v1/object/public/product-images/products/1790792932725-2rvt1o.webp</image:loc>
       <image:title>Lembrancinha Vela na Latinha | Dia dos Professores</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://emporiolelecute.com.br/produto/escalda-pes-lembrancinha-personalizada</loc>
-    <lastmod>2026-08-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <image:image>
-      <image:loc>https://xfqffqxqiuqauefrrcxn.supabase.co/storage/v1/object/public/product-images/products/1778544178415-uk5wr.jpg</image:loc>
-      <image:title>Escalda Pés Lembrancinha Personalizada</image:title>
     </image:image>
   </url>
   <url>
@@ -824,6 +824,16 @@
     </image:image>
   </url>
   <url>
+    <loc>https://emporiolelecute.com.br/produto/escalda-pes-lembrancinha-personalizada</loc>
+    <lastmod>2026-08-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://xfqffqxqiuqauefrrcxn.supabase.co/storage/v1/object/public/product-images/products/1778544178415-uk5wr.jpg</image:loc>
+      <image:title>Escalda Pés Lembrancinha Personalizada</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://emporiolelecute.com.br/categoria/velas</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
@@ -1055,4 +1065,9 @@
 
 
 
+  <url>
+    <loc>https://emporiolelecute.com.br/natal</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
 </urlset>
