@@ -44,7 +44,7 @@ const AdminSecurityScan = () => {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-6 px-4 py-6 md:px-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h1 className="flex items-center gap-2 font-display text-2xl">
