@@ -19,6 +19,10 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - name: Shop safety gates (offline and read-only)
+        run: |
+          node --test scripts/check-storefront-guard.test.mjs
+          node scripts/check-storefront-guard.mjs
       - run: bun run test --run
         env:
           CI: true
