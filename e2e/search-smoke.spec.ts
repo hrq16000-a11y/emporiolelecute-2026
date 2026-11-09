@@ -19,8 +19,11 @@ test.describe("Busca — rotas e navegação", () => {
     await page.goto("/produtos", { waitUntil: "domcontentloaded" });
 
     const search = page.locator("header").getByRole("combobox");
-    if (!(await search.isVisible())) {
-      await page.locator("header").getByRole("button", { name: "Abrir busca" }).click();
+    // Aguarda renderização no desktop; só usa o botão de busca nos viewports móveis.
+    if ((page.viewportSize()?.width ?? 0) < 1024) {
+      const toggle = page.locator("header").getByRole("button", { name: "Abrir busca" });
+      await expect(toggle).toBeVisible();
+      await toggle.click();
     }
     await expect(search).toBeVisible();
 
