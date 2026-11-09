@@ -26,6 +26,6 @@ test.describe("Busca — rotas e navegação", () => {
 
     await search.fill("  coracao  ");
     await search.press("Enter");
-    await expect(page).toHaveURL(/\\/buscar\\?q=coracao$/);
+    await expect(page).toHaveURL(/\/buscar\?q=coracao$/);
   });
 });
