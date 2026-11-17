@@ -118,7 +118,7 @@ export function NatalWelcomeInvite() {
         type="button"
         aria-label="Fechar convite de Natal"
         onClick={() => setVisible(false)}
-        className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#73323c] shadow-sm transition-colors hover:bg-[#f8e5dd] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8d2836]"
+        className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#73323c] shadow-sm transition-colors hover:bg-[#f8e5dd] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8d2836]"
       >
         <X className="h-4 w-4" aria-hidden="true" />
       </button>

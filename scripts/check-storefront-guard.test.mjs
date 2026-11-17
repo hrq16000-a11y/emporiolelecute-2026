@@ -34,3 +34,13 @@ test("aponta perda de imagens reais do catálogo", () => {
   f.campaign = f.campaign.replaceAll("product-images/products/", "sample-images/");
   assert.ok(auditStorefront(f).some((x) => x.code === "PRODUCTS"));
 });
+
+
+test("impede pipeline pesado de vídeo e proxy de modelos no bundle de checkout", () => {
+  const f = loadFiles();
+  const pkg = JSON.parse(f.package);
+  pkg.dependencies["hyperframes"] = "latest";
+  pkg.dependencies["freellmapi"] = "latest";
+  f.package = JSON.stringify(pkg);
+  assert.ok(auditStorefront(f).some((x) => x.code === "EXTERNAL_AGENTS"));
+});
