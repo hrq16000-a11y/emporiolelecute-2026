@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import logo from "@/assets/logo.webp";
 import { useFooterConfig, defaultFooterConfig } from "@/hooks/useStoreSettings";
 import { useMenuItems } from "@/hooks/useMenus";
+import { Button } from '@/components/ui/button';
+import { openConsentPreferences } from '@/lib/cookie-consent';
 
 const Footer = () => {
   const { data: footerConfig } = useFooterConfig();
@@ -139,10 +141,13 @@ const Footer = () => {
 
         <div className="border-t border-primary-foreground/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-primary-foreground/45 font-light">
           <p>{config.footer_text.replace('{year}', new Date().getFullYear().toString())}</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             <Link to="/politica-de-privacidade" className="hover:text-primary transition-colors">
               Política de Privacidade
             </Link>
+            <Button variant="link" onClick={openConsentPreferences} className="min-h-11 px-0 text-xs text-primary-foreground/70">
+              Preferências de cookies
+            </Button>
             <span className="tracking-wide">Feito à mão. Em Curitiba.</span>
           </div>
         </div>

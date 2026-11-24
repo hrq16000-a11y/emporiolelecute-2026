@@ -11,6 +11,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { isTrackingPath, sanitizeDiagnosticValue } from './tracking-privacy';
+import { hasOptionalConsent } from './cookie-consent';
 
 declare global {
   interface Window {
@@ -21,12 +22,14 @@ declare global {
 }
 
 const safeGtag = (...args: any[]) => {
+  if (!hasOptionalConsent()) return;
   if (typeof location !== 'undefined' && isTrackingPath(location.pathname)) return;
   if (typeof window !== "undefined" && typeof window.gtag === "function") {
     window.gtag(...args.map(value => sanitizeDiagnosticValue(value)));
   }
 };
 const safeFbq = (...args: any[]) => {
+  if (!hasOptionalConsent()) return;
   if (typeof location !== 'undefined' && isTrackingPath(location.pathname)) return;
   if (typeof window !== "undefined" && typeof window.fbq === "function") {
     window.fbq(...args.map(value => sanitizeDiagnosticValue(value)));
@@ -187,6 +190,11 @@ const FUNNEL_FLUSH_MS = 4000;
 const FUNNEL_MAX_BATCH = 10;
 
 function flushFunnelQueue(useKeepalive = false) {
+  if (!hasOptionalConsent()) {
+    FUNNEL_QUEUE.length = 0;
+    if (funnelFlushTimer) { clearTimeout(funnelFlushTimer); funnelFlushTimer = null; }
+    return;
+  }
   if (typeof window === "undefined") return;
   if (FUNNEL_QUEUE.length === 0) return;
   const batch = FUNNEL_QUEUE.splice(0, FUNNEL_QUEUE.length);
@@ -220,6 +228,7 @@ if (typeof window !== "undefined") {
 }
 
 export const trackFunnelEvent = (name: string, payload: FunnelPayload = {}) => {
+  if (!hasOptionalConsent()) return;
   if (typeof location !== 'undefined' && isTrackingPath(location.pathname)) return;
   event(name, payload);
   if (!FUNNEL_EVENTS.has(name)) return;

@@ -1,5 +1,13 @@
 # Boutique editorial
 
+## 360° Round 2 — commercial integrity and consent
+- [x] Recover current HEAD and compare PR #9 files; no local isolated backend is immediately available.
+- [x] Inspect existing catalog/checkout protections; add fresh active-catalog preflight, customer review, submission lock and cent-based display totals.
+- [x] Gate optional visitors/advertising/funnel/lead tracking on validated consent; add preferences and safe revocation, preserving essential cart/auth.
+- [x] Validate purchase and consent paths with fully intercepted synthetic backend at 390/1440; 221 unit tests, five storefront guards, directed lint and automatic build passed.
+- [x] Record report and Git checkpoint; no production data, deployment, publication or Round 3. See docs/qa/round2-360-commercial-integrity.md.
+- [ ] Operational integration/publication waits for PR #9 isolated runner: effective RPC parity, atomic pre-persistence price-change handling, real auth/RLS/SSE and distributed limiter evidence.
+
 ## Selected security findings — 2026-11-24
 - [x] Fix and test seven selected findings: active shipping catalog, three postcode leaks, GSC CSV, subscription ownership and unpublished paths. Twenty-two focused tests and automatic build passed.
 - [ ] Guest email/carrier authorization and browser-bound visitor histories await contextual approval.
@@ -10,7 +18,7 @@
 - [x] Close remaining diagnostic/analytics redaction and notification lookup oracle using existing privacy mechanisms; SSE uses POST body.
 - [x] Validate affected flows with isolated synthetic inputs; 22 tests and 390/1440 browser flows passed. Report: docs/qa/round1-360-privacy-review.md.
 - [ ] Release validation awaits an isolated backend runner and explicit deployment approval; no deployment/publication performed.
-- Rounds 2 and 3 remain on hold until separately requested.
+- Round 2 authorized separately; Round 3 remains on hold.
 
 ## Round 8 — targeted tracking privacy review (2026-11-24)
 - [x] Tighten public tracking allowlist and redact tracking routes from visitor telemetry; preserve authenticated details and commercial flows.

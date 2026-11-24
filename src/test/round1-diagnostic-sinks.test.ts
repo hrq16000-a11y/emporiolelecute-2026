@@ -31,6 +31,7 @@ describe('Round 1 diagnostic sinks', () => {
   });
   it('analytics wrappers omit nested capabilities and suppress events on tracking routes', async () => {
     const { event, fbEvent } = await import('@/lib/analytics');
+    localStorage.setItem('elc_cookie_consent', 'accepted');
     const gtag = vi.fn(); const fbq = vi.fn();
     window.gtag = gtag; window.fbq = fbq;
     event('diagnostic', { nested: { order_code: 'LCABC123' }, link_to: '/rastrear/LCABC123', status: 500 });
@@ -41,5 +42,6 @@ describe('Round 1 diagnostic sinks', () => {
     event('diagnostic'); fbEvent('Contact');
     expect(gtag).not.toHaveBeenCalled(); expect(fbq).not.toHaveBeenCalled();
     delete window.gtag; delete window.fbq;
+    localStorage.removeItem('elc_cookie_consent');
   });
 });

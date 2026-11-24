@@ -40,4 +40,6 @@ Não importar identidade, preços, credenciais, funis ou ferramentas pagas da 0W
 - Aplicação específica: Vitrine artesanal, PDP, personalização, orçamento e checkout existentes; fotos reais, hierarquia do produto, touch 44px, estados loading/empty/error. Preservar CEP, carrinho e identidade coral/creme; seguir os skills locais da LeleCute.
 - Implementar em micro-PR própria, medir 390/1440 e preservar SEO, SSR (se houver), LCP, segurança, privacidade, funis e conteúdo factual. Nenhuma regra aqui autoriza mexer em produção, banco, RLS, DNS ou pagamentos.
 - Checkout order prices are recomputed in the database from catalog products; client-sent prices, status and shipping are ignored so totals cannot be forged.
+- Checkout performs a fresh active-catalog display preflight before submission and stops for customer review after changes; this never replaces atomic server price authorization.
+- Optional visitor and advertising analytics share a fail-closed browser consent store; revocation discards queued events and reloads to stop already-executed third-party scripts.
 - Visitor tracking accepts only random UUID visitor ids and an allowlist of device fields; tracking/lead routines run only through the tracking service.

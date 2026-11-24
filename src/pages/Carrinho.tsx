@@ -30,6 +30,7 @@ import { reportError, retryAsync, type ReportedError } from "@/lib/errorReportin
 import CopyCorrelationId from "@/components/CopyCorrelationId";
 import { lookupPostalAddress } from "@/lib/postal-address";
 import { generateOrderCode } from '@/lib/order-code';
+import { reconcileCartCatalog } from '@/lib/cart-catalog';
 
 
 interface AddressData {
@@ -47,6 +48,8 @@ interface CustomerData {
 const Carrinho = () => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, total, clearCart } = useCart();
+  const submissionLock = useRef(false);
+  const [catalogNotice, setCatalogNotice] = useState('');
   const cartTotal = total;
   const serverTotalsRef = useRef<{ subtotal: number; total: number; items: { product_slug: string; unit_price: number }[] } | null>(null);
   const { toast } = useToast();
@@ -498,6 +501,7 @@ const Carrinho = () => {
   };
 
   const handleSubmitOrder = async () => {
+    if (submissionLock.current) return;
     // Coleta todos os campos vazios para destacar com efeito pulsante
     const missing = new Set<string>();
     if (!customer.name.trim()) missing.add('name');
@@ -531,6 +535,31 @@ const Carrinho = () => {
     setPendingSync(false);
 
     setIsSubmitting(true);
+    submissionLock.current = true;
+
+    try {
+      const snapshot = JSON.stringify(items);
+      const { data, error } = await supabase.from('products')
+        .select('id,slug,name,price,original_price,min_quantity,is_active')
+        .in('id', items.map(item => item.id)).eq('is_active', true);
+      if (error) throw new Error('Não foi possível conferir os valores. Seu carrinho foi preservado; tente novamente.');
+      if (JSON.stringify(useCartStore.getState().items) !== snapshot) throw new Error('O carrinho mudou durante a conferência. Confira os itens e tente novamente.');
+      const result = reconcileCartCatalog(items, data ?? []);
+      if (result.changed) {
+        useCartStore.getState().refreshCatalogItems(result.items);
+        setCoupon(null);
+        setCatalogNotice('Atualizamos os preços ou quantidades conforme o catálogo. Confira os valores e o cupom antes de finalizar novamente.');
+        setIsSubmitting(false);
+        submissionLock.current = false;
+        return;
+      }
+      setCatalogNotice('');
+    } catch (error) {
+      setCatalogNotice(error instanceof Error ? error.message : 'Não foi possível conferir o carrinho. Tente novamente.');
+      setIsSubmitting(false);
+      submissionLock.current = false;
+      return;
+    }
 
     // Idempotência: o código é gerado UMA vez e reaproveitado em todas as
     // tentativas, impedindo pedidos duplicados em caso de retry/instabilidade.
@@ -632,6 +661,7 @@ const Carrinho = () => {
       });
     } finally {
       setIsSubmitting(false);
+      submissionLock.current = false;
     }
   };
 
@@ -1209,6 +1239,8 @@ const Carrinho = () => {
                 <p className="text-xs text-muted-foreground text-center mb-6">
                   + frete (calculado via WhatsApp)
                 </p>
+
+                {catalogNotice && <p role="alert" className="mb-4 text-sm text-destructive">{catalogNotice}</p>}
 
                 {checkoutError && (
                   <div

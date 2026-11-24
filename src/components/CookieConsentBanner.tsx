@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { Cookie, X } from "lucide-react";
 import { getConsentStatus, recordConsent } from "@/hooks/useVisitorTracking";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from '@/components/ui/button';
+import { consentPreferencesEvent } from '@/lib/cookie-consent';
 
 type Config = {
   is_enabled: boolean;
@@ -41,6 +43,9 @@ export default function CookieConsentBanner() {
   useEffect(() => {
     if (window.location.pathname.startsWith("/admin")) return;
     let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const openPreferences = () => setVisible(true);
+    window.addEventListener(consentPreferencesEvent, openPreferences);
     (async () => {
       const { data } = await supabase
         .from("cookie_consent_config")
@@ -52,11 +57,12 @@ export default function CookieConsentBanner() {
       setCfg(merged);
       if (!merged.is_enabled) return;
       if (getConsentStatus() !== "pending") return;
-      const t = setTimeout(() => setVisible(true), merged.delay_ms);
-      return () => clearTimeout(t);
+      timer = setTimeout(() => setVisible(true), merged.delay_ms);
     })();
     return () => {
       cancelled = true;
+      clearTimeout(timer);
+      window.removeEventListener(consentPreferencesEvent, openPreferences);
     };
   }, []);
 
@@ -79,10 +85,10 @@ export default function CookieConsentBanner() {
       <div
         className={`mx-auto ${
           isCompact ? "max-w-4xl" : "max-w-3xl"
-        } bg-card/95 backdrop-blur border border-border shadow-lg rounded-full ${
+        } bg-card/95 backdrop-blur border border-border shadow-lg rounded-lg sm:rounded-full ${
           isCompact ? "py-2 pl-3 pr-2 sm:py-2.5 sm:pl-4 sm:pr-3" : "rounded-xl p-4 sm:p-5"
         } pointer-events-auto flex ${
-          isCompact ? "items-center" : "flex-col sm:flex-row items-start"
+          isCompact ? "flex-col sm:flex-row items-start sm:items-center" : "flex-col sm:flex-row items-start"
         } gap-2 sm:gap-3`}
       >
         {cfg.show_icon && (
@@ -100,7 +106,7 @@ export default function CookieConsentBanner() {
           } text-foreground leading-snug`}
         >
           {!isCompact && <p className="font-semibold mb-1">{cfg.title}</p>}
-          <p className={isCompact ? "text-muted-foreground truncate sm:whitespace-normal sm:line-clamp-2" : "text-muted-foreground"}>
+          <p className="text-muted-foreground">
             {isCompact ? (
               <>
                 <span className="font-medium text-foreground mr-1">{cfg.title}</span>
@@ -116,31 +122,31 @@ export default function CookieConsentBanner() {
           </p>
         </div>
         <div className="flex gap-1.5 shrink-0">
-          <button
+          <Button variant="outline"
             onClick={() => handle(false)}
             className={`${
-              isCompact ? "h-8 px-3 text-xs" : "h-9 px-4 text-sm"
+              isCompact ? "min-h-11 px-3 text-xs" : "min-h-11 px-4 text-sm"
             } rounded-full border border-border bg-background hover:bg-muted text-foreground transition-colors`}
           >
             {cfg.reject_label}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => handle(true)}
             className={`${
-              isCompact ? "h-8 px-3 text-xs" : "h-9 px-4 text-sm"
+              isCompact ? "min-h-11 px-3 text-xs" : "min-h-11 px-4 text-sm"
             } rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium transition-colors`}
           >
             {cfg.accept_label}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="icon"
             aria-label="Fechar"
             onClick={() => handle(false)}
             className={`hidden sm:flex items-center justify-center ${
-              isCompact ? "w-8 h-8" : "w-9 h-9"
+              isCompact ? "w-11 h-11" : "w-11 h-11"
             } rounded-full hover:bg-muted text-muted-foreground`}
           >
             <X className={isCompact ? "w-3.5 h-3.5" : "w-4 h-4"} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { toast } from "sonner";
+import { calcCartTotals } from '@/lib/cartTotals';
 
 export interface CartItem {
   id: string;
@@ -26,6 +27,7 @@ interface CartStore {
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  refreshCatalogItems: (items: CartItem[]) => void;
   getItemCount: () => number;
   getTotal: () => number;
 }
@@ -72,12 +74,13 @@ export const useCartStore = create<CartStore>()(
         })),
 
       clearCart: () => set({ items: [] }),
+      refreshCatalogItems: (items) => set({ items }),
 
       getItemCount: () =>
         get().items.reduce((sum, item) => sum + item.quantity, 0),
 
       getTotal: () =>
-        get().items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        calcCartTotals(get().items).subtotal,
     }),
     {
       name: CART_STORAGE_KEY,
@@ -92,7 +95,7 @@ export const useCartItems = () => useCartStore((s) => s.items);
 export const useCartItemCount = () =>
   useCartStore((s) => s.items.reduce((sum, item) => sum + item.quantity, 0));
 export const useCartTotal = () =>
-  useCartStore((s) => s.items.reduce((sum, item) => sum + item.price * item.quantity, 0));
+  useCartStore((s) => calcCartTotals(s.items).subtotal);
 
 /**
  * Hook de compatibilidade com a API anterior do CartContext.
@@ -105,6 +108,6 @@ export const useCart = () => {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const clearCart = useCartStore((s) => s.clearCart);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = calcCartTotals(items).subtotal;
   return { items, addItem, removeItem, updateQuantity, clearCart, itemCount, total };
 };

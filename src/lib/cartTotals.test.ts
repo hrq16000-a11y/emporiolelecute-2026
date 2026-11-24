@@ -109,6 +109,10 @@ describe("discountPercent", () => {
 });
 
 describe("calcCartTotals — quantidades e precisão", () => {
+  it('sums decimal cents exactly across multiple products', () => {
+    const result = calcCartTotals([{ price: 0.1, quantity: 3 }, { price: 0.2, quantity: 1 }]);
+    expect(result.subtotal).toBe(0.5);
+  });
   it("quantidade alta mantém soma exata até centavos", () => {
     const r = calcCartTotals([
       { price: 9.9, originalPrice: 12.5, quantity: 100 },

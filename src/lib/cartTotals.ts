@@ -48,12 +48,14 @@ export function calcCartTotals(items: CartTotalsItem[]): CartTotals {
 
   for (const item of items) {
     const qty = item.quantity;
-    subtotal += item.price * qty;
+    subtotal += Math.round(item.price * 100) * qty;
     const original = effectiveOriginalPrice(item);
-    originalSubtotal += original * qty;
+    originalSubtotal += Math.round(original * 100) * qty;
     if (original > item.price) hasDiscount = true;
   }
 
-  const savings = Math.max(0, originalSubtotal - subtotal);
+  subtotal /= 100;
+  originalSubtotal /= 100;
+  const savings = Math.max(0, Math.round((originalSubtotal - subtotal) * 100) / 100);
   return { subtotal, originalSubtotal, savings, hasDiscount };
 }

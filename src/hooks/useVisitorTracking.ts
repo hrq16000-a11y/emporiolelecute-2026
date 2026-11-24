@@ -1,14 +1,12 @@
-// Hook de rastreamento de visitantes — Fase 2 (telemetria agressiva, Opção B).
-// Captura device/UTM/referrer SEMPRE no init, dispara pageview a cada rota e
-// envia heartbeats de DELTA (segundos desde o último envio), nunca tempo total.
-// Consentimento LGPD continua sendo registrado, mas NÃO bloqueia mais a captura.
+// Optional visitor analytics starts only after explicit consent.
 import { useEffect, useRef } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { parseUA } from "@/lib/uaParser";
 import { redactTrackingText } from '@/lib/tracking-privacy';
+import { hasOptionalConsent, useCookieConsent } from '@/lib/cookie-consent';
+export { getConsentStatus, recordConsent } from '@/lib/cookie-consent';
 
 const STORAGE_KEY = "elc_visitor_id";
-const CONSENT_KEY = "elc_cookie_consent";
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-visit`;
 
 function getOrCreateVisitorId(): string {
@@ -21,6 +19,7 @@ function getOrCreateVisitorId(): string {
 }
 
 function send(payload: Record<string, unknown>, useBeacon = false) {
+  if (!hasOptionalConsent()) return;
   const body = JSON.stringify(payload);
   if (useBeacon && navigator.sendBeacon) {
     navigator.sendBeacon(ENDPOINT, new Blob([body], { type: "application/json" }));
@@ -52,25 +51,8 @@ function buildDevicePayload() {
   };
 }
 
-function readConsent(): "pending" | "accepted" | "rejected" {
-  return (localStorage.getItem(CONSENT_KEY) as "accepted" | "rejected" | null) ?? "pending";
-}
-
-export function recordConsent(accepted: boolean) {
-  localStorage.setItem(CONSENT_KEY, accepted ? "accepted" : "rejected");
-  send({
-    visitor_id: getOrCreateVisitorId(),
-    event: "consent",
-    accepted,
-    categories: { analytics: accepted, tracking: accepted },
-  });
-}
-
-export function getConsentStatus() {
-  return readConsent();
-}
-
 export function useVisitorTracking() {
+  const consent = useCookieConsent();
   const location = useLocation();
   const params = useParams<{ slug?: string }>();
   const initialized = useRef(false);
@@ -80,6 +62,7 @@ export function useVisitorTracking() {
 
   // INIT — captura device + UTM + referrer (1x por carregamento)
   useEffect(() => {
+    if (consent !== 'accepted') { initialized.current = false; lastPath.current = ''; return; }
     if (initialized.current) return;
     initialized.current = true;
 
@@ -101,10 +84,11 @@ export function useVisitorTracking() {
       referrer: redactTrackingText(document.referrer) || null,
       landing_path: redactTrackingText(location.pathname),
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [consent, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // PAGEVIEW + flush de heartbeat ao mudar de rota
   useEffect(() => {
+    if (consent !== 'accepted') return;
     if (location.pathname.startsWith("/admin")) return;
 
     // Flush do delta acumulado na página anterior antes de virar
@@ -139,13 +123,14 @@ export function useVisitorTracking() {
       from_path: fromPath,
       device: buildDevicePayload(),
     });
-  }, [location.pathname, location.search, params.slug]);
+  }, [location.pathname, location.search, params.slug, consent]);
 
   // Heartbeat periódico (30s) — envia DELTA acumulado
   useEffect(() => {
+    if (consent !== 'accepted') return;
     if (location.pathname.startsWith("/admin")) return;
     const interval = setInterval(() => {
-      if (document.visibilityState !== "visible") return;
+      if (!hasOptionalConsent() || document.visibilityState !== "visible") return;
       const deltaMs = Date.now() - lastHeartbeatAt.current;
       const delta = Math.max(1, Math.floor(deltaMs / 1000));
       if (delta < 5) return;
@@ -158,11 +143,13 @@ export function useVisitorTracking() {
       lastHeartbeatAt.current = Date.now();
     }, 30000);
     return () => clearInterval(interval);
-  }, [location.pathname]);
+  }, [location.pathname, consent]);
 
   // Heartbeat final ao sair / esconder a aba
   useEffect(() => {
+    if (consent !== 'accepted') return;
     const onHide = () => {
+      if (!hasOptionalConsent()) return;
       if (location.pathname.startsWith("/admin")) return;
       const deltaMs = Date.now() - lastHeartbeatAt.current;
       const delta = Math.max(1, Math.floor(deltaMs / 1000));
@@ -185,5 +172,5 @@ export function useVisitorTracking() {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("pagehide", onHide);
     };
-  }, [location.pathname]);
+  }, [location.pathname, consent]);
 }

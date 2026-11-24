@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useTrackingConfig, pathMatches } from "@/hooks/useTrackingConfig";
 import { isTrackingPath, redactTrackingText } from '@/lib/tracking-privacy';
+import { hasOptionalConsent, useCookieConsent } from '@/lib/cookie-consent';
 
 /**
  * Strict format validators for admin-managed tracking IDs. These prevent a
@@ -23,8 +24,30 @@ const isValid = (re: RegExp, v?: string | null): v is string =>
 export const TrackingScripts = () => {
   const { data: cfg } = useTrackingConfig();
   const location = useLocation();
+  const consent = useCookieConsent();
+  const hadConsent = useRef(false);
 
   useEffect(() => {
+    if (consent === 'accepted') { hadConsent.current = true; return; }
+    if (!hadConsent.current) return;
+    hadConsent.current = false;
+    // Reload discards already-executed third-party timers and event listeners.
+    window.gtag?.('consent', 'update', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
+    window.fbq?.('consent', 'revoke');
+    for (const part of document.cookie.split(';')) {
+      const name = part.split('=')[0].trim();
+      if (!/^(_ga($|_)|_gid$|_gat($|_)|_gcl_|_fbp$|_fbc$)/.test(name)) continue;
+      const domains = window.location.hostname.split('.');
+      document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`;
+      for (let index = 0; index < domains.length - 1; index++) {
+        document.cookie = `${name}=; Max-Age=0; path=/; domain=.${domains.slice(index).join('.')}; SameSite=Lax`;
+      }
+    }
+    window.location.reload();
+  }, [consent]);
+
+  useEffect(() => {
+    if (!hasOptionalConsent()) return;
     if (!cfg || !cfg.enabled) return;
     const path = location.pathname;
     if (isTrackingPath(path)) return;
@@ -66,10 +89,11 @@ export const TrackingScripts = () => {
       s.innerHTML = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${cfg.meta_pixel_id}');fbq('track','PageView');`;
       document.head.appendChild(s);
     }
-  }, [cfg]);
+  }, [cfg, consent, location.pathname]);
 
   // Track page changes for SPA
   useEffect(() => {
+    if (!hasOptionalConsent()) return;
     if (!cfg?.enabled) return;
     const path = redactTrackingText(location.pathname + location.search);
     if (isTrackingPath(location.pathname)) return;
@@ -79,7 +103,7 @@ export const TrackingScripts = () => {
     if (cfg.ga4_id && window.gtag) window.gtag("event", "page_view", { page_path: path, page_location: redactTrackingText(window.location.href), page_referrer: redactTrackingText(document.referrer) });
     // @ts-ignore
     if (cfg.meta_pixel_id && window.fbq) window.fbq("track", "PageView");
-  }, [location, cfg]);
+  }, [location, cfg, consent]);
 
   return null;
 };
