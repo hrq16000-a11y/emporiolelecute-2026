@@ -55,6 +55,24 @@ jobs:
           sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid" -j REJECT
           sudo iptables -C OUTPUT -m owner --uid-owner "$uid" ! -d 127.0.0.1/32 -j REJECT
           sudo ip6tables -C OUTPUT -m owner --uid-owner "$uid" -j REJECT
+      - name: Make historical cron cleanup safe on fresh local database
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("supabase/migrations/20260814154716_b2258712-76bd-49f4-b81e-5854d32e5bd9.sql")
+          original = p.read_text()
+          patched = original
+          for job in ("submit-sitemap-weekly", "weekly-sitemap-submission", "submit-sitemap-12h"):
+              before = f"SELECT cron.unschedule('{job}');"
+              after = f"SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = '{job}';"
+              assert patched.count(before) == 1, "Historical migration drift: " + job
+              patched = patched.replace(before, after, 1)
+          p.write_text(patched)
+          print("Local-only adaptation: three historical cron cleanup statements now skip absent jobs.")
+          PY
+          git diff --stat -- supabase/migrations
       - name: Start disposable Supabase (no edge runtime)
         run: supabase start -x edge-runtime
       - name: Synthetic Auth, RLS, checkout and privacy checks
