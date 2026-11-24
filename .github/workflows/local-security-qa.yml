@@ -25,10 +25,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13
         with:
           version: 2.75.0
       - name: Isolate local stack before migrations
+        id: isolate
         shell: bash
         run: |
           set -euo pipefail
@@ -40,8 +42,12 @@ jobs:
           sudo iptables -S DOCKER-USER >/dev/null
           sudo iptables -I DOCKER-USER 1 -i br+ ! -o br+ -j REJECT
           sudo iptables -I DOCKER-USER 1 -i docker0 ! -o docker0 -j REJECT
+          sudo iptables -I INPUT 1 -i br+ -m conntrack --ctstate NEW -j REJECT
+          sudo iptables -I INPUT 1 -i docker0 -m conntrack --ctstate NEW -j REJECT
           sudo ip6tables -I FORWARD 1 -i br+ ! -o br+ -j REJECT
           sudo ip6tables -I FORWARD 1 -i docker0 ! -o docker0 -j REJECT
+          sudo ip6tables -I INPUT 1 -i br+ -m conntrack --ctstate NEW -j REJECT
+          sudo ip6tables -I INPUT 1 -i docker0 -m conntrack --ctstate NEW -j REJECT
           # Separate unprivileged test process with loopback-only network access.
           sudo useradd --system --no-create-home --shell /usr/sbin/nologin leleqa
           uid="$(id -u leleqa)"
@@ -56,6 +62,7 @@ jobs:
         run: |
           set -euo pipefail
           set +x
+          node -e 'if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'
           local_status="$(supabase status -o env)"
           api="$(printf '%s\n' "$local_status" | sed -n 's/^API_URL="\([^"]*\)"$/\1/p')"
           key="$(printf '%s\n' "$local_status" | sed -n 's/^ANON_KEY="\([^"]*\)"$/\1/p')"
@@ -70,5 +77,5 @@ jobs:
           chmod -R a+rX "$tmp"
           sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL="$api" SUPABASE_ANON_KEY="$key" "$(command -v node)" --experimental-strip-types --test "$tmp/scripts/local-security-qa.mjs"
       - name: Destroy local stack
-        if: always()
+        if: always() && steps.isolate.outcome == 'success'
         run: supabase stop --no-backup

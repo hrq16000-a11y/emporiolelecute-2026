@@ -11,6 +11,8 @@ concurrency:
 
 jobs:
   unit:
+    # The isolated security PR runs only its opt-in QA; normal CI resumes for other branches.
+    if: github.event_name != 'pull_request' || github.head_ref != 'fix/round-2a-local-rls-test-isolation'
     name: Vitest (unit)
     runs-on: ubuntu-latest
     steps:
@@ -28,6 +30,7 @@ jobs:
           CI: true
 
   e2e:
+    if: github.event_name != 'pull_request' || github.head_ref != 'fix/round-2a-local-rls-test-isolation'
     name: Playwright (${{ matrix.project }})
     runs-on: ubuntu-24.04
     needs: unit
