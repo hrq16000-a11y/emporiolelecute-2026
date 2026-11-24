@@ -623,21 +623,36 @@ const handler = async (req: Request): Promise<Response> => {
     // ---------------- New order confirmation ----------------
     if (requestData.orderCode) {
       const orderCode = clampStr((requestData as OrderRequest).orderCode, 32);
+      const denied = () => new Response(JSON.stringify({ success: false, error: "Acesso não autorizado" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+      const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+      if (!token) return denied();
+      let verifiedCustomerEmail: string;
+      let userId: string;
+      try {
+        const { data, error } = await supabaseAdmin.auth.getUser(token);
+        const user = data?.user;
+        if (error || !user?.id || user.is_anonymous || !user.email_confirmed_at || !isValidEmail(user.email)) return denied();
+        userId = user.id;
+        verifiedCustomerEmail = user.email.trim().toLowerCase();
+      } catch { return denied(); }
+      const { data: roles, error: roleError } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", userId);
+      if (roleError) return denied();
+      const isAdmin = roles?.some(role => role.role === "admin") === true;
+      if (!/^[A-Z0-9]{4,20}$/.test(orderCode)) return denied();
 
       // The email body is built ONLY from the stored order, never from the
-      // request, and confirmations are sent only right after checkout.
-      const { data: dbOrder } = await supabaseAdmin
+      // request. Owner scope is applied before retrieving order details.
+      let orderQuery = supabaseAdmin
         .from("orders")
         .select("id, order_code, customer_email, customer_name, customer_phone, address_cep, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, shipping_method, shipping_company, shipping_days, shipping_price, subtotal, total, created_at")
-        .eq("order_code", orderCode)
-        .maybeSingle();
+        .eq("order_code", orderCode);
+      if (!isAdmin) orderQuery = orderQuery.eq("customer_email", verifiedCustomerEmail);
+      const { data: dbOrder, error: orderError } = await orderQuery.maybeSingle();
       const freshWindowMs = 30 * 60 * 1000;
-      if (!dbOrder || Date.now() - new Date(dbOrder.created_at).getTime() > freshWindowMs) {
-        return new Response(JSON.stringify({ success: false, error: "Order not found" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
+      const orderAge = dbOrder ? Date.now() - new Date(dbOrder.created_at).getTime() : NaN;
+      if (orderError || !dbOrder || !Number.isFinite(orderAge) || orderAge < 0 || orderAge > freshWindowMs) return denied();
 
       const { data: dbItems } = await supabaseAdmin
         .from("order_items")
@@ -671,23 +686,8 @@ const handler = async (req: Request): Promise<Response> => {
         html: storeEmailHtml,
       });
 
-      // Guest-written order email is not proof of mailbox ownership.
-      // Customer confirmations require a server-verified confirmed matching account.
-      // Authentication failure suppresses only this optional send, not guest checkout.
+      // Admin authorization does not establish ownership of the recipient mailbox.
       const recipient = dbOrder.customer_email;
-      let verifiedCustomerEmail: string | null = null;
-      const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
-      if (token) {
-        try {
-          const { data, error: identityError } = await supabaseAdmin.auth.getUser(token);
-          const user = data?.user;
-          if (!identityError && user?.id && user.email_confirmed_at && !user.is_anonymous && isValidEmail(user.email)) {
-            verifiedCustomerEmail = user.email.trim().toLowerCase();
-          }
-        } catch {
-          verifiedCustomerEmail = null;
-        }
-      }
       if (isValidEmail(recipient) && verifiedCustomerEmail === recipient.trim().toLowerCase()) {
         const customerEmailHtml = generateCustomerEmailHtml(order);
         await resend.emails.send({

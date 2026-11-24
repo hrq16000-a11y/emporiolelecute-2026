@@ -4,23 +4,16 @@ import { useLocation, useParams } from "react-router-dom";
 import { parseUA } from "@/lib/uaParser";
 import { redactTrackingText } from '@/lib/tracking-privacy';
 import { hasOptionalConsent, useCookieConsent } from '@/lib/cookie-consent';
+import { getVisitorIdentity } from '@/lib/visitor';
 export { getConsentStatus, recordConsent } from '@/lib/cookie-consent';
 
-const STORAGE_KEY = "elc_visitor_id";
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-visit`;
 
-function getOrCreateVisitorId(): string {
-  let id = localStorage.getItem(STORAGE_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(STORAGE_KEY, id);
-  }
-  return id;
-}
-
-function send(payload: Record<string, unknown>, useBeacon = false) {
+async function send(payload: Record<string, unknown>, useBeacon = false) {
   if (!hasOptionalConsent()) return;
-  const body = JSON.stringify(payload);
+  const identity = await getVisitorIdentity();
+  if (!identity || !hasOptionalConsent()) return;
+  const body = JSON.stringify({ ...payload, ...identity });
   if (useBeacon && navigator.sendBeacon) {
     navigator.sendBeacon(ENDPOINT, new Blob([body], { type: "application/json" }));
     return;
@@ -71,7 +64,6 @@ export function useVisitorTracking() {
 
     const search = new URLSearchParams(window.location.search);
     send({
-      visitor_id: getOrCreateVisitorId(),
       event: "init",
       device: buildDevicePayload(),
       utm: {
@@ -96,7 +88,6 @@ export function useVisitorTracking() {
       const deltaMs = Date.now() - lastHeartbeatAt.current;
       const delta = Math.max(1, Math.floor(deltaMs / 1000));
       send({
-        visitor_id: getOrCreateVisitorId(),
         event: "heartbeat",
         delta_seconds: delta,
         scroll_depth: Math.round((window.scrollY / Math.max(document.body.scrollHeight - window.innerHeight, 1)) * 100),
@@ -114,7 +105,6 @@ export function useVisitorTracking() {
 
     // Reenvia device a cada pageview também (auto-heal de campos faltantes — barato)
     send({
-      visitor_id: getOrCreateVisitorId(),
       event: "pageview",
       path: redactTrackingText(location.pathname + location.search),
       title: document.title,
@@ -135,7 +125,6 @@ export function useVisitorTracking() {
       const delta = Math.max(1, Math.floor(deltaMs / 1000));
       if (delta < 5) return;
       send({
-        visitor_id: getOrCreateVisitorId(),
         event: "heartbeat",
         delta_seconds: delta,
         scroll_depth: Math.round((window.scrollY / Math.max(document.body.scrollHeight - window.innerHeight, 1)) * 100),
@@ -155,7 +144,6 @@ export function useVisitorTracking() {
       const delta = Math.max(1, Math.floor(deltaMs / 1000));
       if (delta < 1) return;
       send({
-        visitor_id: getOrCreateVisitorId(),
         event: "heartbeat",
         delta_seconds: delta,
         scroll_depth: Math.round((window.scrollY / Math.max(document.body.scrollHeight - window.innerHeight, 1)) * 100),

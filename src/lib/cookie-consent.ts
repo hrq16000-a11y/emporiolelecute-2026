@@ -21,6 +21,7 @@ export const recordConsent = (accepted: boolean) => {
     window.localStorage.setItem(consentKey, accepted ? 'accepted' : 'rejected');
     if (!accepted) {
       window.localStorage.removeItem('elc_visitor_id');
+      window.localStorage.removeItem('elc_visitor_credential');
       window.sessionStorage.removeItem('__pdp_funnel_sid__');
     }
   } catch { /* Unavailable storage never enables optional tracking. */ }

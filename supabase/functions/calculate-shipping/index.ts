@@ -110,13 +110,22 @@ type ShippingOption = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method !== 'POST') return json({ error: 'Método não permitido' }, 405);
 
   const sb = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   );
 
   try {
+    // Authenticate before reading provider credentials, cache or writing audits.
+    const token = req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const loginRequired = () => json({ error: 'Entre na sua conta para cotar com a transportadora ou combine o frete pelo WhatsApp.', login_required: true }, 401);
+    if (!token) return loginRequired();
+    try {
+      const { data, error } = await sb.auth.getUser(token);
+      if (error || !data?.user?.id || data.user.is_anonymous) return loginRequired();
+    } catch { return loginRequired(); }
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
     const { cep_destino, items, state } = parsed.data;

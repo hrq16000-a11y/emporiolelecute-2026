@@ -88,10 +88,21 @@ export default function ShippingCalculator({ items, state, initialCep = "", onSe
     }
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session || sessionData.session.user.is_anonymous) {
+        setError('Entre na sua conta para cotar com a transportadora ou combine o frete pelo WhatsApp.');
+        return;
+      }
       const { data, error: fnErr } = await supabase.functions.invoke("calculate-shipping", {
         body: { cep_destino: cep, state, items },
       });
-      if (fnErr) throw fnErr;
+      if (fnErr) {
+        if ('context' in fnErr && fnErr.context instanceof Response && fnErr.context.status === 401) {
+          setError('Entre na sua conta para cotar com a transportadora ou combine o frete pelo WhatsApp.');
+          return;
+        }
+        throw fnErr;
+      }
       const opts: ShippingOption[] = data?.options ?? [];
       if (!opts.length) {
         setError(ERROR_MSG);

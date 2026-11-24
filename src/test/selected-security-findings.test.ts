@@ -11,7 +11,7 @@ const installHandler = (path: string, database: Database, extra: Record<string, 
   const queries: Array<{ table: string; filters: Array<[string, unknown]> }> = [];
   const writes: Row[] = [];
   const client = {
-    auth: { getUser: async () => ({ data: { user: { email: 'owner@example.test', email_confirmed_at: '2026-11-24' } } }) },
+    auth: { getUser: async () => ({ data: { user: { id: 'synthetic-owner', email: 'owner@example.test', email_confirmed_at: '2026-11-24' } } }) },
     from: (table: string) => {
       const filters: Array<[string, unknown]> = [];
       queries.push({ table, filters });
@@ -62,7 +62,7 @@ const catalog = () => ({
   products: [{ id: ACTIVE, is_active: true, price: 53, weight_kg: 0.3 }, { id: HIDDEN, is_active: false, price: 12, weight_kg: 9 }],
 });
 const quoteRequest = (ids = [ACTIVE]) => new Request('https://isolated.test/calculate-shipping', {
-  method: 'POST', body: JSON.stringify({ cep_destino: CEP, items: ids.map(product_id => ({ product_id, name: 'Synthetic soap', quantity: 1 })) }),
+  method: 'POST', headers: { authorization: 'Bearer isolated-test-session' }, body: JSON.stringify({ cep_destino: CEP, items: ids.map(product_id => ({ product_id, name: 'Synthetic soap', quantity: 1 })) }),
 });
 const subscriptionRequest = (endpoint: string) => new Request('https://isolated.test/notification-prefs', {
   method: 'POST', headers: { authorization: 'Bearer isolated-test-session' },

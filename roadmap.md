@@ -1,5 +1,12 @@
 # Boutique editorial
 
+## Authorized selected security fixes — 2026-11-24
+- [x] Restrict code-based resend/read to verified owners or server-verified admins; preserve guest checkout and WhatsApp.
+- [x] Require verified non-anonymous login before carrier settings/cache/quotes/audits.
+- [x] Bind all visitor mutations to a browser secret; start fresh for legacy browsers without reattachment.
+- [x] Run 89 affected tests and 5 storefront guards; verify synthetic 390/768/1440 flows and document limits in docs/qa/authorized-selected-security-2026-11-24.md.
+- [ ] Real authenticated carrier/email persistence verification waits for an isolated backend; no real orders, sends, quotes or production database changes were requested.
+
 ## Daily close — 2026-11-24
 - [x] Confirm GitHub received f68623a0 and PR #9 stays isolated.
 - [x] Observe Vercel already auto-promoted f68623a0 to Production READY despite documented NO-GO; no manual deployment or rollback.
@@ -9,9 +16,9 @@
 ## Next-day queue — separate authorization required
 - [ ] Atomic server catalog pricing and pre-persistence divergence contract.
 - [ ] Isolated real authentication, email, RLS and SSE homologation.
-- [ ] Order-code resend/discovery authorization.
-- [ ] Anonymous carrier authorization.
-- [ ] Browser-bound visitor history authorization.
+- [x] Order-code resend/discovery authorization supplied and implemented in the selected security fixes.
+- [x] Anonymous carrier authorization supplied and implemented in the selected security fixes.
+- [x] Browser-bound visitor history authorization supplied and implemented in the selected security fixes.
 - [ ] Finish isolated PR #9 without duplicating its runner or weakening CI gates.
 - [ ] Future TanStack Start/SSR migration awaits explicit specific authorization; no migration now.
 
@@ -33,7 +40,7 @@
 ## Selected security findings — 2026-11-24
 - [x] Fix and test seven selected findings: active shipping catalog, three postcode leaks, GSC CSV, subscription ownership and unpublished paths. Twenty-two focused tests and automatic build passed.
 - [x] Guest customer-email confirmation restriction authorized and corrected in Round 2.1; not deployed.
-- [ ] Separate order-code resend/discovery, carrier authorization and browser-bound visitor histories remain outside Round 2.1 scope.
+- [x] Separate order-code resend/discovery, carrier authorization and browser-bound visitor histories authorized and corrected in the selected security follow-up.
 - [x] Update seven verified selected findings; keep four active awaiting approval. No other findings changed; no deployment or frontend publication.
 
 ## 360° Round 1 — order privacy and notification authorization

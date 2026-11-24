@@ -38,7 +38,7 @@ const installHandler = (options: {
     from: (table: string) => {
       const rows = table === 'orders' ? [order] : table === 'order_items'
         ? [{ order_id: 'synthetic-order', product_name: 'Produto sintético', quantity: 3, unit_price: 12.5 }]
-        : options.admin ? [{ user_id: 'synthetic-admin', role: 'admin' }] : [];
+        : options.admin ? [{ user_id: options.user?.id ?? 'synthetic-admin', role: 'admin' }] : [];
       const filters: Array<[string, unknown]> = [];
       const result = () => ({ data: rows.filter(row => filters.every(([key, value]) => row[key as keyof typeof row] === value)), error: null });
       const query = {
@@ -71,12 +71,12 @@ const installHandler = (options: {
 };
 
 describe('Round 2.1 — verified customer confirmation boundary', () => {
-  it('guest checkout never sends to the caller-selected third-party address and still notifies the store', async () => {
+  it('guest code requests cannot discover orders or cause any emails', async () => {
     const fixture = installHandler({ recipient: 'third-party@example.test' });
     const response = await fixture.handle();
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ success: true });
-    expect(fixture.send.mock.calls.map(([mail]) => mail.to)).toEqual([[STORE]]);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ success: false });
+    expect(fixture.send).not.toHaveBeenCalled();
     expect(fixture.getUser).not.toHaveBeenCalled();
   });
 
@@ -86,15 +86,14 @@ describe('Round 2.1 — verified customer confirmation boundary', () => {
     ['unconfirmed email', { user: { ...confirmedUser(), email_confirmed_at: null } }],
     ['confirmation forged in editable metadata', { user: { id: 'synthetic-owner', email: OWNER, user_metadata: { email_confirmed_at: '2026-11-24', role: 'admin' } } }],
     ['different confirmed email', { user: confirmedUser('other@example.test') }],
-    ['administrator with different email', { user: confirmedUser('admin@example.test'), admin: true }],
     ['missing email', { user: { id: 'synthetic-owner', email_confirmed_at: '2026-11-24' } }],
     ['anonymous authenticated identity', { user: { ...confirmedUser(), is_anonymous: true } }],
     ['identity provider failure', { authThrows: true }],
     ['invalid stored recipient', { user: confirmedUser(), recipient: 'invalid' }],
   ])('%s cannot cause a customer confirmation', async (_name, options) => {
     const fixture = installHandler(options);
-    expect((await fixture.handle(undefined, 'Bearer synthetic-session')).status).toBe(200);
-    expect(fixture.send.mock.calls.map(([mail]) => mail.to)).toEqual([[STORE]]);
+    expect((await fixture.handle(undefined, 'Bearer synthetic-session')).status).toBe(403);
+    expect(fixture.send).not.toHaveBeenCalled();
   });
 
   it('verified matching account receives canonical saved order content, not forged payload fields', async () => {
@@ -110,14 +109,14 @@ describe('Round 2.1 — verified customer confirmation boundary', () => {
 
   it('absence of a bearer session does not trust a matching identity fixture', async () => {
     const fixture = installHandler({ user: confirmedUser() });
-    expect((await fixture.handle(undefined, 'Basic synthetic-session')).status).toBe(200);
+    expect((await fixture.handle(undefined, 'Basic synthetic-session')).status).toBe(403);
     expect(fixture.getUser).not.toHaveBeenCalled();
-    expect(fixture.send.mock.calls.map(([mail]) => mail.to)).toEqual([[STORE]]);
+    expect(fixture.send).not.toHaveBeenCalled();
   });
 
   it('old orders retain the existing freshness restriction', async () => {
     const fixture = installHandler({ user: confirmedUser(), orderAgeMs: 31 * 60 * 1000 });
-    expect((await fixture.handle(undefined, 'Bearer synthetic-session')).status).toBe(404);
+    expect((await fixture.handle(undefined, 'Bearer synthetic-session')).status).toBe(403);
     expect(fixture.send).not.toHaveBeenCalled();
   });
 
@@ -125,6 +124,21 @@ describe('Round 2.1 — verified customer confirmation boundary', () => {
     const fixture = installHandler();
     expect((await fixture.handle({ type: 'quote', name: 'Cliente sintético', email: 'third-party@example.test', whatsapp: '41999999999' })).status).toBe(200);
     expect(fixture.send.mock.calls.map(([mail]) => mail.to)).toEqual([[STORE]]);
+  });
+
+  it('confirmed database admin can notify the store but cannot confirm another mailbox', async () => {
+    const fixture = installHandler({ user: confirmedUser('admin@example.test'), admin: true });
+    expect((await fixture.handle(undefined, 'Bearer synthetic-session')).status).toBe(200);
+    expect(fixture.send.mock.calls.map(([mail]) => mail.to)).toEqual([[STORE]]);
+  });
+
+  it('missing and unrelated orders have identical denials for confirmed non-owners', async () => {
+    const fixture = installHandler({ user: confirmedUser('other@example.test') });
+    const existing = await fixture.handle(undefined, 'Bearer synthetic-session');
+    const missing = await fixture.handle({ orderCode: 'LCMISSING' }, 'Bearer synthetic-session');
+    expect(existing.status).toBe(403); expect(missing.status).toBe(403);
+    expect(await existing.json()).toEqual(await missing.json());
+    expect(fixture.send).not.toHaveBeenCalled();
   });
 
   it('anonymous status-update requests remain denied without sends', async () => {

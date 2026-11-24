@@ -1,18 +1,11 @@
-// Track visit beacon — Fase 2 (Opção B: telemetria agressiva).
-// Coleta IP/UA/device/timeline DESDE o ms zero, sem bloquear por consentimento.
-// Bots conhecidos são identificados, marcados em `visitors.is_bot=true` e descartados
-// (não geram pageviews/heartbeats). Consentimento LGPD continua sendo registrado,
-// mas serve apenas para a decisão jurídica de uso futuro do dado — nunca trava captura.
+// Optional browser analytics; every mutation requires the browser capability.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { ownsVisitorId } from '../_shared/visitor-capability.ts';
 
 interface Payload {
   visitor_id: string;
+  visitor_credential?: string;
   event: "init" | "pageview" | "heartbeat" | "consent" | "lead" | "session_end";
   lead_trigger?: string;
   device?: Record<string, unknown>;
@@ -50,8 +43,7 @@ const pickDevice = (raw: unknown): Record<string, unknown> => {
       .map(([k, v]) => [k, typeof v === "string" ? v.slice(0, 200) : v]),
   );
 };
-// Visitor ids are browser-generated random UUIDs; anything else is rejected so
-// ids cannot be enumerated or chosen to target another visitor's record.
+// UUID syntax is not authorization; the credential must derive this exact id.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // ---- Detecção de bots/scrapers ----
@@ -116,10 +108,20 @@ Deno.serve(async (req) => {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  if (!await ownsVisitorId(body.visitor_id, body.visitor_credential)) {
+    return new Response(JSON.stringify({ error: 'visitor_authorization_required' }), {
+      status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  if (!["init", "pageview", "heartbeat", "consent", "lead", "session_end"].includes(body.event)) {
+    return new Response(JSON.stringify({ error: 'invalid_event' }), {
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   );
 
   const ip = getClientIP(req);
@@ -193,15 +195,10 @@ Deno.serve(async (req) => {
         categories: body.categories || {},
         ip, user_agent: ua,
       });
-      // Only the same browser that created the visitor may change its consent state;
-      // a leaked visitor_id from another device just appends an audit row.
-      const sameBrowser = !existing || !existing.user_agent || existing.user_agent === ua;
-      if (sameBrowser) {
-        await supabase.from("visitors").update({
-          consent_status: body.accepted ? "accepted" : "rejected",
-          consent_at: new Date().toISOString(),
-        }).eq("visitor_id", body.visitor_id);
-      }
+      await supabase.from("visitors").update({
+        consent_status: body.accepted ? "accepted" : "rejected",
+        consent_at: new Date().toISOString(),
+      }).eq("visitor_id", body.visitor_id);
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -244,7 +241,8 @@ Deno.serve(async (req) => {
       if (delta > 0) {
         const { error: hbErr } = await supabase.rpc("track_heartbeat", {
           _visitor_id: body.visitor_id,
-          _pageview_id: body.pageview_id || null,
+          // Never accept a foreign pageview id; the RPC resolves this owner's latest.
+          _pageview_id: null,
           _delta_seconds: delta,
           _scroll_depth: typeof body.scroll_depth === "number" ? body.scroll_depth | 0 : null,
         });

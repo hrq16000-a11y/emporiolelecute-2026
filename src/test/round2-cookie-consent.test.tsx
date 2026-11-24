@@ -5,8 +5,10 @@ import { getConsentStatus, hasOptionalConsent, recordConsent, useCookieConsent }
 import { event, fbEvent, trackFunnelEvent } from '@/lib/analytics';
 import { markLead } from '@/lib/visitor';
 import { useVisitorTracking } from '@/hooks/useVisitorTracking';
+import { webcrypto } from 'node:crypto';
+import { waitFor } from '@testing-library/react';
 
-beforeEach(() => { localStorage.clear(); sessionStorage.clear(); });
+beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.stubGlobal('crypto', webcrypto); });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); delete window.gtag; delete window.fbq; });
 
 describe('Round 2 optional consent boundaries', () => {
@@ -31,9 +33,10 @@ describe('Round 2 optional consent boundaries', () => {
     expect(window.gtag).toHaveBeenCalledWith('event', 'view_item', { value: 9.99 });
   });
   it('revokes optional identifiers while preserving the cart', () => {
-    recordConsent(true); localStorage.setItem('elc_visitor_id', 'synthetic'); sessionStorage.setItem('__pdp_funnel_sid__', 'synthetic');
+    recordConsent(true); localStorage.setItem('elc_visitor_id', 'synthetic'); localStorage.setItem('elc_visitor_credential', 'synthetic'); sessionStorage.setItem('__pdp_funnel_sid__', 'synthetic');
     localStorage.setItem('emporio-cart-storage', 'synthetic-cart'); recordConsent(false);
     expect(localStorage.getItem('elc_visitor_id')).toBeNull(); expect(sessionStorage.getItem('__pdp_funnel_sid__')).toBeNull();
+    expect(localStorage.getItem('elc_visitor_credential')).toBeNull();
     expect(localStorage.getItem('emporio-cart-storage')).toBe('synthetic-cart');
   });
   it('discards queued analytics when consent is revoked before sending', () => {
@@ -48,12 +51,12 @@ describe('Round 2 optional consent boundaries', () => {
     act(() => recordConsent(true)); expect(result.current).toBe('accepted');
     act(() => recordConsent(false)); expect(result.current).toBe('rejected');
   });
-  it('does not create visitor IDs or send pageviews before consent, and resumes on acceptance', () => {
+  it('does not create visitor IDs or send pageviews before consent, and resumes on acceptance', async () => {
     const fetch = vi.fn(async () => new Response('{}')); vi.stubGlobal('fetch', fetch);
     const { unmount } = renderHook(useVisitorTracking, { wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter> });
     expect(fetch).not.toHaveBeenCalled(); expect(localStorage.getItem('elc_visitor_id')).toBeNull();
     act(() => recordConsent(true));
-    expect(fetch).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
     const bodies = fetch.mock.calls.map(call => JSON.parse(String((call as unknown as [string, RequestInit])[1].body)));
     expect(bodies.map(body => body.event)).toEqual(['init', 'pageview']);
     act(() => recordConsent(false)); fetch.mockClear();

@@ -21,7 +21,7 @@ export const sanitizeDiagnosticValue = (value: unknown, seen = new WeakSet<objec
   };
   if (Array.isArray(value)) return value.map(item => sanitizeDiagnosticValue(item, seen, depth + 1));
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key,
-    /^(?:order_?code|order_?id|tracking_?(?:code|url)|visitor_?id|user_?id|customer_.*|email|phone|address.*|authorization|token|subscription|endpoint|p256dh|auth)$/i.test(key)
+    /^(?:order_?code|order_?id|tracking_?(?:code|url)|visitor_?(?:id|credential)|user_?id|customer_.*|email|phone|address.*|authorization|token|subscription|endpoint|p256dh|auth)$/i.test(key)
       ? '[omitted]' : sanitizeDiagnosticValue(item, seen, depth + 1),
   ]));
 };
