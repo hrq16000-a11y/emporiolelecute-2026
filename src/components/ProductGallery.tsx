@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { optimizeImage } from "@/lib/image";
 import { BlurImage } from "@/components/BlurImage";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface ProductGalleryProps {
   images: string[];
@@ -13,6 +14,7 @@ interface ProductGalleryProps {
 }
 
 const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: ProductGalleryProps) => {
+  const { enabled: reducedMotion } = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -38,13 +40,14 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
 
   // Vibração tátil sutil ao trocar de slide (mobile, quando disponível)
   const hapticTick = useCallback(() => {
+    if (reducedMotion) return;
     if (typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
     if (typeof window !== 'undefined') {
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       if (reduced) return;
     }
     try { navigator.vibrate?.(8); } catch { /* noop */ }
-  }, []);
+  }, [reducedMotion]);
 
   const goToPrevious = () => {
     hapticTick();
@@ -126,12 +129,12 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [hapticTick]);
 
   // Autoplay suave (fade já aplicado via transition-opacity).
   // Pausa em: zoom aberto, hover/touch/focus, aba oculta, prefers-reduced-motion, <2 imagens.
   useEffect(() => {
-    if (images.length < 2 || isZoomed || isPaused) return;
+    if (images.length < 2 || isZoomed || isPaused || reducedMotion) return;
     if (typeof window === 'undefined') return;
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduced) return;
@@ -141,7 +144,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
       setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
     }, 5000);
     return () => window.clearInterval(id);
-  }, [images.length, isZoomed, isPaused]);
+  }, [images.length, isZoomed, isPaused, reducedMotion]);
 
   // Pausa autoplay quando a aba fica oculta
   useEffect(() => {

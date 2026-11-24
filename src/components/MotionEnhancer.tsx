@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
  * Motion global e leve: revela seções `.scroll-3d` (fallback para navegadores
@@ -6,11 +7,17 @@ import { useEffect } from "react";
  * Desligado com prefers-reduced-motion ou html.motion-reduced.
  */
 const MotionEnhancer = () => {
+  const { enabled } = useReducedMotion();
   useEffect(() => {
     const reduced = () =>
       window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
       document.documentElement.classList.contains("motion-reduced");
-    if (reduced()) return;
+    const resetCards = () => document.querySelectorAll<HTMLElement>(".product-card").forEach((card) => {
+      card.style.removeProperty("--tilt-x");
+      card.style.removeProperty("--tilt-y");
+    });
+    resetCards();
+    if (enabled || reduced()) return;
 
     const io = new IntersectionObserver(
       (entries) =>
@@ -31,10 +38,12 @@ const MotionEnhancer = () => {
     const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     let raf = 0;
     const onMove = (ev: PointerEvent) => {
+      if (reduced() || ev.pointerType === "touch") return;
       const card = (ev.target as HTMLElement)?.closest?.(".product-card") as HTMLElement | null;
       if (!card) return;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
+        if (reduced() || !card.isConnected) return;
         const r = card.getBoundingClientRect();
         const x = (ev.clientX - r.left) / r.width - 0.5;
         const y = (ev.clientY - r.top) / r.height - 0.5;
@@ -45,6 +54,7 @@ const MotionEnhancer = () => {
     const onLeave = (ev: PointerEvent) => {
       const card = (ev.target as HTMLElement)?.closest?.(".product-card") as HTMLElement | null;
       if (card && !card.contains(ev.relatedTarget as Node)) {
+        cancelAnimationFrame(raf);
         card.style.removeProperty("--tilt-x");
         card.style.removeProperty("--tilt-y");
       }
@@ -59,8 +69,9 @@ const MotionEnhancer = () => {
       cancelAnimationFrame(raf);
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerout", onLeave);
+      resetCards();
     };
-  }, []);
+  }, [enabled]);
   return null;
 };
 

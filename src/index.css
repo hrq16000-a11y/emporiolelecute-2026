@@ -335,6 +335,14 @@
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
+  transition-duration: 0.001ms !important;
+}
+.motion-reduced .scroll-3d,
+.motion-reduced .product-card,
+.motion-reduced .hero-kenburns {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
 }
 .motion-reduced .animate-pingpong,
 .motion-reduced .animate-float,
@@ -346,6 +354,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .scroll-3d, .product-card, .hero-kenburns {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
   html:not(.motion-reduced) [class*="animate-"] {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;

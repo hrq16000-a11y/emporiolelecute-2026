@@ -1,6 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useSyncExternalStore, useCallback } from "react";
 
 const STORAGE_KEY = "emporio:reduced-motion";
+const CHANGE_EVENT = "emporio:motion-change";
+let memoryPreference: boolean | null = null;
 
 function systemPrefers(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) return false;
@@ -9,11 +11,26 @@ function systemPrefers(): boolean {
 
 function readStored(): boolean | null {
   if (typeof window === "undefined") return null;
-  const v = localStorage.getItem(STORAGE_KEY);
-  if (v === "1") return true;
-  if (v === "0") return false;
-  return null;
+  try {
+    const v = localStorage.getItem(STORAGE_KEY);
+    if (v === "1") return true;
+    if (v === "0") return false;
+  } catch { /* Keep the control usable when storage is unavailable. */ }
+  return memoryPreference;
 }
+
+const getSnapshot = () => readStored() ?? systemPrefers();
+const subscribe = (notify: () => void) => {
+  const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+  window.addEventListener(CHANGE_EVENT, notify);
+  window.addEventListener("storage", notify);
+  mq.addEventListener("change", notify);
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, notify);
+    window.removeEventListener("storage", notify);
+    mq.removeEventListener("change", notify);
+  };
+};
 
 /**
  * Reduced-motion controller.
@@ -22,10 +39,7 @@ function readStored(): boolean | null {
  * - Applies `motion-reduced` class to <html> for CSS to react.
  */
 export function useReducedMotion() {
-  const [enabled, setEnabled] = useState<boolean>(() => {
-    const stored = readStored();
-    return stored !== null ? stored : systemPrefers();
-  });
+  const enabled = useSyncExternalStore(subscribe, getSnapshot, () => false);
 
   // Reflect on <html> so global CSS can opt-out animations.
   useEffect(() => {
@@ -33,28 +47,17 @@ export function useReducedMotion() {
     root.classList.toggle("motion-reduced", enabled);
   }, [enabled]);
 
-  // Listen to system changes only when user has no explicit choice.
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => {
-      if (readStored() === null) setEnabled(mq.matches);
-    };
-    mq.addEventListener?.("change", onChange);
-    return () => mq.removeEventListener?.("change", onChange);
-  }, []);
-
   const toggle = useCallback(() => {
-    setEnabled((prev) => {
-      const next = !prev;
-      try { localStorage.setItem(STORAGE_KEY, next ? "1" : "0"); } catch {}
-      return next;
-    });
+    const next = !getSnapshot();
+    memoryPreference = next;
+    try { localStorage.setItem(STORAGE_KEY, next ? "1" : "0"); } catch { /* Use memory fallback. */ }
+    window.dispatchEvent(new Event(CHANGE_EVENT));
   }, []);
 
   const reset = useCallback(() => {
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-    setEnabled(systemPrefers());
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* Reset the in-memory preference regardless. */ }
+    memoryPreference = null;
+    window.dispatchEvent(new Event(CHANGE_EVENT));
   }, []);
 
   return { enabled, toggle, reset };

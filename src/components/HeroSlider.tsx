@@ -5,6 +5,7 @@ import { Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import TrustBadges from "@/components/TrustBadges";
 import { Button } from "@/components/ui/button";
 import { useHeroSlides, type HeroSlide } from "@/hooks/useHeroSlides";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import sabonetesImg from "@/assets/category-sabonetes.webp";
 import lembrancinhasImg from "@/assets/category-lembrancinhas.webp";
 import kitsImg from "@/assets/category-kits.webp";
@@ -268,7 +269,9 @@ const HeroSlider = () => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [prevSlide, setPrevSlide] = useState<number | null>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const { enabled: userReducedMotion } = useReducedMotion();
+  const [systemReducedMotion, setReducedMotion] = useState(false);
+  const reducedMotion = userReducedMotion || systemReducedMotion;
   const [isPaused, setIsPaused] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
