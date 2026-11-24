@@ -63,7 +63,7 @@ const ProductCard = ({ product, priority = false }: ProductCardProps) => {
 
   return (
     <article
-      className="min-w-0 max-w-full bg-card rounded-xl sm:rounded-2xl overflow-hidden border border-border/40 product-card group transition-colors duration-300 hover:border-border"
+      className="min-w-0 max-w-full bg-card rounded-xl sm:rounded-2xl overflow-hidden border border-border/40 product-card group hover:border-border"
       itemScope
       itemType="https://schema.org/Product"
     >

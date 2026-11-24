@@ -627,3 +627,47 @@
   opacity: 1 !important;
   transform: none !important;
 }
+
+/* ---------------------------------------------------------------
+   3D scroll motion — seções entram com leve rotação em perspectiva,
+   guiada pela rolagem (CSS scroll-driven, zero JS, roda na GPU).
+   Navegadores sem suporte ou com movimento reduzido: sem efeito.
+--------------------------------------------------------------- */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:not(.motion-reduced) .scroll-3d {
+      transform-origin: 50% 100%;
+      animation: scroll-3d-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+  }
+}
+@keyframes scroll-3d-in {
+  from {
+    opacity: 0.35;
+    transform: perspective(1400px) rotateX(9deg) translateY(48px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1400px) rotateX(0) translateY(0) scale(1);
+  }
+}
+
+/* Cartões de produto: elevação 3D suave no hover (só ponteiro fino) */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html:not(.motion-reduced) .product-card {
+    transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 500ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms ease;
+  }
+  html:not(.motion-reduced) .product-card:hover {
+    transform: perspective(900px) rotateX(3deg) translateY(-6px);
+    box-shadow: 0 22px 40px -24px hsl(var(--foreground) / 0.28);
+  }
+  html:not(.motion-reduced) .product-card img {
+    transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
+  }
+  html:not(.motion-reduced) .product-card:hover img {
+    transform: scale(1.04);
+  }
+}
