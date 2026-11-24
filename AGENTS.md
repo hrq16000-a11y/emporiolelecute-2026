@@ -1,6 +1,7 @@
 # Architecture rules
 
 - Motion preferences use one subscribed browser store across the header and global controller; effect setup and cleanup follow preference changes to prevent stale tilt and hidden content.
+- Hero slides share a static grid stage with responsive banner aspect ratios; only internal images and opacity animate, so image loading and slide changes cannot resize the document stage.
 
 - Resolve checkout postal addresses through `src/lib/postal-address.ts`; centralizing provider fallback keeps automatic and manual CEP input consistent.
 - Editorial packaging uses a shared story rendered through the PDP registry; the admin synchronizes its institutional page to keep the two surfaces aligned.

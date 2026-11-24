@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, type TouchEvent } from "react";
+import { useState, useEffect, useRef, useCallback, type TouchEvent } from "react";
 import { Helmet } from "react-helmet-async";
 import { Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -177,7 +177,7 @@ function SlideBannerMobile({
 
   return (
     // hidden on md+ (desktop)
-    <div className="block md:hidden w-full animate-fade-in pt-2 hero-frame">
+    <div className="block md:hidden w-full hero-frame hero-banner-mobile">
       <img
         src={imgSrc}
         alt={alt}
@@ -185,8 +185,9 @@ function SlideBannerMobile({
         // @ts-expect-error fetchpriority is valid HTML
         fetchpriority={isPriority ? "high" : "auto"}
         decoding="async"
-        className="w-full h-auto block hero-kenburns"
-        style={{ maxWidth: "100%", display: "block" }}
+        width={963}
+        height={565}
+        className="w-full h-full object-contain block hero-kenburns"
       />
     </div>
   );
@@ -208,7 +209,7 @@ function SlideBannerDesktop({
 
   return (
     // hidden on mobile (< md)
-    <div className="hidden md:block w-full animate-fade-in md:pt-3 lg:pt-16 xl:pt-20 hero-frame">
+    <div className="hidden md:block w-full hero-frame hero-banner-desktop">
       <img
         src={imgSrc}
         alt={alt}
@@ -216,8 +217,9 @@ function SlideBannerDesktop({
         // @ts-expect-error fetchpriority is valid HTML
         fetchpriority={isPriority ? "high" : "auto"}
         decoding="async"
-        className="w-full h-auto block hero-kenburns"
-        style={{ maxWidth: "100%", display: "block" }}
+        width={1900}
+        height={565}
+        className="w-full h-full object-contain block hero-kenburns"
       />
     </div>
   );
@@ -236,7 +238,7 @@ function SlideRenderer({ slide, isPriority }: { slide: HeroSlide; isPriority: bo
 
   if (!hasAnyBanner) {
     return (
-      <div className="pt-28 md:pt-32 pb-10 md:pb-14">
+      <div className="pb-10 md:pb-14">
         <SlideTextImage slide={slide} isPriority={isPriority} imgSrc={fallbackSrc} />
       </div>
     );
@@ -247,14 +249,14 @@ function SlideRenderer({ slide, isPriority }: { slide: HeroSlide; isPriority: bo
       {mobileBannerSrc ? (
         <SlideBannerMobile slide={slide} isPriority={isPriority} imgSrc={mobileBannerSrc} />
       ) : (
-        <div className="block md:hidden pt-28 pb-10">
+        <div className="block md:hidden pb-10">
           <SlideTextImage slide={slide} isPriority={isPriority} imgSrc={fallbackSrc} />
         </div>
       )}
       {desktopBannerSrc ? (
         <SlideBannerDesktop slide={slide} isPriority={isPriority} imgSrc={desktopBannerSrc} />
       ) : (
-        <div className="hidden md:block pt-32 pb-10 md:pb-14">
+        <div className="hidden md:block pb-10 md:pb-14">
           <SlideTextImage slide={slide} isPriority={isPriority} imgSrc={fallbackSrc} />
         </div>
       )}
@@ -263,21 +265,17 @@ function SlideRenderer({ slide, isPriority }: { slide: HeroSlide; isPriority: bo
 }
 
 const HeroSlider = () => {
-  const { data: dbSlides } = useHeroSlides();
+  const { data: dbSlides, isLoading } = useHeroSlides();
   const slides: HeroSlide[] =
-    dbSlides && dbSlides.length > 0 ? dbSlides : fallbackSlides;
+    isLoading ? [] : dbSlides && dbSlides.length > 0 ? dbSlides : fallbackSlides;
 
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [prevSlide, setPrevSlide] = useState<number | null>(null);
   const { enabled: userReducedMotion } = useReducedMotion();
   const [systemReducedMotion, setReducedMotion] = useState(false);
   const reducedMotion = userReducedMotion || systemReducedMotion;
   const [isPaused, setIsPaused] = useState(false);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const activeRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [stageHeight, setStageHeight] = useState<number | "auto">("auto");
 
   // Detect prefers-reduced-motion
   useEffect(() => {
@@ -320,58 +318,16 @@ const HeroSlider = () => {
     if (currentSlide >= slides.length) setCurrentSlide(0);
   }, [slides.length, currentSlide]);
 
-  // Trigger cross-fade: track previous slide, then clear after transition.
-  // In reduced-motion mode, swap instantly (no previous overlay).
+  // Change visibility only; every slide keeps its grid contribution.
   const goTo = useCallback(
     (next: number) => {
       setCurrentSlide((cur) => {
         if (next === cur) return cur;
-        if (!reducedMotion) setPrevSlide(cur);
         return next;
       });
     },
-    [reducedMotion]
+    []
   );
-
-  useEffect(() => {
-    if (prevSlide === null) return;
-    const t = setTimeout(() => setPrevSlide(null), 720);
-    return () => clearTimeout(t);
-  }, [prevSlide, currentSlide]);
-
-  const activeSlideId = slides[currentSlide]?.id;
-
-  // Animate stage height to match the active slide.
-  // Stable observer (deps []), rAF-coalesced, no-op when value unchanged.
-  // Skipped entirely in reduced-motion mode (height: auto).
-  useLayoutEffect(() => {
-    if (reducedMotion) {
-      setStageHeight("auto");
-      return;
-    }
-    const el = activeRef.current;
-    if (!el) return;
-    let raf = 0;
-    const measure = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const h = Math.round(el.offsetHeight);
-        if (h < 1) return;
-        setStageHeight((prev) => (typeof prev === "number" && Math.abs(prev - h) < 1 ? prev : h));
-      });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [currentSlide, reducedMotion, activeSlideId]);
-
-  const slide = slides[currentSlide] ?? slides[0];
-  if (!slide) return null;
-  const previous = !reducedMotion && prevSlide !== null ? slides[prevSlide] : null;
 
   const nextSlideFn = useCallback(
     () => goTo((currentSlide + 1) % slides.length),
@@ -415,10 +371,9 @@ const HeroSlider = () => {
     scheduleResume();
   }, [scheduleResume]);
 
-  const isPriority = currentSlide === 0;
-  const hasAnyBanner = Boolean(
-    resolveImageSrc(slide.image_mobile_url) || resolveImageSrc(slide.image_desktop_url)
-  );
+  const hasAnyBanner = isLoading || slides.some((item) => Boolean(
+    resolveImageSrc(item.image_mobile_url) || resolveImageSrc(item.image_desktop_url)
+  ));
   const isBanner = hasAnyBanner;
 
   // Preload LCP — primeiro slide (index 0), sempre, mesmo quando o usuário
@@ -432,8 +387,7 @@ const HeroSlider = () => {
   return (
     <section
       id="inicio"
-      className="relative flex flex-col justify-center overflow-hidden bg-background"
-      style={isBanner ? { paddingTop: "var(--header-height, 80px)" } : undefined}
+      className="hero-shell relative flex flex-col overflow-hidden bg-background"
       aria-label="Seção principal - Empório LeleCute"
     >
       {/* Preload da imagem LCP do primeiro slide — descoberta antecipada pelo browser.
@@ -470,40 +424,30 @@ const HeroSlider = () => {
         </div>
       )}
 
-      {/* Cross-fade stage: previous + current slide stacked, opacity transition */}
+      {/* All slides share a grid cell; hidden slides still reserve structural height. */}
       <div
-        ref={stageRef}
-        className="relative w-full touch-pan-y motion-safe:transition-[height] motion-safe:duration-700 motion-safe:ease-in-out"
+        className="hero-stage relative grid w-full touch-pan-y"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchCancel}
         onMouseEnter={pauseAutoplay}
         onMouseLeave={() => scheduleResume(1200)}
-        style={{
-          height: stageHeight === "auto" ? undefined : stageHeight,
-          minHeight: hasAnyBanner ? undefined : 280,
-        }}
       >
-        {previous && (
-          <div
-            key={`prev-${previous.id}-${prevSlide}`}
-            className="absolute inset-0 w-full hero-fade-out motion-reduce:hidden pointer-events-none"
-            aria-hidden="true"
-          >
-            <SlideRenderer slide={previous} isPriority={false} />
+        {isLoading && (
+          <div className="[grid-area:1/1]" aria-hidden="true">
+            <div className="hero-frame hero-banner-mobile md:hidden bg-muted/30" />
+            <div className="hero-frame hero-banner-desktop hidden md:block bg-muted/30" />
           </div>
         )}
-        <div
-          ref={activeRef}
-          key={`active-${slide.id}`}
-          className={
-            reducedMotion
-              ? "relative w-full"
-              : "relative w-full opacity-0 hero-fade-in motion-reduce:opacity-100"
-          }
-        >
-          <SlideRenderer slide={slide} isPriority={isPriority} />
-        </div>
+        {slides.map((item, index) => (
+          <div
+            key={item.id}
+            className={`hero-slide relative w-full [grid-area:1/1] ${index === currentSlide ? "hero-slide-active" : "hero-slide-inactive"}`}
+            aria-hidden={index !== currentSlide}
+          >
+            <SlideRenderer slide={item} isPriority={index === 0} />
+          </div>
+        ))}
 
         {slides.length > 1 && (
           <>
@@ -530,7 +474,7 @@ const HeroSlider = () => {
       </div>
 
       {/* Navigation dots + arrows — shown when there are multiple slides */}
-      {slides.length > 1 && (
+      {(isLoading || slides.length > 1) && (
         <>
           {/* Dots */}
           <div
@@ -538,6 +482,7 @@ const HeroSlider = () => {
               isBanner ? "pt-1.5 pb-0 md:pt-3 md:pb-2" : "pb-3"
             } relative z-10`}
           >
+            {isLoading && <span className="h-8 w-8" aria-hidden="true" />}
             {slides.map((_, index) => (
               <button
                 key={index}

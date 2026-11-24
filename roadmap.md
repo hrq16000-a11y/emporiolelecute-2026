@@ -1,10 +1,18 @@
 # Boutique editorial
 
+## Hero structural stability
+- [x] Reproduce height collapse while real banners replaced text fallback and measured slide height; scroll stayed zero during animation.
+- [x] Use a static overlapping grid stage and responsive image ratios; reserve loading space and keep header clearance stable.
+- [x] Verify 390/768/1440 continuously through zoom/slide swaps, reduced motion, disabled animations, menu and resize; hero geometry is stable at each width.
+- [ ] Publication and production verification — held by owner's choice until three critical security alerts are addressed in a separate round.
+- [ ] Separate security round: verify and correct critical search report injection, order update email abuse and private-service access before publishing; admin/backend work is not authorized in this Hero-only round.
+- DNS, admin, catalog, checkout and backend changes are out of scope.
+
 ## Updated 3D motion release
 - [x] Verify 360/390/768/1440 widths, system reduced motion, toggle persistence, reactivation and stopped hero/PDP autoplay; 155 tests passed.
 - [x] Triage current security findings; revoke anonymous administrative listing access and verify denial. Public catalog/config reads and guarded allowlisted sorting remain intentional, not marked resolved. Quick scan has no critical findings.
-- [ ] Deep security scan result — background analysis pending; started before frontend corrections.
-- [x] Publication requested for https://emporiolelecute.lovable.app; deployment completion not yet verified.
+- [x] Deep security scan result received with partial code coverage and three critical findings; not a clean security verdict.
+- [x] Previous publication confirmed HTTP 200 at https://emporiolelecute.lovable.app with motion toggle present; the later Hero structural fix is not published.
 - [ ] Correct external domain routing — requires DNS changes at Hosteg, with email routing preserved.
 
 ## Operational and support production review

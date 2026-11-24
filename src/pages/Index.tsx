@@ -73,7 +73,7 @@ const Index = () => {
                 return (
                   <Fragment key={section.id}>
                     <Suspense fallback={<SectionFallback name={section.component_name} />}>
-                      {index === 0 ? (
+                      {index === 0 || section.component_name === "HeroSlider" ? (
                         <Component {...(section.editable_props || {})} />
                       ) : (
                         <div className="scroll-3d">
