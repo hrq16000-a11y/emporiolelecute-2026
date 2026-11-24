@@ -709,3 +709,7 @@
   html:not(.motion-reduced) button:active:not(:disabled),
   html:not(.motion-reduced) a[role="button"]:active { transform: scale(0.98); }
 }
+@media (max-width: 767px) {
+  .hero-orb { opacity: 0.45; }
+  .hero-orb-a { width: 14rem; height: 14rem; left: -7rem; }
+}
