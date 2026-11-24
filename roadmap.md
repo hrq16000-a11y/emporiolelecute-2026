@@ -4,7 +4,7 @@
 - [x] Verify 360/390/768/1440 widths, system reduced motion, toggle persistence, reactivation and stopped hero/PDP autoplay; 155 tests passed.
 - [x] Triage current security findings; revoke anonymous administrative listing access and verify denial. Public catalog/config reads and guarded allowlisted sorting remain intentional, not marked resolved. Quick scan has no critical findings.
 - [ ] Deep security scan result — background analysis pending; started before frontend corrections.
-- [ ] Request publication of the verified animation updates.
+- [x] Publication requested for https://emporiolelecute.lovable.app; deployment completion not yet verified.
 - [ ] Correct external domain routing — requires DNS changes at Hosteg, with email routing preserved.
 
 ## Operational and support production review
