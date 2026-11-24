@@ -1,5 +1,10 @@
 # Boutique editorial
 
+## Selected order-tracking privacy fix
+- [x] Code-only tracking omits contact/address/notes/personalization; deployed function verified for guest, verified owner, unrelated customer and admin. Guest UI retains status on desktop/mobile/tablet; synthetic orders removed.
+- [x] Checkout uses cryptographic randomness with rejection sampling; LC + six-character format and retry code unchanged. Three targeted privacy tests and lint passed; preview build OK.
+- [x] Selected critical finding resolved after live verification; no unrelated finding changes or frontend publication.
+
 ## Floating WhatsApp correction
 - [x] Keep WhatsApp fixed through a body portal outside route transforms; verified viewport bounds at top/middle/end in 390/768/1440 and isolated cart-action delegation. Targeted lint/build and five storefront guards passed; full checkout not repeated.
 - [x] Authorized Round 7: private admin-only motion control persisted in account preferences; anonymous default and system reduction verified at 390/768/1440. Admin navigation/reload, saved database value and customer direct-route denial passed; preference restored.

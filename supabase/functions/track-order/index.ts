@@ -1,10 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { mayReadOrderDetails, trackingResponse } from './privacy.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Cache-Control": "no-store",
 };
 
 interface TrackOrderRequest {
@@ -90,41 +92,20 @@ serve(async (req: Request) => {
       );
     }
 
-    // Return order data - the order code acts as authentication
-    // Only someone who knows the order code can retrieve the order details
+    // The legacy short order code permits tracking, never identity verification.
+    let privateAccess = false;
+    const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+    if (token) {
+      const { data: identity, error: identityError } = await supabase.auth.getUser(token);
+      if (!identityError && identity.user) {
+        const { data: isAdmin, error: roleError } = await supabase.rpc('has_role', {
+          _user_id: identity.user.id, _role: 'admin',
+        });
+        privateAccess = mayReadOrderDetails(identity.user, order.customer_email, !roleError && isAdmin === true);
+      }
+    }
     return new Response(
-      JSON.stringify({
-        order: {
-          id: order.id,
-          order_code: order.order_code,
-          customer_name: order.customer_name,
-          customer_email: order.customer_email,
-          customer_phone: order.customer_phone,
-          address_cep: order.address_cep,
-          address_street: order.address_street,
-          address_number: order.address_number,
-          address_complement: order.address_complement,
-          address_neighborhood: order.address_neighborhood,
-          address_city: order.address_city,
-          address_state: order.address_state,
-          shipping_method: order.shipping_method,
-          shipping_company: order.shipping_company,
-          shipping_days: order.shipping_days,
-          shipping_price: order.shipping_price,
-          subtotal: order.subtotal,
-          total: order.total,
-          status: order.status,
-          notes: order.notes,
-          created_at: order.created_at,
-          updated_at: order.updated_at,
-          tracking_code: order.tracking_code,
-          tracking_carrier: order.tracking_carrier,
-          tracking_url: order.tracking_url,
-          shipped_at: order.shipped_at,
-          payment_status: order.payment_status,
-        },
-        items: items || [],
-      }),
+      JSON.stringify(trackingResponse(order, items || [], privateAccess)),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

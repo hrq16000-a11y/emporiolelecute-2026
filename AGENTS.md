@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Short order codes grant tracking only; personal fields and item personalization require a verified matching account or server-verified admin, and new checkout codes use cryptographic rejection sampling without changing legacy format.
+
 - Motion preferences use one subscribed browser store across controllers; public pages ignore legacy device preferences and private account preference is loaded only inside the authorized panel, cleared on exit, and persisted in user_preferences; system reduction always wins.
 - Hero slides share a static grid stage with responsive banner aspect ratios; only internal images and opacity animate, so image loading and slide changes cannot resize the document stage.
 - Floating WhatsApp controls render through a body portal to stay viewport-fixed outside transformed route containers; cart clicks still delegate to the validated checkout action.

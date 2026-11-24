@@ -24,18 +24,18 @@ interface OrderItem {
   product_image: string | null;
   quantity: number;
   unit_price: number;
-  personalization: string | null;
+  personalization?: string | null;
 }
 
 interface Order {
   id: string;
   order_code: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  address_cep: string;
-  address_street: string;
-  address_number: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  address_cep?: string;
+  address_street?: string;
+  address_number?: string;
   address_complement: string | null;
   address_neighborhood: string | null;
   address_city: string;
@@ -538,7 +538,7 @@ const RastrearPedido = () => {
                 </div>
 
                 {/* Customer & Shipping */}
-                <div className="grid md:grid-cols-2 gap-6">
+                {order.customer_email && <div className="grid md:grid-cols-2 gap-6">
                   {/* Customer Info */}
                   <div className="bg-card rounded-xl border border-border p-6">
                     <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -575,7 +575,7 @@ const RastrearPedido = () => {
                       <p>CEP: {order.address_cep}</p>
                     </div>
                   </div>
-                </div>
+                </div>}
 
                 {/* Order Summary */}
                 <div className="bg-card rounded-xl border border-border p-6">

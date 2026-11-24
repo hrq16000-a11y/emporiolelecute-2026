@@ -29,6 +29,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { reportError, retryAsync, type ReportedError } from "@/lib/errorReporting";
 import CopyCorrelationId from "@/components/CopyCorrelationId";
 import { lookupPostalAddress } from "@/lib/postal-address";
+import { generateOrderCode } from '@/lib/order-code';
 
 
 interface AddressData {
@@ -42,15 +43,6 @@ interface CustomerData {
   email: string;
   phone: string;
 }
-
-const generateOrderCode = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = 'LC';
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
 
 const Carrinho = () => {
   const navigate = useNavigate();
