@@ -1,5 +1,4 @@
 import { Fragment, Suspense } from "react";
-import MotionEnhancer from "@/components/MotionEnhancer";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -58,7 +57,6 @@ const Index = () => {
       {/* flex-1 garante que o footer fique sempre no fim, sem subir antes do conteúdo carregar */}
       <main className="flex-1 min-h-[100vh]">
         <HomeRegistryProvider>
-          <MotionEnhancer />
           {isLoading || !sections
             ? // Reserva visual enquanto sections carregam — evita o pop do footer.
               <div className="min-h-[100vh] animate-pulse bg-muted/20" aria-hidden />
