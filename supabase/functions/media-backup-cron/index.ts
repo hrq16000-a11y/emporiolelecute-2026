@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 // ============= Edge Function: media-backup-cron =============
 // Auditoria periódica de mídia (executada por pg_cron).
 //
@@ -29,6 +30,9 @@ interface MissingAsset {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

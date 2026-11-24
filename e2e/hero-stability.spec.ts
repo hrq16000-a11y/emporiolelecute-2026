@@ -45,8 +45,8 @@ test("hero retains document geometry across zoom, slides and motion opt-out", as
       expect(current.scroll).toBe(initial.scroll);
     }
   }
-  const toggle = page.getByRole("button", { name: "Reduzir animações da interface" }).filter({ visible: true });
-  await toggle.click();
+  await expect(page.getByRole("button", { name: "Reduzir animações da interface" })).toHaveCount(0);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   expect(Math.abs((await geometry()).height - initial.height)).toBeLessThan(1);
   await page.getByRole("button", { name: "Slide 2", exact: true }).click();
   expect(Math.abs((await geometry()).height - initial.height)).toBeLessThan(1);

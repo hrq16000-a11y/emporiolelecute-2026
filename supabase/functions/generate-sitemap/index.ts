@@ -5,6 +5,7 @@ import {
   productAbsolute,
 } from '../_shared/urls.ts'
 import { resilientSelect, type QueryDiagnostic } from '../_shared/resilientSelect.ts'
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +37,10 @@ Deno.serve(async (req) => {
       notificationEmail = body?.notificationEmail || ''
     } catch {
       // No body or invalid JSON, continue without notification
+    }
+    if (sendNotification) {
+      const authorization = await authorizeOperationalRequest(req);
+      if (authorization instanceof Response) return authorization;
     }
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!

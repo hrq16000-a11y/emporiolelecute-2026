@@ -3,6 +3,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { sendWebPush } from "../_shared/webpush.ts";
+import { escapeEmailHtml, safeEmailLink } from '../_shared/email-output.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -180,19 +181,19 @@ Deno.serve(async (req: Request) => {
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#3f3a38">
       <h1 style="font-size:20px;color:#e08a7b">Empório LeleCute</h1>
-      <p>Olá, ${String(order.customer_name || "").slice(0, 80)}!</p>
+      <p>Olá, ${escapeEmailHtml(String(order.customer_name || "").slice(0, 80))}!</p>
       <p>${message}</p>
       <p style="background:#faf6f4;padding:16px;border-radius:12px">
-        <strong>Pedido:</strong> ${order.order_code}<br/>
-        <strong>Status atual:</strong> ${label}
-        ${order.tracking_code ? `<br/><strong>Rastreio:</strong> ${order.tracking_code}` : ""}
+        <strong>Pedido:</strong> ${escapeEmailHtml(order.order_code)}<br/>
+        <strong>Status atual:</strong> ${escapeEmailHtml(label)}
+        ${order.tracking_code ? `<br/><strong>Rastreio:</strong> ${escapeEmailHtml(order.tracking_code)}` : ""}
       </p>
       <p>
         <a href="${trackUrl}" style="display:inline-block;background:#e08a7b;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none">
           Acompanhar meu pedido
         </a>
       </p>
-      ${order.tracking_url ? `<p><a href="${order.tracking_url}">Rastrear na transportadora</a></p>` : ""}
+      ${safeEmailLink(order.tracking_url) ? `<p><a href="${safeEmailLink(order.tracking_url)}">Rastrear na transportadora</a></p>` : ""}
       <p style="font-size:12px;color:#8c8481">Você recebeu este e-mail porque fez um pedido no Empório LeleCute.</p>
     </div>
   `;

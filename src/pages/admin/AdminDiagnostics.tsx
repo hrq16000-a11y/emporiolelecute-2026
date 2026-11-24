@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Download, RefreshCw, Trash2 } from "lucide-react";
+import { toCsv as toCSV } from '@/lib/seoExport';
 
 interface StaleLog {
   id: string;
@@ -47,15 +48,6 @@ const sinceISO = (days: string) => {
   return d.toISOString();
 };
 
-const toCSV = (rows: Record<string, unknown>[]) => {
-  if (rows.length === 0) return "";
-  const headers = Object.keys(rows[0]);
-  const escape = (v: unknown) => {
-    const s = v == null ? "" : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  return [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
-};
 
 const downloadCSV = (filename: string, csv: string) => {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });

@@ -3,7 +3,7 @@
  * Gera download client-side em CSV ou JSON, sem dependências externas.
  */
 
-const escapeCsv = (value: unknown): string => {
+export const escapeCsv = (value: unknown): string => {
   if (value === null || value === undefined) return '';
   const raw = typeof value === 'object' ? JSON.stringify(value) : String(value);
   const safe = typeof value === 'string' && /^[\s]*[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;

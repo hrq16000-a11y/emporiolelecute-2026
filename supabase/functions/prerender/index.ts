@@ -10,6 +10,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { productPath } from "../_shared/urls.ts";
+import { crawlerProductSchema } from '../_shared/crawler-product-schema.ts';
 
 const ORIGIN = "https://emporiolelecute.com.br";
 const SITE_NAME = "Empório LeleCute";
@@ -114,7 +115,7 @@ const orgLd = {
   "@id": `${ORIGIN}/#organization`,
   name: SITE_NAME,
   url: ORIGIN,
-  logo: `${ORIGIN}/logo.png`,
+  logo: `${ORIGIN}/logo.webp`,
   sameAs: ["https://instagram.com/emporiolelecute", "https://facebook.com/emporiolelecute"],
 };
 
@@ -161,7 +162,7 @@ async function renderHome(): Promise<SeoPayload> {
         publisher: { "@id": `${ORIGIN}/#organization` },
         potentialAction: {
           "@type": "SearchAction",
-          target: `${ORIGIN}/produtos?search={q}`,
+          target: `${ORIGIN}/buscar?q={q}`,
           "query-input": "required name=q",
         },
       },
@@ -195,25 +196,7 @@ ${img ? `<img src="${esc(img)}" alt="${esc(p.name)}" loading="eager">` : ""}
 <p><a href="${ORIGIN}/produto/${esc(p.slug)}">Ver detalhes e personalizar</a></p>`,
     jsonLd: [
       orgLd,
-      {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        name: p.name,
-        description: desc,
-        image: p.images || [DEFAULT_IMAGE],
-        sku: p.slug,
-        brand: { "@type": "Brand", name: SITE_NAME },
-        offers: {
-          "@type": "Offer",
-          url: canonical(productPath(p.slug)),
-          priceCurrency: "BRL",
-          price: Number(p.price),
-          availability: "https://schema.org/InStock",
-        },
-        ...(p.rating
-          ? { aggregateRating: { "@type": "AggregateRating", ratingValue: p.rating, reviewCount: 1 } }
-          : {}),
-      },
+      crawlerProductSchema({ name: p.name, description: desc, slug: p.slug, price: p.price, images: p.images || [] }, canonical(productPath(p.slug)), SITE_NAME),
       breadcrumbLd([
         { name: "Início", url: ORIGIN },
         { name: "Produtos", url: `${ORIGIN}/produtos` },
@@ -343,6 +326,7 @@ async function renderStaticPage(slug: string): Promise<SeoPayload | null> {
     .from("pages")
     .select("title, content, seo_title, seo_description, seo_canonical, slug")
     .eq("slug", slug)
+    .eq("status", "published")
     .maybeSingle();
   if (!page) return null;
   // Strip tags from content for description if needed

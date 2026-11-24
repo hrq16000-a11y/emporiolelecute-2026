@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 
 const GATEWAY = 'https://connector-gateway.lovable.dev/google_search_console'
@@ -5,6 +6,9 @@ const SITE_URL = 'sc-domain:emporiolelecute.com.br'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
   const GSC_KEY = Deno.env.get('GOOGLE_SEARCH_CONSOLE_API_KEY')

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, Instagram, Facebook, ShoppingCart, LogIn, Search, Heart } from "lucide-react";
 import MiniCart from "@/components/MiniCart";
-import ReducedMotionToggle from "@/components/ReducedMotionToggle";
 import { Button } from "@/components/ui/button";
 import SearchBar from "@/components/SearchBar";
 import { useCart } from "@/stores/cartStore";
@@ -189,7 +188,6 @@ const Header = () => {
             </Link>
 
             <MiniCart />
-            <ReducedMotionToggle className="h-11 w-11 shrink-0" />
 
             {/* Conectar (login) */}
             <Link to="/admin/login">
@@ -205,7 +203,6 @@ const Header = () => {
           </div>
 
           <div className="lg:hidden flex items-center gap-2">
-            <ReducedMotionToggle className="h-11 w-11 shrink-0" />
             <button
               data-mobile-search-toggle
               className="p-2 text-foreground hover:text-primary transition-colors"

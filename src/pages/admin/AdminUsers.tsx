@@ -32,6 +32,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAdminWorkspaceStore } from "@/stores/adminWorkspaceStore";
+import { escapeCsv as csvEscape } from '@/lib/seoExport';
 
 interface UserRow {
   source: "auth" | "customer";
@@ -61,10 +62,6 @@ type SortKey = "created_at" | "last_sign_in_at" | "email_confirmed_at" | "role" 
 type SortDir = "asc" | "desc";
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-const csvEscape = (v: unknown) => {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
 const downloadCSV = (filename: string, rows: (string | number | null | undefined)[][]) => {
   const csv = rows.map((r) => r.map(csvEscape).join(",")).join("\n");
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });

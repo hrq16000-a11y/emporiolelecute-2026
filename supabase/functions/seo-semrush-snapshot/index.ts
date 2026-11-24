@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -24,6 +25,9 @@ function parseTsv(text: string): Record<string, string>[] {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   const KEY = Deno.env.get('SEMRUSH_API_KEY')
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!

@@ -1,4 +1,5 @@
 import { MessageCircle } from "lucide-react";
+import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import { useContactInfo } from "@/hooks/useContactInfo";
 import { markLead } from "@/lib/visitor";
@@ -31,7 +32,7 @@ const WhatsAppButton = ({ message, ariaLabel }: Props = {}) => {
       }
     };
 
-    return (
+    return createPortal(
       <button
         type="button"
         onClick={handleCartClick}
@@ -44,11 +45,12 @@ const WhatsAppButton = ({ message, ariaLabel }: Props = {}) => {
             Finalizar pelo WhatsApp
           </span>
         </div>
-      </button>
+      </button>,
+      document.body,
     );
   }
 
-  return (
+  return createPortal(
     <a
       href={href}
       target="_blank"
@@ -60,7 +62,8 @@ const WhatsAppButton = ({ message, ariaLabel }: Props = {}) => {
       <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
         <MessageCircle className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
       </div>
-    </a>
+    </a>,
+    document.body,
   );
 };
 

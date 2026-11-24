@@ -518,7 +518,6 @@ const ProductPage = () => {
         reviewCount={reviewStats?.review_count}
         productionDays={product.productionDays}
         category={dbProduct?.category?.name}
-        material="Artesanal — produzido à mão no Brasil"
         variantGroups={personalizationOptions
           .filter((o) => (o.choices || []).length > 0)
           .map((o) => ({ label: o.label, values: (o.choices || []).map((c) => c.label).filter(Boolean) }))}

@@ -7,6 +7,8 @@ export const authorizeOperationalRequest = async (req: Request, allowEditor = fa
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!url || !key) return new Response('Service unavailable', { status: 503, headers: corsHeaders });
   const client = createClient(url, key, { auth: { persistSession: false } });
+  // Exact server-held credential supports existing trusted function chains.
+  if (req.headers.get('authorization') === `Bearer ${key}`) return 'cron';
   const secret = req.headers.get('x-operational-secret');
   if (secret) {
     const { data, error } = await client.from('operational_worker_credentials').select('token').eq('id', true).single();

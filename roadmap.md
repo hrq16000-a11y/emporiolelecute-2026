@@ -1,5 +1,11 @@
 # Boutique editorial
 
+## Floating WhatsApp correction
+- [x] Keep WhatsApp fixed through a body portal outside route transforms; verified viewport bounds at top/middle/end in 390/768/1440 and isolated cart-action delegation. Targeted lint/build and five storefront guards passed; full checkout not repeated.
+- [x] Authorized Round 7: private admin-only motion control persisted in account preferences; anonymous default and system reduction verified at 390/768/1440. Admin navigation/reload, saved database value and customer direct-route denial passed; preference restored.
+- [x] Triage all available scan groups; 35 verified warnings marked fixed, 28 warnings and 9 informational findings remain active. Fifteen protected services denied anonymous/customer requests; admin analytics returned 200. Eight affected schedules use private headers. No blanket dismissals; deep rescan pending.
+- [x] Hero stability: two focused E2E tests passed; admin preview geometry and system reduction rechecked at 390/768/1440. Organization and Product JSON-LD plus public crawler output checked; public sitemap preserved and draft hidden. No frontend publication or DNS changes.
+
 ## Hero structural stability
 - [x] Reproduce height collapse while real banners replaced text fallback and measured slide height; scroll stayed zero during animation.
 - [x] Use a static overlapping grid stage and responsive image ratios; reserve loading space and keep header clearance stable.

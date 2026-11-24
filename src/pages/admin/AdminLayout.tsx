@@ -20,6 +20,7 @@ import AdminSearchBar from '@/components/admin/AdminSearchBar';
 import DraftNavigationGuard from '@/components/admin/DraftNavigationGuard';
 import BackToHomeSections from '@/components/admin/BackToHomeSections';
 import AdminCommandPalette from '@/components/admin/AdminCommandPalette';
+import AdminMotionPreference from '@/components/admin/AdminMotionPreference';
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, Package, Tags, Calendar, Home, Sparkles, ShoppingCart, Users,
@@ -258,6 +259,7 @@ const AdminLayout = () => {
       </aside>
 
       <main className="lg:ml-64 pt-20 lg:pt-0 min-h-screen min-w-0 overflow-x-hidden">
+        <div className="flex justify-end px-4 py-2"><AdminMotionPreference userId={user.id} /></div>
         <BackToHomeSections />
         <Outlet />
       </main>

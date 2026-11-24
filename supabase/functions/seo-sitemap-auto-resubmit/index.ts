@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 // Verifica a flag store_settings.sitemap_dirty e, se positivo,
 // chama submit-sitemap e limpa a flag. Roda via pg_cron a cada 15 min
 // para fazer debounce de várias edições no admin.
@@ -13,6 +14,9 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!

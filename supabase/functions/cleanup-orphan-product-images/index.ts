@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 // ============= Edge Function: cleanup-orphan-product-images =============
 // Garbage collector ENDURECIDO para o bucket de mídia.
 //
@@ -34,6 +35,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   const startedAt = Date.now();
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

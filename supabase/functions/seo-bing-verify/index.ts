@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 /**
  * seo-bing-verify
  * ---------------
@@ -31,6 +32,9 @@ interface Check {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   const checks: Check[] = [];
   const push = (id: string, label: string, ok: boolean, detail: string) =>

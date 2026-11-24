@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 /**
  * seo-gsc-snapshot
  * ----------------
@@ -54,6 +55,9 @@ export function classifyPageType(rawUrl: string): string {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,

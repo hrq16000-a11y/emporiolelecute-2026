@@ -178,17 +178,10 @@ function shouldSkipUrl(url: string) {
   return false;
 }
 
-function safeBodyPreview(init?: RequestInit): string | undefined {
+export function safeBodyPreview(init?: RequestInit): string | undefined {
   if (!init || init.body == null) return undefined;
-  try {
-    if (typeof init.body === "string") return init.body.slice(0, 500);
-    if (init.body instanceof FormData) return "[FormData]";
-    if (init.body instanceof Blob) return `[Blob ${init.body.size}b]`;
-    if (init.body instanceof ArrayBuffer) return `[ArrayBuffer ${init.body.byteLength}b]`;
-    return JSON.stringify(init.body).slice(0, 500);
-  } catch {
-    return "[unserializable]";
-  }
+  // Never retain checkout, auth, support or other private request content.
+  return '[request body omitted]';
 }
 
 function installFetchCapture() {
@@ -283,7 +276,7 @@ function installXhrCapture() {
             method: meta.method,
             kind,
             durationMs: Date.now() - meta.start,
-            requestBody: typeof body === "string" ? body.slice(0, 500) : body ? "[non-string body]" : undefined,
+            requestBody: body == null ? undefined : '[request body omitted]',
           },
         });
       };

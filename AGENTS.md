@@ -1,7 +1,8 @@
 # Architecture rules
 
-- Motion preferences use one subscribed browser store across the header and global controller; effect setup and cleanup follow preference changes to prevent stale tilt and hidden content.
+- Motion preferences use one subscribed browser store across controllers; public pages ignore legacy device preferences and private account preference is loaded only inside the authorized panel, cleared on exit, and persisted in user_preferences; system reduction always wins.
 - Hero slides share a static grid stage with responsive banner aspect ratios; only internal images and opacity animate, so image loading and slide changes cannot resize the document stage.
+- Floating WhatsApp controls render through a body portal to stay viewport-fixed outside transformed route containers; cart clicks still delegate to the validated checkout action.
 - Home section loading and lazy Hero mounting share the banner loading shell; admin previews share a fixed outer stage and stop their timers for either reduced-motion preference, preventing layout changes during device cycling.
 
 - Resolve checkout postal addresses through `src/lib/postal-address.ts`; centralizing provider fallback keeps automatic and manual CEP input consistent.
@@ -14,6 +15,8 @@
 - Support threads are route-derived and account-scoped; server-owned messages, authenticated order email checks, mandatory help retrieval and a human inbox prevent cross-customer exposure and unsupported answers; resolved threads reject further messages.
 - Search print reports insert visitor-provided values with textContent; status emails require a verified admin and use saved order fields, preventing stored script execution and forged notifications.
 - Indexation monitoring requires admin or private worker credentials and a fixed HTTPS store-origin allowlist for requested and sitemap URLs, with redirects disabled to prevent private-service access.
+- Administrative SEO and media workers share server-verified admin or exact private worker authentication before any effects; public crawler rendering filters unpublished pages.
+- Business schema is a route-owned script with a stable public logo and sorted configured profiles to avoid asynchronous head duplication; product and crawler schemas omit unsupported stock, review counts and invalid offers.
 
 ## Skills locais — Empório LeleCute (separado da 0WEB)
 

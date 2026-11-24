@@ -20,16 +20,16 @@ afterEach(() => {
 describe('JSON-LD — preço vindo como string do banco', () => {
   it('Product: "R$ 95,00" vira o número estrito 95', () => {
     const json = buildProductJsonLd({ ...baseProduct, price: 'R$ 95,00' as never });
-    expect(json.offers.price).toBe(95);
-    expect(typeof json.offers.price).toBe('number');
+    expect(json.offers?.price).toBe(95);
+    expect(typeof json.offers?.price).toBe('number');
     expect(JSON.stringify(json)).not.toContain('R$');
     expect(JSON.stringify(json)).not.toContain('null');
   });
 
   it('Product: numeric string do Supabase ("95.00") não vira NaN', () => {
     const json = buildProductJsonLd({ ...baseProduct, price: '95.00' as never });
-    expect(json.offers.price).toBe(95);
-    expect(Number.isNaN(json.offers.price as number)).toBe(false);
+    expect(json.offers?.price).toBe(95);
+    expect(Number.isNaN(json.offers?.price as number)).toBe(false);
   });
 
   it('ItemList: "R$ 1.234,56" vira 1234.56 e nunca NaN', () => {

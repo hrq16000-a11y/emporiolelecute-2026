@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 // Validação automática do feed do Google Merchant (Shopping).
 // Busca o XML gerado por `merchant-feed` e aplica as regras do Merchant Center
 // item a item, retornando erros/avisos por produto. Somente leitura.
@@ -31,6 +32,9 @@ const isHttps = (u: string | null) => !!u && /^https:\/\//i.test(u)
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   try {
     const feedUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/merchant-feed?format=xml`

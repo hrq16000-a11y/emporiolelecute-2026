@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 // Submete o sitemap ao Google Search Console via gateway oficial e
 // registra histórico de indexação em store_settings (chave `sitemap_monitor_history`).
 // Pode ser chamado manualmente ou agendado via pg_cron.
@@ -17,6 +18,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   // Ambiente local/offline: não chama o Google Search Console.
   if (isLocalEnv()) {

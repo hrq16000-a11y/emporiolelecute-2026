@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 /**
  * seo-gsc-coverage
  * ----------------
@@ -31,6 +32,9 @@ function covers(siteUrl: string, target: URL) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   const GSC_KEY = Deno.env.get('GOOGLE_SEARCH_CONSOLE_API_KEY');

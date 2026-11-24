@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 /**
  * Valida o JSON-LD (schema.org) renderizado das páginas de produto.
  *
@@ -45,6 +46,9 @@ const str = (v: unknown) => (v === null || v === undefined ? '' : String(v));
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   try {
     let limit = DEFAULT_LIMIT;

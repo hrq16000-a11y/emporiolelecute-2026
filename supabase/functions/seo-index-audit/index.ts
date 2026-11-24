@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 /**
  * seo-index-audit
  * ---------------
@@ -121,6 +122,9 @@ async function auditPage(kind: PageAudit['kind'], path: string): Promise<PageAud
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   try {
     const supabase = createClient(

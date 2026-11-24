@@ -1,25 +1,21 @@
-import { useEffect, useSyncExternalStore, useCallback } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
-const STORAGE_KEY = "emporio:reduced-motion";
 const CHANGE_EVENT = "emporio:motion-change";
-let memoryPreference: boolean | null = null;
+let privateScope: string | null = null;
+let privateReduced = false;
+
+export const setPrivateMotionScope = (userId: string | null, reduced: boolean) => {
+  privateScope = userId;
+  privateReduced = Boolean(userId && reduced);
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(CHANGE_EVENT));
+};
 
 function systemPrefers(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function readStored(): boolean | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    if (v === "1") return true;
-    if (v === "0") return false;
-  } catch { /* Keep the control usable when storage is unavailable. */ }
-  return memoryPreference;
-}
-
-const getSnapshot = () => readStored() ?? systemPrefers();
+const getSnapshot = () => Boolean(privateScope && privateReduced) || systemPrefers();
 const getCombinedSnapshot = () => `${getSnapshot() ? '1' : '0'}:${systemPrefers() ? '1' : '0'}`;
 const subscribe = (notify: () => void) => {
   const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -35,8 +31,8 @@ const subscribe = (notify: () => void) => {
 
 /**
  * Reduced-motion controller.
- * - User toggle wins over system preference.
- * - Persists choice in localStorage.
+ * - Public motion is on unless the operating system requests reduction.
+ * - Authorized panel supplies its account preference; leaving clears scope.
  * - Applies `motion-reduced` class to <html> for CSS to react.
  */
 export function useReducedMotion() {
@@ -50,18 +46,5 @@ export function useReducedMotion() {
     root.classList.toggle("motion-reduced", enabled);
   }, [enabled]);
 
-  const toggle = useCallback(() => {
-    const next = !getSnapshot();
-    memoryPreference = next;
-    try { localStorage.setItem(STORAGE_KEY, next ? "1" : "0"); } catch { /* Use memory fallback. */ }
-    window.dispatchEvent(new Event(CHANGE_EVENT));
-  }, []);
-
-  const reset = useCallback(() => {
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* Reset the in-memory preference regardless. */ }
-    memoryPreference = null;
-    window.dispatchEvent(new Event(CHANGE_EVENT));
-  }, []);
-
-  return { enabled, systemEnabled, toggle, reset };
+  return { enabled, systemEnabled };
 }

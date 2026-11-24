@@ -47,16 +47,13 @@ export function buildProductJsonLd({
   slug,
   rating,
   reviewCount,
-  productionDays = 7,
   category = 'Lembrancinhas Artesanais',
   brand = 'Empório LeleCute',
   reviews,
   material,
   sku,
   variantGroups,
-  baseUrl,
   productUrl,
-  priceValidUntilStr,
 }: ProductStructuredDataProps & {
   baseUrl: string;
   productUrl: string;
@@ -81,27 +78,24 @@ export function buildProductJsonLd({
     "@type": "Product",
     "name": name,
     "description": description,
-    "image": images.length > 0 ? images : [`${baseUrl}/placeholder.svg`],
+    ...(images.length ? { image: images } : {}),
     "sku": sku || slug,
-    "mpn": (sku || slug).toUpperCase(),
     "brand": { "@type": "Brand", "name": brand },
     "category": category,
     ...(material ? { "material": material } : {}),
     "additionalProperty": [
       { "@type": "PropertyValue", "name": "Feito à mão", "value": "Sim" },
-      { "@type": "PropertyValue", "name": "Personalizado", "value": "Sim" },
       { "@type": "PropertyValue", "name": "Origem", "value": "Brasil" },
       ...(variantGroups || [])
         .filter((g) => g.label && g.values.length > 0)
         .map((g) => ({ "@type": "PropertyValue", name: g.label, value: g.values.join(", ") })),
     ],
     "url": productUrl,
-    "offers": {
+    "offers": safePrice === null ? undefined : {
       "@type": "Offer",
       "url": productUrl,
       "priceCurrency": "BRL",
       ...(safePrice !== null ? { price: safePrice } : {}),
-      "priceValidUntil": priceValidUntilStr,
       ...(safeOriginal !== null && safePrice !== null && safeOriginal > safePrice
         ? {
             priceSpecification: {
@@ -112,27 +106,8 @@ export function buildProductJsonLd({
             },
           }
         : {}),
-      "availability": "https://schema.org/InStock",
       "itemCondition": "https://schema.org/NewCondition",
       "seller": { "@type": "Organization", "name": brand },
-      "shippingDetails": {
-        "@type": "OfferShippingDetails",
-        "shippingRate": { "@type": "MonetaryAmount", "value": 0, "currency": "BRL" },
-        "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "BR" },
-        "deliveryTime": {
-          "@type": "ShippingDeliveryTime",
-          "handlingTime": { "@type": "QuantitativeValue", "minValue": productionDays, "maxValue": productionDays + 2, "unitCode": "DAY" },
-          "transitTime": { "@type": "QuantitativeValue", "minValue": 3, "maxValue": 15, "unitCode": "DAY" },
-        },
-      },
-      "hasMerchantReturnPolicy": {
-        "@type": "MerchantReturnPolicy",
-        "applicableCountry": "BR",
-        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-        "merchantReturnDays": 7,
-        "returnMethod": "https://schema.org/ReturnByMail",
-        "returnFees": "https://schema.org/FreeReturn",
-      },
     },
     ...(rating && reviewCount && reviewCount > 0
       ? {
@@ -173,7 +148,7 @@ const ProductStructuredData = (props: ProductStructuredDataProps) => {
   return (
     <Helmet>
       <script type="application/ld+json">
-        {JSON.stringify(structuredData)}
+        {JSON.stringify(structuredData).replace(/</g, '\\u003c')}
       </script>
     </Helmet>
   );

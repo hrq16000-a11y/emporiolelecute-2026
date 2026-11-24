@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ArrowLeft, RefreshCw, Activity, Search, Download, Copy, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { escapeCsv as csvEscape } from '@/lib/seoExport';
 
 interface StaleLog {
   id: string;
@@ -57,12 +58,6 @@ function parseLog(row: StaleLog): ParsedLog {
   return { ...row, cid, source, component, cleanMessage: rest.trim() || msg };
 }
 
-function csvEscape(v: unknown): string {
-  if (v == null) return "";
-  const s = String(v);
-  if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
 
 function downloadCsv(rows: ParsedLog[]) {
   const headers = ["occurred_at", "cid", "source", "component", "route", "message", "user_agent", "reloaded"];

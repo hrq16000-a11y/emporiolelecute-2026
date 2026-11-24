@@ -1,3 +1,4 @@
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 /**
  * Simula o acesso de crawlers (Bingbot, Googlebot, IndexNow bot) à chave
  * IndexNow, ao sitemap e ao robots.txt, registrando status e cabeçalhos.
@@ -41,6 +42,9 @@ interface ProbeResult {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) return authorization;
+
 
   try {
     let agents = ['bingbot', 'googlebot'];
