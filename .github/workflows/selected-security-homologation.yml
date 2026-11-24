@@ -17,10 +17,13 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
       - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13
         with:
           version: 2.75.0
+      # The CLI action installs its own Bun; restore the lockfile-compatible version afterwards.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
       - name: Prepare dependencies without shared environment
         run: |
           rm -f .env .env.local .env.test .env.test.local
