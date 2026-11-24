@@ -1,5 +1,11 @@
 # Boutique editorial
 
+## Round 8 — targeted tracking privacy review (2026-11-24)
+- [x] Tighten public tracking allowlist and redact tracking routes from visitor telemetry; preserve authenticated details and commercial flows.
+- [x] Verify synthetic tracking, invalid codes, authorization boundaries and 390/1440 layouts; record scanner freshness and NO-GO decision. Per-worker limiter tests pass but remote 429 is not demonstrated.
+- [x] Save focused report and prepare commit after targeted privacy gates; no frontend publication or infrastructure investigation.
+- [ ] Release gate: distributed attempt limits require an authorized minimal persistent design; SSE URL-log privacy and external deployment isolation remain unverified. See docs/qa/round8-tracking-privacy-review.md.
+
 ## Selected order-tracking privacy fix
 - [x] Code-only tracking omits contact/address/notes/personalization; deployed function verified for guest, verified owner, unrelated customer and admin. Guest UI retains status on desktop/mobile/tablet; synthetic orders removed.
 - [x] Checkout uses cryptographic randomness with rejection sampling; LC + six-character format and retry code unchanged. Three targeted privacy tests and lint passed; preview build OK.
@@ -25,7 +31,7 @@
 - [x] Triage current security findings; revoke anonymous administrative listing access and verify denial. Public catalog/config reads and guarded allowlisted sorting remain intentional, not marked resolved. Quick scan has no critical findings.
 - [x] Deep security scan result received with partial code coverage and three critical findings; not a clean security verdict.
 - [x] Previous publication confirmed HTTP 200 at https://emporiolelecute.lovable.app with motion toggle present; the later Hero structural fix is not published.
-- [ ] Correct external domain routing — requires DNS changes at Hosteg, with email routing preserved.
+- [x] Infrastructure review closed by owner; do not reopen DNS, domain, IP, hosting or email configuration investigations.
 
 ## Operational and support production review
 - [x] Recheck deployed permissions and sticky catalog blocking; authenticated message forgery/lease attempts and anonymous chat/scan access denied; shared CSV formulas neutralized, 22 regression tests passed.

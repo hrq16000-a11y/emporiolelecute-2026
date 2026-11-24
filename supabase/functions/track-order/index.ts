@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { mayReadOrderDetails, trackingResponse } from './privacy.ts';
+import { createTrackingLimiter, trackingClient } from '../_shared/tracking-rate-limit.ts';
+
+const limitTracking = createTrackingLimiter();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +31,10 @@ serve(async (req: Request) => {
   }
 
   try {
+    const retryAfter = limitTracking(trackingClient(req));
+    if (retryAfter) return new Response(JSON.stringify({ error: 'Muitas tentativas. Aguarde e tente novamente.' }), {
+      status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) },
+    });
     const body: TrackOrderRequest = await req.json();
     const { orderCode } = body;
 
@@ -51,8 +58,9 @@ serve(async (req: Request) => {
     }
 
     // Create Supabase client with service role to bypass RLS
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseServiceKey) throw new Error('Tracking configuration unavailable');
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -78,20 +86,6 @@ serve(async (req: Request) => {
       );
     }
 
-    // Fetch order items
-    const { data: items, error: itemsError } = await supabase
-      .from("order_items")
-      .select("id, product_name, product_slug, product_image, quantity, unit_price, personalization")
-      .eq("order_id", order.id);
-
-    if (itemsError) {
-      console.error("Error fetching order items:", itemsError.message);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch order items" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // The legacy short order code permits tracking, never identity verification.
     let privateAccess = false;
     const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
@@ -104,12 +98,20 @@ serve(async (req: Request) => {
         privateAccess = mayReadOrderDetails(identity.user, order.customer_email, !roleError && isAdmin === true);
       }
     }
+    let items: Record<string, unknown>[] = [];
+    if (privateAccess) {
+      const result = await supabase.from('order_items')
+        .select('id, product_name, product_slug, product_image, quantity, unit_price, personalization')
+        .eq('order_id', order.id);
+      if (result.error) throw new Error('Order items unavailable');
+      items = result.data || [];
+    }
     return new Response(
       JSON.stringify(trackingResponse(order, items || [], privateAccess)),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Track order error:", error);
+    console.error("Track order request failed");
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

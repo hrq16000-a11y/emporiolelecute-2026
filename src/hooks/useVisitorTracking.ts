@@ -5,6 +5,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { parseUA } from "@/lib/uaParser";
+import { redactTrackingText } from '@/lib/tracking-privacy';
 
 const STORAGE_KEY = "elc_visitor_id";
 const CONSENT_KEY = "elc_cookie_consent";
@@ -97,8 +98,8 @@ export function useVisitorTracking() {
         utm_term: search.get("utm_term"),
         utm_content: search.get("utm_content"),
       },
-      referrer: document.referrer || null,
-      landing_path: location.pathname,
+      referrer: redactTrackingText(document.referrer) || null,
+      landing_path: redactTrackingText(location.pathname),
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -121,7 +122,7 @@ export function useVisitorTracking() {
     pageStart.current = Date.now();
     lastHeartbeatAt.current = Date.now();
     const fromPath = lastPath.current || null;
-    lastPath.current = location.pathname;
+    lastPath.current = redactTrackingText(location.pathname);
 
     const productSlug = location.pathname.startsWith("/produto/") || location.pathname.startsWith("/produtos/")
       ? params.slug || location.pathname.split("/").pop()
@@ -131,10 +132,10 @@ export function useVisitorTracking() {
     send({
       visitor_id: getOrCreateVisitorId(),
       event: "pageview",
-      path: location.pathname + location.search,
+      path: redactTrackingText(location.pathname + location.search),
       title: document.title,
       product_slug: productSlug,
-      referrer: document.referrer || null,
+      referrer: redactTrackingText(document.referrer) || null,
       from_path: fromPath,
       device: buildDevicePayload(),
     });

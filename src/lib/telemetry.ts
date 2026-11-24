@@ -4,6 +4,7 @@
 // `stale_bundle_logs` so admins can diagnose production issues without
 // needing the user's devtools.
 import { supabase } from "@/integrations/supabase/client";
+import { redactTrackingText } from '@/lib/tracking-privacy';
 
 type ErrorSource =
   | "react-boundary"
@@ -83,7 +84,7 @@ const breadcrumbs: Array<{ t: number; type: string; detail: string }> = [];
 const MAX_BREADCRUMBS = 25;
 
 export function pushBreadcrumb(type: string, detail: string) {
-  breadcrumbs.push({ t: Date.now(), type, detail: detail.slice(0, 200) });
+  breadcrumbs.push({ t: Date.now(), type, detail: redactTrackingText(detail).slice(0, 200) });
   if (breadcrumbs.length > MAX_BREADCRUMBS) breadcrumbs.shift();
 }
 
@@ -105,8 +106,8 @@ function shouldThrottle(key: string) {
 }
 
 export async function logClientError(params: LogParams) {
-  const { source, message, stack, componentStack, extra } = params;
-  const route = typeof location !== "undefined" ? location.pathname + location.search : "";
+  const { source, message, stack, componentStack, extra } = JSON.parse(redactTrackingText(JSON.stringify(params))) as LogParams;
+  const route = typeof location !== "undefined" ? redactTrackingText(location.pathname + location.search) : "";
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
   const viewport =
     typeof window !== "undefined"

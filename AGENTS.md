@@ -1,6 +1,7 @@
 # Architecture rules
 
-- Short order codes grant tracking only; personal fields and item personalization require a verified matching account or server-verified admin, and new checkout codes use cryptographic rejection sampling without changing legacy format.
+- Public order tracking exposes an explicit status/delivery/payment-summary allowlist, never internal IDs, purchased items or personal data; details require a verified matching account or server-verified admin. New LC capabilities use eighteen cryptographically sampled symbols, while historical codes retain the same public privacy boundary.
+- Both tracking endpoints apply bounded per-worker attempt limits (not a global quota); diagnostic and visitor payloads redact tracking capabilities and advertising scripts skip tracking routes to reduce token exposure.
 
 - Motion preferences use one subscribed browser store across controllers; public pages ignore legacy device preferences and private account preference is loaded only inside the authorized panel, cleared on exit, and persisted in user_preferences; system reduction always wins.
 - Hero slides share a static grid stage with responsive banner aspect ratios; only internal images and opacity animate, so image loading and slide changes cannot resize the document stage.

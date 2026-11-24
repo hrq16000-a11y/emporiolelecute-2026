@@ -3,6 +3,9 @@
 // Emite: "ready" (snapshot inicial), "status" (mudanças), "ping" (heartbeat).
 // O cliente faz fallback automático para polling se a conexão falhar.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createTrackingLimiter, trackingClient } from '../_shared/tracking-rate-limit.ts';
+
+const limitTracking = createTrackingLimiter();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +26,10 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const retryAfter = limitTracking(trackingClient(req));
+  if (retryAfter) return new Response(JSON.stringify({ error: 'Muitas tentativas. Aguarde e tente novamente.' }), {
+    status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) },
+  });
   const url = new URL(req.url);
   const code = (url.searchParams.get("code") || "").trim().toUpperCase();
   if (!/^[A-Z0-9]{4,20}$/.test(code)) {
@@ -32,10 +39,10 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  const backendUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!backendUrl || !serviceKey) return new Response('Service unavailable', { status: 503, headers: corsHeaders });
+  const supabase = createClient(backendUrl, serviceKey);
 
   // Valida a existência do pedido antes de abrir o stream (evita streams órfãos).
   const { data: initial, error } = await supabase

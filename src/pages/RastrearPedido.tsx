@@ -18,7 +18,7 @@ import { RefreshCw, Receipt, RotateCcw } from "lucide-react";
 import { useContactInfo } from "@/hooks/useContactInfo";
 
 interface OrderItem {
-  id: string;
+  id?: string;
   product_name: string;
   product_slug: string | null;
   product_image: string | null;
@@ -28,7 +28,7 @@ interface OrderItem {
 }
 
 interface Order {
-  id: string;
+  id?: string;
   order_code: string;
   customer_name?: string;
   customer_email?: string;
@@ -43,9 +43,9 @@ interface Order {
   shipping_method: string;
   shipping_company: string | null;
   shipping_days: string | null;
-  shipping_price: number;
-  subtotal: number;
-  total: number;
+  shipping_price?: number;
+  subtotal?: number;
+  total?: number;
   status: string;
   notes: string | null;
   created_at: string;
@@ -359,7 +359,7 @@ const RastrearPedido = () => {
                     <div className="mt-4 flex flex-wrap gap-4 text-sm">
                       <div>
                         <span className="text-muted-foreground">Código:</span>{" "}
-                        <span className="font-mono font-bold text-primary">{order.order_code}</span>
+                        <span className="font-mono font-bold text-primary break-all">{order.order_code}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Data:</span>{" "}
@@ -503,7 +503,7 @@ const RastrearPedido = () => {
                 )}
 
                 {/* Products */}
-                <div className="bg-card rounded-xl border border-border p-6">
+                {orderItems.length > 0 && <div className="bg-card rounded-xl border border-border p-6">
                   <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                     <Package className="h-5 w-5 text-primary" />
                     Produtos ({orderItems.length})
@@ -537,6 +537,7 @@ const RastrearPedido = () => {
                   </div>
                 </div>
 
+                }
                 {/* Customer & Shipping */}
                 {order.customer_email && <div className="grid md:grid-cols-2 gap-6">
                   {/* Customer Info */}
@@ -578,7 +579,7 @@ const RastrearPedido = () => {
                 </div>}
 
                 {/* Order Summary */}
-                <div className="bg-card rounded-xl border border-border p-6">
+                {typeof order.subtotal === 'number' && typeof order.total === 'number' && typeof order.shipping_price === 'number' && <div className="bg-card rounded-xl border border-border p-6">
                   <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                     <Truck className="h-5 w-5 text-primary" />
                     Resumo
@@ -600,7 +601,7 @@ const RastrearPedido = () => {
                       <span className="text-primary">R$ {order.total.toFixed(2).replace('.', ',')}</span>
                     </div>
                   </div>
-                </div>
+                </div>}
 
                 {/* Help */}
                 <div className="bg-muted/50 rounded-xl p-6 text-center">

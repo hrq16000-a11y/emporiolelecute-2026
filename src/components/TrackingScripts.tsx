@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTrackingConfig, pathMatches } from "@/hooks/useTrackingConfig";
+import { isTrackingPath } from '@/lib/tracking-privacy';
 
 /**
  * Strict format validators for admin-managed tracking IDs. These prevent a
@@ -26,6 +27,7 @@ export const TrackingScripts = () => {
   useEffect(() => {
     if (!cfg || !cfg.enabled) return;
     const path = location.pathname;
+    if (isTrackingPath(path)) return;
     if (pathMatches(path, cfg.disabled_paths)) return;
     if (cfg.enabled_paths.length && !pathMatches(path, cfg.enabled_paths)) return;
 
@@ -70,6 +72,9 @@ export const TrackingScripts = () => {
   useEffect(() => {
     if (!cfg?.enabled) return;
     const path = location.pathname + location.search;
+    if (isTrackingPath(location.pathname)) return;
+    if (pathMatches(location.pathname, cfg.disabled_paths)) return;
+    if (cfg.enabled_paths.length && !pathMatches(location.pathname, cfg.enabled_paths)) return;
     // @ts-ignore
     if (cfg.ga4_id && window.gtag) window.gtag("event", "page_view", { page_path: path });
     // @ts-ignore
