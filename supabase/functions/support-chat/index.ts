@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { streamResponse, GatewayError, type ResponsesInputItem, type OpenAIAstraResponsesFields } from 'npm:@lovable.dev/ai-gateway@0.1.11';
-import { z } from 'npm:zod@3.25.76';
+import { z } from 'npm:zod@4.6.7';
 import { ownsOrder, wantsHuman } from './policy.ts';
 
 const schema = z.object({ threadId: z.string().uuid(), requestId: z.string().uuid(), text: z.string().trim().min(1).max(4000), action: z.enum(['send','handoff','reply','resolve']).default('send') });

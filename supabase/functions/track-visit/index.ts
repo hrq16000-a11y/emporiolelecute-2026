@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
     // ---- Upsert do visitante (sempre, mesmo bot) ----
     const { data: existing } = await supabase
       .from("visitors")
-      .select("visitor_id, is_bot, total_pageviews")
+      .select("visitor_id, is_bot, total_pageviews, user_agent")
       .eq("visitor_id", body.visitor_id)
       .maybeSingle();
 
@@ -193,10 +193,15 @@ Deno.serve(async (req) => {
         categories: body.categories || {},
         ip, user_agent: ua,
       });
-      await supabase.from("visitors").update({
-        consent_status: body.accepted ? "accepted" : "rejected",
-        consent_at: new Date().toISOString(),
-      }).eq("visitor_id", body.visitor_id);
+      // Only the same browser that created the visitor may change its consent state;
+      // a leaked visitor_id from another device just appends an audit row.
+      const sameBrowser = !existing || !existing.user_agent || existing.user_agent === ua;
+      if (sameBrowser) {
+        await supabase.from("visitors").update({
+          consent_status: body.accepted ? "accepted" : "rejected",
+          consent_at: new Date().toISOString(),
+        }).eq("visitor_id", body.visitor_id);
+      }
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

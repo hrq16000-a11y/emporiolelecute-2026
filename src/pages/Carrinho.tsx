@@ -47,6 +47,8 @@ interface CustomerData {
 const Carrinho = () => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, total, clearCart } = useCart();
+  const cartTotal = total;
+  const serverTotalsRef = useRef<{ subtotal: number; total: number; items: { product_slug: string; unit_price: number }[] } | null>(null);
   const { toast } = useToast();
   
   const [customer, setCustomer] = useState<CustomerData>(() => {
@@ -460,6 +462,11 @@ const Carrinho = () => {
   }, [address.cep]);
 
   const formatWhatsAppMessage = (code: string) => {
+    // Use server-computed catalog prices when available (never stale browser prices).
+    const server = serverTotalsRef.current;
+    const priceFor = (slug: string | undefined, fallback: number) =>
+      server?.items.find((i) => i.product_slug === slug)?.unit_price ?? fallback;
+    const total = server?.subtotal ?? cartTotal;
     // Sprint 3 — agrupa itens por kit (bundleName) quando aplicável
     const groups = new Map<string, typeof items>();
     const ORDER_STANDALONE = "__standalone__";
@@ -471,7 +478,7 @@ const Carrinho = () => {
     }
 
     const formatItem = (item: typeof items[number], idx: number) =>
-      `${idx + 1}. ${item.name}\n   Qtd: ${item.quantity}x\n   Preço unit: R$ ${item.price.toFixed(2).replace('.', ',')}\n   Subtotal: R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}${item.personalization ? `\n   Personalização: ${item.personalization}` : ''}`;
+      `${idx + 1}. ${item.name}\n   Qtd: ${item.quantity}x\n   Preço unit: R$ ${priceFor(item.slug, item.price).toFixed(2).replace('.', ',')}\n   Subtotal: R$ ${(priceFor(item.slug, item.price) * item.quantity).toFixed(2).replace('.', ',')}${item.personalization ? `\n   Personalização: ${item.personalization}` : ''}`;
 
     const blocks: string[] = [];
     const standalone = groups.get(ORDER_STANDALONE);
@@ -534,7 +541,7 @@ const Carrinho = () => {
     try {
       // Save order via secure server-side RPC (validates and inserts atomically)
       await retryAsync(async () => {
-        const { error: orderError } = await supabase.rpc('create_order_with_items', {
+        const { data: orderData, error: orderError } = await supabase.rpc('create_order_with_items', {
           _order: {
             order_code: code,
             customer_name: customer.name,
@@ -570,6 +577,10 @@ const Carrinho = () => {
             /duplicate key|order_code/i.test(orderError.message ?? '');
           if (isDuplicate) return;
           throw orderError;
+        }
+        const d = orderData as { subtotal?: number; total?: number; items?: { product_slug: string; unit_price: number }[] } | null;
+        if (d && typeof d.subtotal === 'number') {
+          serverTotalsRef.current = { subtotal: Number(d.subtotal), total: Number(d.total ?? d.subtotal), items: (d.items ?? []).map((i) => ({ product_slug: i.product_slug, unit_price: Number(i.unit_price) })) };
         }
       }, { retries: 2, backoffMs: 800 });
 
