@@ -10,6 +10,7 @@ import { useHomeSectionsPublic } from "@/hooks/useHomeSections";
 import { HOME_SECTIONS_REGISTRY } from "@/lib/homeSectionsRegistry";
 import { HomeRegistryProvider } from "@/contexts/HomeRegistry";
 import { NatalHomeSpotlight, NatalWelcomeInvite } from "@/components/NatalHomeCampaign";
+import HeroLoading from "@/components/HeroLoading";
 
 /**
  * Altura realista de cada seção, usada no skeleton para reservar espaço
@@ -30,7 +31,7 @@ const SECTION_HEIGHTS: Record<string, string> = {
 
 };
 
-const SectionFallback = ({ name }: { name?: string }) => (
+const SectionFallback = ({ name }: { name?: string }) => name === 'HeroSlider' ? <HeroLoading /> : (
   <div
     className={`w-full animate-pulse bg-muted/30 ${
       (name && SECTION_HEIGHTS[name]) || "min-h-[280px] md:min-h-[360px]"
@@ -59,7 +60,7 @@ const Index = () => {
         <HomeRegistryProvider>
           {isLoading || !sections
             ? // Reserva visual enquanto sections carregam — evita o pop do footer.
-              <div className="min-h-[100vh] animate-pulse bg-muted/20" aria-hidden />
+              <HeroLoading />
             : sections.map((section, index) => {
                 const Component = HOME_SECTIONS_REGISTRY[section.component_name];
                 if (!Component) {

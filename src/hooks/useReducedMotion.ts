@@ -20,6 +20,7 @@ function readStored(): boolean | null {
 }
 
 const getSnapshot = () => readStored() ?? systemPrefers();
+const getCombinedSnapshot = () => `${getSnapshot() ? '1' : '0'}:${systemPrefers() ? '1' : '0'}`;
 const subscribe = (notify: () => void) => {
   const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
   window.addEventListener(CHANGE_EVENT, notify);
@@ -39,7 +40,9 @@ const subscribe = (notify: () => void) => {
  * - Applies `motion-reduced` class to <html> for CSS to react.
  */
 export function useReducedMotion() {
-  const enabled = useSyncExternalStore(subscribe, getSnapshot, () => false);
+  const snapshot = useSyncExternalStore(subscribe, getCombinedSnapshot, () => '0:0');
+  const enabled = snapshot.startsWith('1');
+  const systemEnabled = snapshot.endsWith('1');
 
   // Reflect on <html> so global CSS can opt-out animations.
   useEffect(() => {
@@ -60,5 +63,5 @@ export function useReducedMotion() {
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }, []);
 
-  return { enabled, toggle, reset };
+  return { enabled, systemEnabled, toggle, reset };
 }

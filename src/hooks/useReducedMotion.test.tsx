@@ -1,10 +1,11 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { useReducedMotion } from "./useReducedMotion";
 
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.restoreAllMocks();
 });
 
 describe("shared motion preference", () => {
@@ -31,5 +32,16 @@ describe("shared motion preference", () => {
     expect(restored.result.current.enabled).toBe(true);
     act(() => restored.result.current.reset());
     expect(localStorage.getItem("emporio:reduced-motion")).toBeNull();
+  });
+
+  it("reports system reduction even when the saved site choice enables motion", () => {
+    localStorage.setItem("emporio:reduced-motion", "0");
+    vi.spyOn(window, "matchMedia").mockReturnValue({
+      matches: true, media: "(prefers-reduced-motion: reduce)",
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    } as unknown as MediaQueryList);
+    const hook = renderHook(() => useReducedMotion());
+    expect(hook.result.current.enabled).toBe(false);
+    expect(hook.result.current.systemEnabled).toBe(true);
   });
 });

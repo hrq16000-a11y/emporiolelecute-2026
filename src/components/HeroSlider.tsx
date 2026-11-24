@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 
 import TrustBadges from "@/components/TrustBadges";
+import HeroLoading from "@/components/HeroLoading";
 import { Button } from "@/components/ui/button";
 import { useHeroSlides, type HeroSlide } from "@/hooks/useHeroSlides";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -384,6 +385,8 @@ const HeroSlider = () => {
   const lcpFallback = lcpSlide ? resolveImageSrc(lcpSlide.image_url) : "";
   const isHttp = (u: string) => /^https?:\/\//i.test(u) || u.startsWith("/");
 
+  if (isLoading) return <HeroLoading />;
+
   return (
     <section
       id="inicio"
@@ -474,7 +477,7 @@ const HeroSlider = () => {
       </div>
 
       {/* Navigation dots + arrows — shown when there are multiple slides */}
-      {(isLoading || slides.length > 1) && (
+      {(
         <>
           {/* Dots */}
           <div
@@ -483,6 +486,7 @@ const HeroSlider = () => {
             } relative z-10`}
           >
             {isLoading && <span className="h-8 w-8" aria-hidden="true" />}
+            {slides.length <= 1 && <span className="h-8 w-8" aria-hidden="true" />}
             {slides.map((_, index) => (
               <button
                 key={index}

@@ -4,9 +4,9 @@
 - [x] Reproduce height collapse while real banners replaced text fallback and measured slide height; scroll stayed zero during animation.
 - [x] Use a static overlapping grid stage and responsive image ratios; reserve loading space and keep header clearance stable.
 - [x] Verify 390/768/1440 continuously through zoom/slide swaps, reduced motion, disabled animations, menu and resize; hero geometry is stable at each width.
-- [ ] Publication and production verification — held by owner's choice until three critical security alerts are addressed in a separate round.
-- [ ] Authorized security round: verify and correct critical search report injection, order update email abuse and private-service access before publishing.
-- [ ] After security verification, align initial Home loading and both admin banner previews; verify responsive stability and reduced motion.
+- [ ] Publication and production verification — no publication authorized in this round; frontend remains preview-only.
+- [x] Authorized security round: corrected all three selected critical paths; stored report payload inert, anonymous requests 401, customers 403, admin validation 400; daily monitor uses private worker credentials. Findings marked fixed; other warnings remain and prior deep coverage was partial.
+- [x] After security verification, aligned initial Home/loading shell and both admin banner previews; 390/768/1440 geometry stable, system/site reduced motion stops timers. 161 unit tests, 2 desktop stability tests, 5 storefront guards and targeted lint passed; preview build OK.
 - DNS, catalog, checkout and publication remain out of scope for this round.
 
 ## Updated 3D motion release

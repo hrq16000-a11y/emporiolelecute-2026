@@ -1,4 +1,5 @@
 import { Suspense, useMemo, useState } from "react";
+import HeroLoading from '@/components/HeroLoading';
 import { useNavigate } from "react-router-dom";
 import {
   Eye,
@@ -255,7 +256,7 @@ const PreviewPanel = ({ section }: { section: HomeSection | null }) => {
       </div>
       <div className="overflow-x-hidden">
         <Suspense
-          fallback={
+          fallback={section.component_name === 'HeroSlider' ? <HeroLoading /> :
             <div className="p-8 flex justify-center">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>

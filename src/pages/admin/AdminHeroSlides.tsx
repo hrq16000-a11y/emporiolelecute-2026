@@ -39,6 +39,8 @@ import {
   Pause,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import HeroPreviewFrame from '@/components/admin/HeroPreviewFrame';
+import { useHeroPreviewMotion } from '@/hooks/useHeroPreviewMotion';
 
 // ---------------------------------------------------------------------------
 // Slide composition summary
@@ -110,15 +112,17 @@ function SlidePreview({ slide }: { slide: Partial<HeroSlide> }) {
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   const [autoPlay, setAutoPlay] = useState(true);
   const AUTO_INTERVAL_MS = 3500;
+  const reducedMotion = useHeroPreviewMotion();
+  const isAutoPlaying = autoPlay && !reducedMotion;
 
   // Auto-alternate between mobile and desktop while autoPlay is on.
   useEffect(() => {
-    if (!autoPlay) return;
+    if (!isAutoPlaying) return;
     const id = window.setInterval(() => {
       setDevice((d) => (d === 'desktop' ? 'mobile' : 'desktop'));
     }, AUTO_INTERVAL_MS);
     return () => window.clearInterval(id);
-  }, [autoPlay]);
+  }, [isAutoPlaying]);
 
   const handleManual = (next: PreviewDevice) => {
     setAutoPlay(false);
@@ -148,28 +152,30 @@ function SlidePreview({ slide }: { slide: Partial<HeroSlide> }) {
   return (
     <div className="rounded-xl border bg-muted/30 p-4">
       <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-h-11">
           <Label className="text-sm">Prévia ao vivo</Label>
-          <ModeBadge mode={mode} />
-          {autoPlay && (
+          <span className="inline-flex w-24"><ModeBadge mode={mode} /></span>
+          {isAutoPlaying && (
             <span className="text-[10px] uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full animate-pulse">
               auto
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="outline" size="sm" disabled={reducedMotion}
             type="button"
             onClick={() => setAutoPlay((v) => !v)}
             className="px-2 py-1.5 text-xs rounded inline-flex items-center gap-1.5 border bg-background text-muted-foreground hover:text-foreground"
-            aria-label={autoPlay ? 'Pausar alternância automática' : 'Iniciar alternância automática'}
-            title={autoPlay ? 'Pausar' : 'Reproduzir'}
+            aria-label={isAutoPlaying ? 'Pausar alternância automática' : 'Iniciar alternância automática'}
+            title={reducedMotion ? 'Movimento reduzido ativado' : isAutoPlaying ? 'Pausar' : 'Reproduzir'}
           >
-            {autoPlay ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-            {autoPlay ? 'Pausar' : 'Auto'}
-          </button>
+            {isAutoPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+            {isAutoPlaying ? 'Pausar' : 'Auto'}
+          </Button>
           <div className="inline-flex rounded-md border bg-background p-0.5">
-            <button
+            <Button
+              variant="ghost" size="sm"
               type="button"
               onClick={() => handleManual('mobile')}
               className={cn(
@@ -180,8 +186,9 @@ function SlidePreview({ slide }: { slide: Partial<HeroSlide> }) {
               )}
             >
               <Smartphone className="h-3.5 w-3.5" /> Mobile
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost" size="sm"
               type="button"
               onClick={() => handleManual('desktop')}
               className={cn(
@@ -192,17 +199,12 @@ function SlidePreview({ slide }: { slide: Partial<HeroSlide> }) {
               )}
             >
               <Monitor className="h-3.5 w-3.5" /> Desktop
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      <div
-        className={cn(
-          'mx-auto bg-background border-8 border-foreground/80 overflow-hidden shadow-lg',
-          isMobilePreview ? 'w-[360px] max-w-full rounded-[28px]' : 'w-full max-w-[1024px] rounded-xl'
-        )}
-      >
+      <HeroPreviewFrame mobile={isMobilePreview} banner={mode !== 'text_image'}>
         {mode === 'text_image' ? (
           <div className="p-4 sm:p-6 grid sm:grid-cols-2 gap-4 items-center bg-background">
             <div className="min-w-0">
@@ -232,15 +234,15 @@ function SlidePreview({ slide }: { slide: Partial<HeroSlide> }) {
             </div>
           </div>
         ) : imgSrc ? (
-          <img src={imgSrc} alt={alt} className="w-full h-auto block" />
+          <img src={imgSrc} alt={alt} width={isMobilePreview ? 963 : 1900} height={565} className="w-full h-full object-contain block" />
         ) : (
           <div className="aspect-[16/5] bg-muted flex items-center justify-center">
             <ImageIcon className="h-8 w-8 text-muted-foreground" />
           </div>
         )}
-      </div>
+      </HeroPreviewFrame>
 
-      <p className="text-[11px] text-muted-foreground mt-3 text-center">
+      <p className="text-[11px] text-muted-foreground mt-3 text-center min-h-12">
         {mode === 'text_image'
           ? 'Sem imagem específica para este dispositivo — exibindo layout Texto + Imagem (fallback).'
           : isMobilePreview
@@ -261,9 +263,11 @@ function HeroShowcase({ slides }: { slides: HeroSlide[] }) {
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   const [playing, setPlaying] = useState(true);
   const SLIDE_MS = 4000;
+  const reducedMotion = useHeroPreviewMotion();
+  const isPlaying = playing && !reducedMotion;
 
   useEffect(() => {
-    if (!playing || visible.length === 0) return;
+    if (!isPlaying || visible.length === 0) return;
     const id = window.setInterval(() => {
       // Toggle device first; when it returns to desktop, advance the slide.
       setDevice((d) => {
@@ -275,7 +279,7 @@ function HeroShowcase({ slides }: { slides: HeroSlide[] }) {
       });
     }, SLIDE_MS);
     return () => window.clearInterval(id);
-  }, [playing, visible.length]);
+  }, [isPlaying, visible.length]);
 
   if (visible.length === 0) return null;
   const safeIndex = index % visible.length;
@@ -309,31 +313,28 @@ function HeroShowcase({ slides }: { slides: HeroSlide[] }) {
             <span className="text-[11px] text-muted-foreground">
               Slide {safeIndex + 1}/{visible.length} · {isMobilePreview ? 'Mobile' : 'Desktop'}
             </span>
-            {playing && (
+            {isPlaying && (
               <span className="text-[10px] uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full animate-pulse">
                 auto
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
-            <button
+            <Button
+              variant="outline" size="sm" disabled={reducedMotion}
               type="button"
               onClick={() => setPlaying((v) => !v)}
               className="px-2 py-1.5 text-xs rounded inline-flex items-center gap-1.5 border bg-background text-muted-foreground hover:text-foreground"
-              aria-label={playing ? 'Pausar' : 'Reproduzir'}
+              aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
+              title={reducedMotion ? 'Movimento reduzido ativado' : isPlaying ? 'Pausar' : 'Reproduzir'}
             >
-              {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-              {playing ? 'Pausar' : 'Reproduzir'}
-            </button>
+              {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {isPlaying ? 'Pausar' : 'Reproduzir'}
+            </Button>
           </div>
         </div>
 
-        <div
-          className={cn(
-            'mx-auto bg-background border-8 border-foreground/80 overflow-hidden shadow-lg transition-all duration-300',
-            isMobilePreview ? 'w-[320px] max-w-full rounded-[28px]' : 'w-full max-w-[960px] rounded-xl'
-          )}
-        >
+        <HeroPreviewFrame mobile={isMobilePreview} banner={mode !== 'text_image'}>
           {mode === 'text_image' ? (
             <div className="p-4 sm:p-6 grid sm:grid-cols-2 gap-4 items-center bg-background">
               <div className="min-w-0">
@@ -363,13 +364,13 @@ function HeroShowcase({ slides }: { slides: HeroSlide[] }) {
               </div>
             </div>
           ) : imgSrc ? (
-            <img src={imgSrc} alt={alt} className="w-full h-auto block" />
+            <img src={imgSrc} alt={alt} width={isMobilePreview ? 963 : 1900} height={565} className="w-full h-full object-contain block" />
           ) : (
             <div className="aspect-[16/5] bg-muted flex items-center justify-center">
               <ImageIcon className="h-8 w-8 text-muted-foreground" />
             </div>
           )}
-        </div>
+        </HeroPreviewFrame>
 
         {/* Slide dots */}
         <div className="flex items-center justify-center gap-1.5 mt-3">
@@ -515,7 +516,7 @@ const AdminHeroSlides = () => {
                       <EyeOff className="h-4 w-4 opacity-50" />
                     )}
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(s)}>
+                  <Button variant="ghost" size="icon" aria-label={`Editar slide ${s.position + 1}`} onClick={() => startEdit(s)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
