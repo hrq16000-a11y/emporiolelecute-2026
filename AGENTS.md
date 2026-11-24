@@ -2,7 +2,8 @@
 
 - Public order tracking exposes an explicit status/delivery/payment-summary allowlist, never internal IDs, purchased items or personal data; details require a verified matching account or server-verified admin. New LC capabilities use eighteen cryptographically sampled symbols, while historical codes retain the same public privacy boundary.
 - Both tracking endpoints apply bounded per-worker attempt limits (not a global quota); SSE capabilities travel in POST bodies, not URLs. Diagnostic and analytics sinks use shared recursive redaction and skip advertising events on tracking routes to reduce token exposure.
-- Notification preferences verify a confirmed matching account before scoped order queries; uniform authorization denials prevent third-party order discovery.
+- Notification preferences verify a confirmed matching account before scoped order queries; uniform authorization denials prevent third-party order discovery. Subscription insertion ignores endpoint conflicts and updates are email-owner-scoped so endpoint ownership cannot transfer.
+- Public shipping quotes resolve only active catalog items and reject mixed unavailable carts; diagnostics and shipping audits omit destination postcodes to avoid retaining delivery data outside the quote flow.
 
 - Motion preferences use one subscribed browser store across controllers; public pages ignore legacy device preferences and private account preference is loaded only inside the authorized panel, cleared on exit, and persisted in user_preferences; system reduction always wins.
 - Hero slides share a static grid stage with responsive banner aspect ratios; only internal images and opacity animate, so image loading and slide changes cannot resize the document stage.

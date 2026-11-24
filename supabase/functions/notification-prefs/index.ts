@@ -111,7 +111,8 @@ Deno.serve(async (req: Request) => {
       if (!/^https:\/\//.test(endpoint) || endpoint.length > 800 || !p256dh || !auth) {
         return json({ error: "invalid_subscription" }, 400);
       }
-      const { error } = await admin.from("push_subscriptions").upsert(
+      // Insert only if unclaimed; conflicting endpoints never transfer email ownership.
+      const { error: insertError } = await admin.from("push_subscriptions").upsert(
         {
           email,
           endpoint,
@@ -119,9 +120,15 @@ Deno.serve(async (req: Request) => {
           auth,
           user_agent: (req.headers.get("user-agent") || "").slice(0, 300),
         },
-        { onConflict: "endpoint" },
+        { onConflict: "endpoint", ignoreDuplicates: true },
       );
+      if (insertError) throw insertError;
+      // Owner-scoped update remains safe even if another request claimed the endpoint first.
+      const { data: owned, error } = await admin.from("push_subscriptions")
+        .update({ p256dh, auth, user_agent: (req.headers.get("user-agent") || "").slice(0, 300) })
+        .eq("endpoint", endpoint).eq("email", email).select("id").maybeSingle();
       if (error) throw error;
+      if (!owned) return json({ error: "not_authorized" }, 403);
       await admin
         .from("notification_preferences")
         .upsert({ email, push_enabled: true }, { onConflict: "email" });

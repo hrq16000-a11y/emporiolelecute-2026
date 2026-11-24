@@ -1,5 +1,10 @@
 # Boutique editorial
 
+## Selected security findings — 2026-11-24
+- [x] Fix and test seven selected findings: active shipping catalog, three postcode leaks, GSC CSV, subscription ownership and unpublished paths. Twenty-two focused tests and automatic build passed.
+- [ ] Guest email/carrier authorization and browser-bound visitor histories await contextual approval.
+- [x] Update seven verified selected findings; keep four active awaiting approval. No other findings changed; no deployment or frontend publication.
+
 ## 360° Round 1 — order privacy and notification authorization
 - [x] Compare official main HEAD and PR #9 before edits; main matches local 5038af3b, PR affects isolated QA files only.
 - [x] Close remaining diagnostic/analytics redaction and notification lookup oracle using existing privacy mechanisms; SSE uses POST body.

@@ -195,13 +195,13 @@ Deno.serve(async (req) => {
       supabase,
       'combination_pages_registry',
       ['path', 'is_indexable', 'discovery_status', 'updated_at'],
-      (q: any) => q.order('updated_at', { ascending: false }).limit(limit),
+      (q: any) => q.eq('is_indexable', true).eq('discovery_status', 'approved').order('updated_at', { ascending: false }).limit(limit),
     );
 
     const targets: Array<{ kind: PageReport['kind']; path: string }> = [
       ...(hubs.data ?? []).filter((h: any) => h.is_approved === true).map((h: any) => ({ kind: 'theme_hub' as const, path: `/tema/${h.slug}` })),
       ...(combos.data ?? [])
-        .filter((c: any) => typeof c.path === 'string' && c.path.startsWith('/'))
+        .filter((c: any) => c.is_indexable === true && c.discovery_status === 'approved' && typeof c.path === 'string' && c.path.startsWith('/'))
         .map((c: any) => ({ kind: 'combination_page' as const, path: c.path })),
     ].slice(0, limit * 2);
 

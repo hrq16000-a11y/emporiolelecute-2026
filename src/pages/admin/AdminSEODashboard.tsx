@@ -16,14 +16,13 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import RobotsAndSitemapPanel from '@/components/admin/RobotsAndSitemapPanel';
 import SEOIndexationPanel from '@/components/admin/SEOIndexationPanel';
+import { toCsv } from '@/lib/seoExport';
 
 type CheckRun = { id: string; ran_at: string; source: string; total: number; passed: number; errors: number; warnings: number; checks: Array<{ name: string; ok: boolean; detail: string; severity: string }>; alert_sent: boolean };
 
 function downloadCSV(filename: string, rows: Array<Record<string, unknown>>) {
   if (!rows.length) { toast.error('Nada para exportar'); return; }
-  const headers = Object.keys(rows[0]);
-  const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const csv = [headers.join(','), ...rows.map(r => headers.map(h => escape(r[h])).join(','))].join('\n');
+  const csv = toCsv(rows);
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

@@ -146,7 +146,11 @@ Deno.serve(async (req) => {
     const { data: catalog } = await sb
       .from('products')
       .select('id, price, weight_kg, length_cm, width_cm, height_cm, requires_shipping')
+      .eq('is_active', true)
       .in('id', ids);
+    if (items.some(item => !item.product_id || !(catalog ?? []).some(product => product.id === item.product_id))) {
+      return json({ error: 'Itens inválidos para cotação' }, 400);
+    }
     const byId = new Map((catalog ?? []).map((p: any) => [p.id, p]));
     const catalogItems = items.flatMap((i) => {
       const p: any = i.product_id ? byId.get(i.product_id) : null;
@@ -176,7 +180,7 @@ Deno.serve(async (req) => {
     const meProvider = (providers ?? []).find((p: any) => p.provider_code === 'melhor_envio');
     const meHasKey = !!meProvider?.api_key && !!meProvider?.endpoint_url;
     console.log('[calculate-shipping]', {
-      destino, totalWeight, subtotal, items_count: shippable.length,
+      totalWeight, subtotal, items_count: shippable.length,
       melhor_envio_active: !!meProvider,
       melhor_envio_has_key: meHasKey,
     });
@@ -185,7 +189,6 @@ Deno.serve(async (req) => {
     if (meProvider && !meHasKey) {
       await sb.from('shipping_audit_logs').insert({
         event_type: 'missing_credentials',
-        destination_zip: destino,
         provider_name: meProvider.provider_name,
         error_message: 'Provedor ativo sem api_key/endpoint_url configurados',
         total_weight_kg: totalWeight,
@@ -216,7 +219,6 @@ Deno.serve(async (req) => {
       options = quoteCorreiosEstimate({ totalWeight, destino, origin: ORIGIN_CEP });
       await sb.from('shipping_audit_logs').insert({
         event_type: 'estimate_fallback',
-        destination_zip: destino,
         cart_snapshot: { items: shippable, subtotal },
         provider_name: meProvider?.provider_name ?? null,
         error_message: meHasKey
@@ -266,9 +268,9 @@ Deno.serve(async (req) => {
         instructions: settings.pickup_instructions,
       } : null,
     });
-  } catch (err) {
-    console.error('[calculate-shipping] unexpected', err);
-    return json({ error: 'Erro interno', message: String(err) }, 500);
+  } catch {
+    console.error('[calculate-shipping] unexpected failure');
+    return json({ error: 'Erro interno' }, 500);
   }
 });
 
@@ -281,7 +283,7 @@ async function quoteProvider(p: any, ctx: any): Promise<ShippingOption[]> {
     const cacheKey = buildQuoteCacheKey('melhor_envio', ctx.origin, ctx.destino, ctx.totalWeight);
     const cached = await readQuoteCache(ctx.sb, cacheKey);
     if (cached && cached.length > 0) {
-      console.log('[calculate-shipping] cache hit', { cacheKey, count: cached.length });
+      console.log('[calculate-shipping] cache hit', { count: cached.length });
       return cached;
     }
 
@@ -301,15 +303,14 @@ async function quoteProvider(p: any, ctx: any): Promise<ShippingOption[]> {
     const reason = isTimeout ? 'provider_timeout' : is5xx ? 'provider_error' : 'provider_error';
 
     console.error('[calculate-shipping] provider fallback', {
-      provider: p.provider_name, reason, status, message: err?.message,
+      provider: p.provider_name, reason, status,
     });
 
     await ctx.sb.from('shipping_audit_logs').insert({
       event_type: reason,
-      destination_zip: ctx.destino,
       cart_snapshot: { items: ctx.items, subtotal: ctx.subtotal, reason },
       provider_name: p.provider_name,
-      error_message: String(err?.message ?? err).slice(0, 500),
+      error_message: reason,
       http_status: status ?? null,
       total_weight_kg: ctx.totalWeight,
       melhor_envio_has_key: !!p.api_key,
