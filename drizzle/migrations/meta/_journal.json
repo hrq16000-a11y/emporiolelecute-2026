@@ -92,6 +92,13 @@
       "when": 1795481035899,
       "tag": "0012_restrict_user_listing_rpc_clients",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795492791030,
+      "tag": "0013_security_hardening_round8",
+      "breakpoints": true
     }
   ]
 }
