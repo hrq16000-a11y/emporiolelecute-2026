@@ -138,9 +138,36 @@ Deno.serve(async (req) => {
     const ORIGIN_CEP = String(settings.origin_zip_code).replace(/\D/g, '');
     if (ORIGIN_CEP.length !== 8) return json({ error: 'CEP de origem inválido' }, 422);
 
+    // Quotes are only for real catalog items: weight/dimensions/price come from
+    // the catalog, never from the request, so the courier account only sees
+    // store-defined packages.
+    const ids = [...new Set(items.map((i) => i.product_id).filter((v): v is string => !!v && /^[0-9a-f-]{36}$/i.test(v)))];
+    if (ids.length === 0) return json({ error: 'Itens inválidos para cotação' }, 400);
+    const { data: catalog } = await sb
+      .from('products')
+      .select('id, price, weight_kg, length_cm, width_cm, height_cm, requires_shipping')
+      .in('id', ids);
+    const byId = new Map((catalog ?? []).map((p: any) => [p.id, p]));
+    const catalogItems = items.flatMap((i) => {
+      const p: any = i.product_id ? byId.get(i.product_id) : null;
+      if (!p) return [];
+      return [{
+        product_id: p.id,
+        name: i.name,
+        quantity: i.quantity,
+        unit_price: Number(p.price) || 0,
+        weight_kg: p.weight_kg != null ? Number(p.weight_kg) : undefined,
+        length: p.length_cm != null ? Number(p.length_cm) : undefined,
+        width: p.width_cm != null ? Number(p.width_cm) : undefined,
+        height: p.height_cm != null ? Number(p.height_cm) : undefined,
+        requires_shipping: p.requires_shipping !== false,
+      }];
+    });
+    if (catalogItems.length === 0) return json({ error: 'Itens inválidos para cotação' }, 400);
+
     // Empacotamento (lib) + filtro de itens que exigem frete
     const defaultItemWeight = Number(settings.default_box_weight_kg) || 0.3;
-    const { shippable, totalWeight, subtotal } = packCart(items as any, defaultItemWeight);
+    const { shippable, totalWeight, subtotal } = packCart(catalogItems as any, defaultItemWeight);
     if (shippable.length === 0) {
       return json({ options: [{ provider: 'Digital', service_name: 'Sem envio', price: 0, estimated_delivery_days: '0' }] });
     }

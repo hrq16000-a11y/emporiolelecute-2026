@@ -1,3 +1,4 @@
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -106,7 +107,7 @@ const WYSIWYGEditor = ({ content, onChange, onAutoSave, autoSaveInterval = 30000
         </div>
         <div 
           className="p-4 prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: isSourceMode ? sourceContent : editor.getHTML() }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(isSourceMode ? sourceContent : editor.getHTML()) }}
         />
       </div>
     );

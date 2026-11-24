@@ -12,6 +12,23 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 type Row = Record<string, unknown>;
 
+// Restorable columns per table. Anything else in the manifest is dropped so a
+// manifest cannot write server-owned or unexpected fields.
+const IMPORT_COLUMNS: Record<string, string[]> = {
+  categories: ["name","slug","position","description","image_url","meta_title","meta_description","h1_override","description_seo","is_indexed","faqs","icon","is_draft","external_ref","image_ref","google_product_category"],
+  occasions: ["name","slug","position","description","image_url","meta_title","meta_description","h1_override","description_seo","is_indexed","faqs","is_draft","external_ref","image_ref","icon"],
+  tags: ["name","slug","position","external_ref"],
+  kits: ["slug","name","description","image_url","bundle_type","estimated_savings","position","is_active","show_on_home","home_position","meta_title","meta_description","external_ref","image_ref"],
+  products: ["name","slug","description","long_description","price","original_price","min_quantity","pix_discount","production_days","weight","category_id","badge","images","features","keywords","is_active","personalization_enabled","personalization_label","personalization_placeholder","google_product_category","seo_noindex","editorial_content","featured_weight","production_speed","pdp_badge_override","external_ref","show_quick_summary","show_min_quantity","weight_kg","length_cm","width_cm","height_cm","requires_shipping","image_refs","personalization_options","seo_title"],
+  kit_products: ["quantity","position"],
+  product_tags: [],
+  product_occasions: [],
+};
+const pickColumns = (table: string, row: Row): Row => {
+  const allowed = IMPORT_COLUMNS[table] ?? [];
+  return Object.fromEntries(Object.entries(row).filter(([k]) => allowed.includes(k)));
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
@@ -82,7 +99,7 @@ Deno.serve(async (req) => {
       for (const r of rows) {
         const ref = r.external_ref as string;
         if (!ref) continue;
-        const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = r as Row & { id?: string; created_at?: string; updated_at?: string };
+        const rest = pickColumns(table, r as Row);
         const localId = exMap.get(ref);
         if (localId) {
           const { error } = await admin.from(table).update(rest).eq("external_ref", ref);
@@ -110,7 +127,8 @@ Deno.serve(async (req) => {
       for (const p of (c.products ?? [])) {
         const ref = p.external_ref as string;
         if (!ref) continue;
-        const { id: _id, created_at: _ca, updated_at: _ua, category_ref, search_text: _st, ...rest } = p as Row & { id?: string; created_at?: string; updated_at?: string; category_ref?: string; search_text?: string };
+        const category_ref = typeof p.category_ref === "string" ? p.category_ref : undefined;
+        const rest = pickColumns("products", p as Row);
         if (category_ref) {
           const catId = catRefMap.get(category_ref) ?? (await admin.from("categories").select("id").eq("external_ref", category_ref).maybeSingle()).data?.id;
           if (catId) rest.category_id = catId;
@@ -121,7 +139,7 @@ Deno.serve(async (req) => {
         }
         // Override images com URLs carregadas pelo client (se houver)
         const imgOverride = manifest.images?.[ref];
-        if (imgOverride && imgOverride.length > 0) rest.images = imgOverride;
+        if (Array.isArray(imgOverride) && imgOverride.length > 0) rest.images = imgOverride.filter((u) => typeof u === "string" && /^https:\/\//.test(u));
 
         const localId = exMap.get(ref);
         if (localId) {
@@ -153,8 +171,7 @@ Deno.serve(async (req) => {
         const a = aMap.get(aRef);
         const b = bMap.get(bRef);
         if (!a || !b) return null;
-        const { [`${aKey}_ref`]: _ar, [`${bKey}_ref`]: _br, id: _id, ...extra } = r as Row;
-        return { [aKey]: a, [bKey]: b, ...extra };
+        return { ...pickColumns(table, r as Row), [aKey]: a, [bKey]: b };
       }).filter(Boolean) as Row[];
       if (!payload.length) return;
       const { error } = await admin.from(table).upsert(payload, { onConflict: `${aKey},${bKey}`, ignoreDuplicates: true });

@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
       supabase,
       'theme_hubs',
       ['slug', 'is_approved', 'is_indexed', 'updated_at'],
-      (q: any) => q.order('updated_at', { ascending: false }).limit(limit),
+      (q: any) => q.eq('is_approved', true).order('updated_at', { ascending: false }).limit(limit),
     );
     // deno-lint-ignore no-explicit-any
     const combos = await resilientSelect<any>(
@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
     );
 
     const targets: Array<{ kind: PageReport['kind']; path: string }> = [
-      ...(hubs.data ?? []).map((h: any) => ({ kind: 'theme_hub' as const, path: `/tema/${h.slug}` })),
+      ...(hubs.data ?? []).filter((h: any) => h.is_approved === true).map((h: any) => ({ kind: 'theme_hub' as const, path: `/tema/${h.slug}` })),
       ...(combos.data ?? [])
         .filter((c: any) => typeof c.path === 'string' && c.path.startsWith('/'))
         .map((c: any) => ({ kind: 'combination_page' as const, path: c.path })),

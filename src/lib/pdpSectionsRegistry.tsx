@@ -102,6 +102,7 @@ export const pdpSectionRegistry: Record<string, Renderer> = {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
+            // Escape HTML-significant characters so stored text can never close the script tag.
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Article",
@@ -109,7 +110,12 @@ export const pdpSectionRegistry: Record<string, Renderer> = {
               articleBody: dbProduct.editorial_content.slice(0, 4000),
               mainEntityOfPage: canonicalUrl,
               author: { "@type": "Organization", name: "Empório LeleCute" },
-            }),
+            })
+              .replace(/</g, "\\u003c")
+              .replace(/>/g, "\\u003e")
+              .replace(/&/g, "\\u0026")
+              .replace(/\u2028/g, "\\u2028")
+              .replace(/\u2029/g, "\\u2029"),
           }}
         />
       </section>

@@ -6,6 +6,7 @@
 
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts';
 
 interface Payload {
   user_id?: string;
@@ -30,8 +31,20 @@ const log = (
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  const request_id = req.headers.get('x-request-id') ?? crypto.randomUUID();
+  // Only server-generated identifiers are echoed anywhere (logs, headers, email).
+  const suppliedId = req.headers.get('x-request-id') ?? '';
+  const request_id = /^[A-Za-z0-9-]{8,64}$/.test(suppliedId) ? suppliedId : crypto.randomUUID();
   const started = performance.now();
+
+  // Only database triggers (service credential / private worker secret) or a
+  // verified admin may ask this function to email an account.
+  const authorization = await authorizeOperationalRequest(req.clone());
+  if (authorization instanceof Response) {
+    return new Response(JSON.stringify({ error: 'forbidden', request_id }), {
+      status: authorization.status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-request-id': request_id },
+    });
+  }
 
   try {
     const body = (await req.json().catch(() => ({}))) as Payload;
@@ -105,7 +118,7 @@ Deno.serve(async (req) => {
 
     // Warn (don't fail) if caller-supplied email mismatches the canonical one.
     if (email && email.toLowerCase() !== canonicalEmail.toLowerCase()) {
-      log('warn', request_id, 'email_mismatch_overridden', { supplied: email });
+      log('warn', request_id, 'email_mismatch_overridden');
     }
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -120,7 +133,7 @@ Deno.serve(async (req) => {
         <p>Olá,</p>
         <p>Sua conta <strong>${canonicalEmail}</strong> recebeu a permissão <strong>${safeRole}</strong> no painel administrativo do Empório LeleCute.</p>
         <p><a href="https://emporiolelecute.com.br/admin" style="background:#c2956b;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Abrir painel</a></p>
-        <p style="font-size:12px;color:#888;">Evento: ${safeEvent} · ref: ${request_id}</p>
+        <p style="font-size:12px;color:#888;">Evento: ${safeEvent} · ref: ${request_id.replace(/[^A-Za-z0-9-]/g, '')}</p>
       </div>
     `;
 

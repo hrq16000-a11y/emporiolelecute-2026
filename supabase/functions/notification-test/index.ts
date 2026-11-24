@@ -50,6 +50,10 @@ Deno.serve(async (req: Request) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json({ error: "E-mail inválido" }, 400);
   }
+  // Test pushes/emails may only target the signed-in admin's own address.
+  if (!user.email || email !== user.email.trim().toLowerCase()) {
+    return json({ error: "Use o e-mail da sua própria conta para o teste." }, 403);
+  }
   const orderCode = String(body.order_code || "TESTE01").trim().toUpperCase().slice(0, 20);
   const allowEmailFallback = body.send_email_fallback !== false;
 

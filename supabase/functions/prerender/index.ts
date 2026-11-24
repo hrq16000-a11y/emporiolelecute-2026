@@ -1,3 +1,4 @@
+import sanitizeHtmlLib from "npm:sanitize-html@2.13.0";
 // Edge prerender — serve crawler-friendly HTML for SPA routes.
 // Designed to sit BEHIND a Cloudflare Worker that gates by User-Agent
 // (only bots reach this function). See docs/PRERENDER_STRATEGY.md.
@@ -30,6 +31,15 @@ const supabase = createClient(
 );
 
 // --- helpers ---------------------------------------------------------------
+
+// Stored page HTML is reduced to a safe rich-text allowlist before being served.
+const sanitizeStoredHtml = (dirty: string): string =>
+  sanitizeHtmlLib(dirty, {
+    allowedTags: sanitizeHtmlLib.defaults.allowedTags.concat(["img", "h1", "h2", "figure", "figcaption"]),
+    allowedAttributes: { a: ["href", "title", "target", "rel"], img: ["src", "alt", "title", "width", "height", "loading"], "*": ["class"] },
+    allowedSchemes: ["http", "https", "mailto", "tel"],
+    allowProtocolRelative: false,
+  });
 
 const esc = (s: unknown) =>
   String(s ?? "")
@@ -335,7 +345,7 @@ async function renderStaticPage(slug: string): Promise<SeoPayload | null> {
     title: page.seo_title || `${page.title} | ${SITE_NAME}`,
     description: desc,
     h1: page.title,
-    bodyHtml: String(page.content || ""),
+    bodyHtml: sanitizeStoredHtml(String(page.content || "")),
     jsonLd: [orgLd, breadcrumbLd([
       { name: "Início", url: ORIGIN },
       { name: page.title, url: canonical(`/${page.slug}`) },

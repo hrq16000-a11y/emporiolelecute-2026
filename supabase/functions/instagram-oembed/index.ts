@@ -4,6 +4,7 @@
 //   - profile: { username }            → tentativa best-effort de listar últimas postagens do perfil
 //   - bulk-refresh: {}                 → re-extrai thumbnail/título de todos os posts cadastrados
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { authorizeOperationalRequest } from "../_shared/operational-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -138,8 +139,17 @@ async function tryProfile(username: string): Promise<{ ok: boolean; posts: { sho
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+    // Every action touches stored posts or fetches from Instagram on the store's
+    // behalf: only admins (or the private scheduler credential) may call it.
+    const authorization = await authorizeOperationalRequest(req.clone());
+    if (authorization instanceof Response) {
+      return new Response(await authorization.text(), { status: authorization.status, headers: corsHeaders });
+    }
     const body = await req.json().catch(() => ({}));
     const action = body?.action || (body?.url ? "extract" : null);
+    if (action === "scheduled-refresh" && authorization !== "cron") {
+      return Response.json({ ok: false, error: "scheduler_only" }, { status: 403, headers: corsHeaders });
+    }
 
     if (action === "extract") {
       const cls = classifyUrl(body.url || "");
@@ -150,12 +160,13 @@ Deno.serve(async (req) => {
         );
       }
       const meta = await fetchPostMeta(cls.permalink!);
-      if (body.post_id) {
+      if (typeof body.post_id === "string" && /^[0-9a-f-]{36}$/i.test(body.post_id)) {
         const supabase = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
         );
-        await logAttempt(supabase, body.post_id, body.source || "manual", meta);
+        const { data: post } = await supabase.from("instagram_posts").select("id").eq("id", body.post_id).maybeSingle();
+        if (post) await logAttempt(supabase, post.id, body.source === "cron" ? "cron" : "manual", meta);
       }
       return Response.json(
         {
@@ -174,8 +185,8 @@ Deno.serve(async (req) => {
     }
 
     if (action === "profile") {
-      const username = body.username || "emporiolelecute";
-      const r = await tryProfile(username);
+      // Server-chosen profile only: the store's own Instagram account.
+      const r = await tryProfile("emporiolelecute");
       return Response.json(r, { headers: corsHeaders });
     }
 
@@ -236,7 +247,7 @@ Deno.serve(async (req) => {
     );
   } catch (e) {
     return Response.json(
-      { ok: false, error: String(e instanceof Error ? e.message : e) },
+      { ok: false, error: "internal_error" },
       { status: 500, headers: corsHeaders },
     );
   }

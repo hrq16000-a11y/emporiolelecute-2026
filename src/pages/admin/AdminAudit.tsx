@@ -1,3 +1,4 @@
+import { escapeCsv } from '@/lib/seoExport';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,11 +77,7 @@ function fmt(e: string | null | undefined, mask: boolean) {
 
 function toCsv(rows: TimelineRow[], mask: boolean): string {
   const header = ['created_at', 'source', 'status', 'role', 'target_email', 'target_user_id', 'actor_email', 'details'];
-  const escape = (v: any) => {
-    if (v === null || v === undefined) return '';
-    const s = String(v).replace(/"/g, '""');
-    return /[",\n;]/.test(s) ? `"${s}"` : s;
-  };
+  const escape = (v: any) => escapeCsv(v === null || v === undefined ? '' : String(v));
   const lines = [header.join(',')];
   for (const r of rows) {
     lines.push([

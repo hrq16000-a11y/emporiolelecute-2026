@@ -41,6 +41,9 @@ Deno.serve(async (req) => {
     if (sendNotification) {
       const authorization = await authorizeOperationalRequest(req);
       if (authorization instanceof Response) return authorization;
+      // Recipient is never caller-chosen: only the store's configured inbox.
+      const storeInbox = (Deno.env.get('STORE_NOTIFICATION_EMAIL') || 'emporiolelecute@gmail.com').toLowerCase()
+      notificationEmail = storeInbox
     }
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!

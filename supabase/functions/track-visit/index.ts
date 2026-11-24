@@ -13,7 +13,8 @@ const corsHeaders = {
 
 interface Payload {
   visitor_id: string;
-  event: "init" | "pageview" | "heartbeat" | "consent" | "identify" | "gps" | "session_end";
+  event: "init" | "pageview" | "heartbeat" | "consent" | "lead" | "session_end";
+  lead_trigger?: string;
   device?: Record<string, unknown>;
   utm?: Record<string, string | null>;
   referrer?: string;
@@ -32,13 +33,26 @@ interface Payload {
   time_on_page?: number;
   accepted?: boolean;
   categories?: Record<string, boolean>;
-  customer_id?: string;
-  whatsapp_phone?: string;
-  email?: string;
-  gps_lat?: number;
-  gps_lon?: number;
-  gps_accuracy?: number;
 }
+
+// Only these client-reported device columns may ever be written to visitors.
+const ALLOWED_DEVICE_FIELDS = new Set([
+  "screen_w", "screen_h", "viewport_w", "viewport_h", "pixel_ratio",
+  "color_depth", "touch_support", "language", "languages", "timezone",
+  "device_type", "device_brand", "device_model", "os_name", "os_version",
+  "browser_name", "browser_version",
+]);
+const pickDevice = (raw: unknown): Record<string, unknown> => {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return Object.fromEntries(
+    Object.entries(raw as Record<string, unknown>)
+      .filter(([k, v]) => ALLOWED_DEVICE_FIELDS.has(k) && (v === null || ["string", "number", "boolean"].includes(typeof v) || Array.isArray(v)))
+      .map(([k, v]) => [k, typeof v === "string" ? v.slice(0, 200) : v]),
+  );
+};
+// Visitor ids are browser-generated random UUIDs; anything else is rejected so
+// ids cannot be enumerated or chosen to target another visitor's record.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // ---- Detecção de bots/scrapers ----
 const BOT_REGEX = /(bot|crawl|spider|slurp|bingbot|googlebot|amazonbot|gptbot|claudebot|perplexitybot|ahrefs|semrush|mj12bot|yandexbot|baiduspider|facebookexternalhit|twitterbot|whatsapp|telegram|headlesschrome|phantomjs|puppeteer|playwright|duckduckbot|applebot|petalbot|seznambot|chrome-lighthouse)/i;
@@ -97,7 +111,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (!body?.visitor_id || typeof body.visitor_id !== "string" || body.visitor_id.length > 64) {
+  if (!body?.visitor_id || typeof body.visitor_id !== "string" || !UUID_RE.test(body.visitor_id)) {
     return new Response(JSON.stringify({ error: "invalid_visitor_id" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -122,17 +136,7 @@ Deno.serve(async (req) => {
 
     if (!existing) {
       const geo = bot.isBot ? {} : await lookupIPGeo(ip);
-      // Whitelist device fields to prevent mass-assignment of sensitive
-      // columns (e.g. consent_status) that would bypass the LGPD consent gate.
-      const ALLOWED_DEVICE_FIELDS = new Set([
-        "screen_w", "screen_h", "viewport_w", "viewport_h", "pixel_ratio",
-        "color_depth", "touch_support", "language", "languages", "timezone",
-        "device_type", "device_brand", "device_model", "os_name", "os_version",
-        "browser_name", "browser_version",
-      ]);
-      const device = Object.fromEntries(
-        Object.entries(body.device || {}).filter(([k]) => ALLOWED_DEVICE_FIELDS.has(k)),
-      );
+      const device = pickDevice(body.device);
       await supabase.from("visitors").insert({
         visitor_id: body.visitor_id,
         ip,
@@ -152,7 +156,7 @@ Deno.serve(async (req) => {
       });
     } else {
       // Auto-heal: reenviar device popula campos faltantes; last_seen sempre atualiza
-      const device = body.device || {};
+      const device = pickDevice(body.device);
       const patch: Record<string, unknown> = {
         last_seen_at: new Date().toISOString(),
         ip,
@@ -198,24 +202,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---- IDENTIFY ----
-    if (body.event === "identify") {
-      const update: Record<string, unknown> = {};
-      if (body.customer_id) update.customer_id = body.customer_id;
-      if (body.whatsapp_phone) update.whatsapp_phone = body.whatsapp_phone;
-      if (Object.keys(update).length) {
-        await supabase.from("visitors").update(update).eq("visitor_id", body.visitor_id);
-      }
-    }
-
-    // ---- GPS ----
-    if (body.event === "gps" && body.gps_lat && body.gps_lon) {
-      await supabase.from("visitors").update({
-        gps_lat: body.gps_lat,
-        gps_lon: body.gps_lon,
-        gps_accuracy: body.gps_accuracy ?? null,
-        gps_captured_at: new Date().toISOString(),
-      }).eq("visitor_id", body.visitor_id);
+    // ---- LEAD (server-side only; identity/contact fields are never accepted here) ----
+    if (body.event === "lead") {
+      const trigger = String(body.lead_trigger || "").replace(/[^a-z0-9_:-]/gi, "").slice(0, 60) || "unknown";
+      const { error: leadErr } = await supabase.rpc("mark_visitor_as_lead", {
+        _visitor_id: body.visitor_id,
+        _trigger: trigger,
+      });
+      if (leadErr) console.error("mark_visitor_as_lead rpc error", leadErr.code);
     }
 
     // ---- PAGEVIEW (RPC atômica: insere com step_index e incrementa total) ----

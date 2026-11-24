@@ -1,5 +1,4 @@
 // Helpers compartilhados de visitante (id local + promoção a lead).
-import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "elc_visitor_id";
 
@@ -13,9 +12,11 @@ export async function markLead(trigger: string): Promise<void> {
   const visitorId = getVisitorId();
   if (!visitorId) return;
   try {
-    await (supabase as any).rpc("mark_visitor_as_lead", {
-      _visitor_id: visitorId,
-      _trigger: trigger,
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-visit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitor_id: visitorId, event: "lead", lead_trigger: trigger }),
+      keepalive: true,
     });
   } catch {
     // silencioso — não pode bloquear UX

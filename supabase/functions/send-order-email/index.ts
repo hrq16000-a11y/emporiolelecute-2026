@@ -622,23 +622,47 @@ const handler = async (req: Request): Promise<Response> => {
 
     // ---------------- New order confirmation ----------------
     if (requestData.orderCode) {
-      const order = requestData as OrderRequest;
-      const orderCode = clampStr(order.orderCode, 32);
+      const orderCode = clampStr((requestData as OrderRequest).orderCode, 32);
 
-      // Verify the order actually exists in DB before sending any email.
-      // This prevents arbitrary phishing via fake orderCode + recipient email.
+      // The email body is built ONLY from the stored order, never from the
+      // request, and confirmations are sent only right after checkout.
       const { data: dbOrder } = await supabaseAdmin
         .from("orders")
-        .select("order_code, customer_email")
+        .select("id, order_code, customer_email, customer_name, customer_phone, address_cep, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, shipping_method, shipping_company, shipping_days, shipping_price, subtotal, total, created_at")
         .eq("order_code", orderCode)
         .maybeSingle();
-      if (!dbOrder) {
+      const freshWindowMs = 30 * 60 * 1000;
+      if (!dbOrder || Date.now() - new Date(dbOrder.created_at).getTime() > freshWindowMs) {
         return new Response(JSON.stringify({ success: false, error: "Order not found" }), {
           status: 404,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
+      const { data: dbItems } = await supabaseAdmin
+        .from("order_items")
+        .select("product_name, quantity, unit_price, personalization")
+        .eq("order_id", dbOrder.id);
+      const order: OrderRequest = {
+        orderCode: dbOrder.order_code,
+        customer: { name: dbOrder.customer_name ?? "", email: dbOrder.customer_email ?? "", phone: dbOrder.customer_phone ?? "" },
+        address: {
+          cep: dbOrder.address_cep ?? "", street: dbOrder.address_street ?? "", number: dbOrder.address_number ?? "",
+          complement: dbOrder.address_complement ?? undefined, neighborhood: dbOrder.address_neighborhood ?? "",
+          city: dbOrder.address_city ?? "", state: dbOrder.address_state ?? "",
+        },
+        items: (dbItems ?? []).map((it) => ({
+          name: it.product_name, quantity: Number(it.quantity), price: Number(it.unit_price),
+          personalization: it.personalization ?? undefined,
+        })),
+        shipping: {
+          id: "", name: dbOrder.shipping_method ?? "", company: dbOrder.shipping_company ?? "",
+          price: Number(dbOrder.shipping_price ?? 0), days: dbOrder.shipping_days != null ? String(dbOrder.shipping_days) : "",
+        },
+        subtotal: Number(dbOrder.subtotal ?? 0),
+        shippingPrice: Number(dbOrder.shipping_price ?? 0),
+        total: Number(dbOrder.total ?? 0),
+      };
       const storeEmailHtml = generateOrderEmailHtml(order);
       await resend.emails.send({
         from: "Empório LeleCute <onboarding@resend.dev>",

@@ -5,6 +5,7 @@
 // batched e-mail to all admins via Resend (Lovable connector gateway).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { authorizeOperationalRequest } from "../_shared/operational-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,6 +27,13 @@ function escapeHtml(s: string): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  // Scheduler (private worker credential) or a verified admin only.
+  const authorization = await authorizeOperationalRequest(req);
+  if (authorization instanceof Response) {
+    return new Response(JSON.stringify({ error: "forbidden" }), {
+      status: authorization.status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

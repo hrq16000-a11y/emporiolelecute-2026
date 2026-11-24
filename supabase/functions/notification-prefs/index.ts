@@ -56,6 +56,15 @@ Deno.serve(async (req: Request) => {
     return json({ error: "order_not_found" }, 404);
   }
 
+  // Mailbox proof: an order code is not enough to change someone's alerts.
+  // The caller must be signed in with a confirmed account for this email.
+  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  const { data: authData } = token ? await admin.auth.getUser(token) : { data: { user: null } };
+  const authUser = authData?.user;
+  if (!authUser || !authUser.email_confirmed_at || String(authUser.email || "").trim().toLowerCase() !== email) {
+    return json({ error: "sign_in_required" }, 401);
+  }
+
   const loadState = async () => {
     const { data: prefs } = await admin
       .from("notification_preferences")
