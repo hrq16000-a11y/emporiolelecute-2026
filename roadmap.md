@@ -1,5 +1,12 @@
 # Boutique editorial
 
+## Isolated homologation and promotion separation — 2026-11-24
+- [x] Confirm remote 970fcc11 and identify the reversed Vercel ignored-build command; correct it before saving checkpoints.
+- [ ] Verify the corrected production gate and preserve the current production deployment.
+- [ ] Run the three authorized handlers with real disposable local authentication and persistence, with all external effects fenced.
+- [ ] Record isolated evidence and update only the three authorized findings; retain editor-price findings unchanged.
+- [ ] Save a non-promoting checkpoint and verify no production promotion occurred.
+
 ## Authorized selected security fixes — 2026-11-24
 - [x] Restrict code-based resend/read to verified owners or server-verified admins; preserve guest checkout and WhatsApp.
 - [x] Require verified non-anonymous login before carrier settings/cache/quotes/audits.
