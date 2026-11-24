@@ -2,23 +2,23 @@
 
 ## Isolated homologation and promotion separation — 2026-11-24
 - [x] Confirm remote 970fcc11 and identify the reversed Vercel ignored-build command; correct it before saving checkpoints.
-- [ ] Verify the corrected production gate and preserve the current production deployment.
-- [ ] Run the three authorized handlers with real disposable local authentication and persistence, with all external effects fenced.
-- [ ] Record isolated evidence and update only the three authorized findings; retain editor-price findings unchanged.
-- [ ] Save a non-promoting checkpoint and verify no production promotion occurred.
+- [x] Verify the corrected production gate; observed checkpoint 956646d7 CANCELED while 970fcc11 retains the official production alias.
+- [x] Run the three authorized handlers with real disposable local authentication and persistence: GitHub run 45342839589 PASS, including teardown; all external effects fenced.
+- [x] Record isolated evidence and check only the three authorized findings (already inactive); retain both editor-price findings unchanged.
+- [x] Verify a real main checkpoint did not promote; persist the report and runner corrections. See docs/qa/isolated-selected-security-homologation-2026-11-24.md.
 
 ## Authorized selected security fixes — 2026-11-24
 - [x] Restrict code-based resend/read to verified owners or server-verified admins; preserve guest checkout and WhatsApp.
 - [x] Require verified non-anonymous login before carrier settings/cache/quotes/audits.
 - [x] Bind all visitor mutations to a browser secret; start fresh for legacy browsers without reattachment.
 - [x] Run 89 affected tests and 5 storefront guards; verify synthetic 390/768/1440 flows and document limits in docs/qa/authorized-selected-security-2026-11-24.md.
-- [ ] Real authenticated carrier/email persistence verification waits for an isolated backend; no real orders, sends, quotes or production database changes were requested.
+- [x] Real authentication and persistence for the three handlers verified in a minimal disposable backend, with mail in memory and carrier on loopback only; production deployment and full historical migration/RLS/SSE replay remain separate gates.
 
 ## Daily close — 2026-11-24
 - [x] Confirm GitHub received f68623a0 and PR #9 stays isolated.
 - [x] Observe Vercel already auto-promoted f68623a0 to Production READY despite documented NO-GO; no manual deployment or rollback.
 - [x] Record actual production SHA/status and read-only domain/catalog/product/cart checks; see docs/qa/daily-close-2026-11-24.md. No next round.
-- [ ] Controlled promotion remains blocked: Git main pushes currently auto-deploy; separately authorize synchronization/promotion separation before future functional changes.
+- [x] Controlled promotion separation authorized: corrected the reversed Vercel ignored-build command and verified main checkpoint 956646d7 canceled without replacing the official production alias.
 
 ## Next-day queue — separate authorization required
 - [ ] Atomic server catalog pricing and pre-persistence divergence contract.

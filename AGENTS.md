@@ -1,6 +1,7 @@
 # Architecture rules
 
 - Selected-security homologation uses an opt-in QA branch, disposable local Auth/PostgREST and an explicit minimal schema with loopback-only egress; execute actual handlers with memory-only mail and never replay this fixture against shared Cloud or conflate it with full migration/RLS homologation.
+- Vercel's ignored-build command exits 0 for production and 1 for previews; previews stay disabled, so Git sync cannot silently publish.
 
 - Public order tracking exposes an explicit status/delivery/payment-summary allowlist, never internal IDs, purchased items or personal data; details require a verified matching account or server-verified admin. New LC capabilities use eighteen cryptographically sampled symbols, while historical codes retain the same public privacy boundary.
 - Both tracking endpoints apply bounded per-worker attempt limits (not a global quota); SSE capabilities travel in POST bodies, not URLs. Diagnostic and analytics sinks use shared recursive redaction and skip advertising events on tracking routes to reduce token exposure.
