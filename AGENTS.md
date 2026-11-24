@@ -11,6 +11,8 @@
 - Operational policy is admin-only; unresolved high regressions remain blocked across repeated scans until approval or verified resolution, and scheduled workers authenticate with private database credentials.
 - Image retries use a role-checked RPC; service-only leased claims fence completion and reclaim interrupted work, while clients cannot directly update job state.
 - Support threads are route-derived and account-scoped; server-owned messages, authenticated order email checks, mandatory help retrieval and a human inbox prevent cross-customer exposure and unsupported answers; resolved threads reject further messages.
+- Search print reports insert visitor-provided values with textContent; status emails require a verified admin and use saved order fields, preventing stored script execution and forged notifications.
+- Indexation monitoring requires admin or private worker credentials and a fixed HTTPS store-origin allowlist for requested and sitemap URLs, with redirects disabled to prevent private-service access.
 
 ## Skills locais — Empório LeleCute (separado da 0WEB)
 

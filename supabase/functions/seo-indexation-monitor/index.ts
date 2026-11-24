@@ -8,11 +8,9 @@
 // indexação e o HTTP status do servidor como sinal de saúde da página.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
+import { authorizeOperationalRequest } from '../_shared/operational-auth.ts'
+import { parseIndexationRequest, safeIndexationUrl } from './policy.ts'
 
 const GSC_GATEWAY = 'https://connector-gateway.lovable.dev/google_search_console/webmasters/v3'
 
@@ -42,36 +40,42 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
   try {
+    const authorization = await authorizeOperationalRequest(req);
+    if (authorization instanceof Response) return authorization;
+    let body: unknown;
+    try { body = await req.json() } catch {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const input = parseIndexationRequest(body);
+    if (!input) return new Response(JSON.stringify({ error: 'Only store HTTPS URLs and limits from 1 to 200 are allowed' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
     const GSC_KEY = Deno.env.get('GOOGLE_SEARCH_CONSOLE_API_KEY')
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured')
     if (!GSC_KEY) throw new Error('GOOGLE_SEARCH_CONSOLE_API_KEY not configured')
 
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
     const { data: seoData } = await supabase
       .from('store_settings').select('value').eq('key', 'seo_config').maybeSingle()
     const seoConfig = (seoData?.value ?? {}) as { canonical_url?: string; gsc_property?: string; sitemap_notification_email?: string }
-    const siteUrl = seoConfig.canonical_url || 'https://emporiolelecute.com.br'
+    const configuredSite = safeIndexationUrl(seoConfig.canonical_url || 'https://emporiolelecute.com.br');
+    if (!configuredSite) throw new Error('Store URL is not allowed');
+    const siteUrl = new URL(configuredSite).origin
     const property = seoConfig.gsc_property || `sc-domain:${siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}`
 
-    let urls: string[] = []
-    let limit = 100
-    if (req.method === 'POST') {
-      try {
-        const b = await req.json()
-        if (Array.isArray(b?.urls)) urls = b.urls
-        if (typeof b?.limit === 'number') limit = Math.min(Math.max(1, b.limit), 200)
-      } catch { /* ignore */ }
-    }
+    let urls: string[] = input.urls
+    const limit = input.limit
 
     if (urls.length === 0) {
-      const sitemapRes = await fetch(`${siteUrl}/sitemap.xml`, { headers: { 'User-Agent': 'EmporioLeleCute-IndexMonitor' } })
+      const sitemapRes = await fetch(`${siteUrl}/sitemap.xml`, { redirect: 'manual', signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'EmporioLeleCute-IndexMonitor' } })
+      if (!sitemapRes.ok) throw new Error('Could not load store sitemap');
       const xml = await sitemapRes.text()
-      urls = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g)).map(m => m[1])
+      urls = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g))
+        .map(m => safeIndexationUrl(m[1].replace(/&amp;/g, '&')))
+        .filter((url): url is string => url !== null)
     }
 
     // 1) Search Analytics: páginas com impressões nos últimos 90 dias
@@ -116,9 +120,12 @@ Deno.serve(async (req) => {
     // 3) HTTP check + noindex check em paralelo (limite de 6)
     async function check(url: string): Promise<UrlCheck> {
       try {
-        const r = await fetch(url, {
+        const safeUrl = safeIndexationUrl(url);
+        if (!safeUrl) throw new Error('Store URL is not allowed');
+        const r = await fetch(safeUrl, {
           method: 'GET',
           redirect: 'manual',
+          signal: AbortSignal.timeout(15000),
           headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EmporioLeleCuteSEO/1.0)' },
         })
         let html = ''
@@ -201,7 +208,7 @@ Deno.serve(async (req) => {
       if (resendKey) {
         try {
           const list = newIssues.slice(0, 25).map(r =>
-            `<li><strong>${r.coverage}</strong> — <a href="${r.url}">${r.url}</a></li>`
+            `<li><strong>${r.coverage}</strong> — <a href="${escapeHtml(r.url)}">${escapeHtml(r.url)}</a></li>`
           ).join('')
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -237,3 +244,5 @@ Deno.serve(async (req) => {
     })
   }
 })
+
+const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character] ?? character));

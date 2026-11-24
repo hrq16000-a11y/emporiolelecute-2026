@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildStatusEmailData } from "../_shared/order-status-email.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -8,11 +10,6 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 // --- Simple in-memory per-IP rate limiter (best-effort, per warm instance) ---
 const rateBucket = new Map<string, { count: number; reset: number }>();
@@ -547,6 +544,9 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+  }
 
   // Rate-limit anonymous/public invocations per IP
   const ip = clientIp(req);
@@ -562,36 +562,57 @@ const handler = async (req: Request): Promise<Response> => {
 
     // ---------------- Status update (admin-triggered) ----------------
     if (requestData.type === "status_update") {
+      const authorization = req.headers.get("authorization");
+      const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+      if (!token) {
+        return new Response(JSON.stringify({ success: false, error: "Authentication required" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: identity, error: authError } = await supabaseAdmin.auth.getClaims(token);
+      const userId = identity?.claims?.sub;
+      if (authError || !userId) {
+        return new Response(JSON.stringify({ success: false, error: "Authentication required" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: roles, error: roleError } = await supabaseAdmin
+        .from("user_roles").select("role").eq("user_id", userId);
+      if (roleError || !roles?.some((role) => role.role === "admin")) {
+        return new Response(JSON.stringify({ success: false, error: "Administrative permission required" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const orderCode = clampStr(requestData.orderCode, 32);
-      const customerEmail = clampStr(requestData.customerEmail, 320);
-      if (!orderCode || !isValidEmail(customerEmail)) {
+      if (!/^[A-Z0-9]{4,20}$/.test(orderCode)) {
         return new Response(JSON.stringify({ success: false, error: "Invalid payload" }), {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
-      // Verify order exists and email matches what's on file (anti-phishing)
-      const { data: order } = await supabaseAdmin
+      // An order code is not authorization; all content comes from the saved order.
+      const { data: order, error: orderError } = await supabaseAdmin
         .from("orders")
-        .select("order_code, customer_email")
+        .select("order_code, customer_email, customer_name, status, tracking_code, tracking_carrier, tracking_url")
         .eq("order_code", orderCode)
         .maybeSingle();
-      if (!order || order.customer_email?.toLowerCase() !== customerEmail.toLowerCase()) {
+      if (orderError || !order || !isValidEmail(order.customer_email)) {
         return new Response(JSON.stringify({ success: false, error: "Order not found" }), {
           status: 404,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
-      const statusData = requestData as StatusUpdateRequest;
+      const statusData = buildStatusEmailData(order);
       const statusEmailHtml = generateStatusUpdateEmailHtml(statusData);
-      await resend.emails.send({
+      const { error: deliveryError } = await resend.emails.send({
         from: "Empório LeleCute <onboarding@resend.dev>",
-        to: [customerEmail],
+        to: [statusData.customerEmail],
         subject: `📦 Atualização do Pedido ${orderCode} - ${escapeHtml(statusData.statusLabel || "")}`,
         html: statusEmailHtml,
       });
+      if (deliveryError) throw new Error("Status email delivery failed");
 
       return new Response(JSON.stringify({ success: true }), {
         status: 200,

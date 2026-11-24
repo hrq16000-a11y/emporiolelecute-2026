@@ -78,12 +78,6 @@ export default function SearchInsights({ onCreateSynonym, onCreateBoost }: Props
   /** PDF via janela de impressão do navegador (sem dependência extra). */
   const handlePdf = () => {
     const periodLabel = PERIODS.find((p) => p.value === period)?.label ?? "";
-    const body = exportRows()
-      .map(
-        (r) =>
-          `<tr><td>${r.termo}</td><td class="n">${r.buscas}</td><td class="n">${r.zero_results}</td><td class="n">${r.taxa_zero}</td><td>${r.ultima_busca}</td><td>${r.sugestao}</td></tr>`,
-      )
-      .join("");
     const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
       <title>Insights de busca — ${periodLabel}</title>
       <style>
@@ -98,13 +92,26 @@ export default function SearchInsights({ onCreateSynonym, onCreateBoost }: Props
       <h1>Insights de busca — Empório LeleCute</h1>
       <p class="meta">${periodLabel} · ${totals.uniqueTerms} termos · ${totals.total} buscas · ${totals.zero} sem resultado · gerado em ${new Date().toLocaleString("pt-BR")}</p>
       <table><thead><tr><th>Termo</th><th>Buscas</th><th>Zero</th><th>Taxa zero</th><th>Última busca</th><th>Sugestão</th></tr></thead>
-      <tbody>${body}</tbody></table>
-      <script>window.onload=()=>{window.print()}<\/script>
+      <tbody></tbody></table>
       </body></html>`;
     const w = window.open("", "_blank", "width=1024,height=768");
     if (!w) return;
+    w.opener = null;
     w.document.write(html);
     w.document.close();
+    const tbody = w.document.querySelector("tbody");
+    if (!tbody) return;
+    for (const row of exportRows()) {
+      const tr = w.document.createElement("tr");
+      for (const [index, value] of Object.values(row).entries()) {
+        const td = w.document.createElement("td");
+        td.textContent = String(value);
+        if (index >= 1 && index <= 3) td.className = "n";
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    w.print();
   };
 
 

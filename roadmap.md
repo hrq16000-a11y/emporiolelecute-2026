@@ -5,8 +5,9 @@
 - [x] Use a static overlapping grid stage and responsive image ratios; reserve loading space and keep header clearance stable.
 - [x] Verify 390/768/1440 continuously through zoom/slide swaps, reduced motion, disabled animations, menu and resize; hero geometry is stable at each width.
 - [ ] Publication and production verification — held by owner's choice until three critical security alerts are addressed in a separate round.
-- [ ] Separate security round: verify and correct critical search report injection, order update email abuse and private-service access before publishing; admin/backend work is not authorized in this Hero-only round.
-- DNS, admin, catalog, checkout and backend changes are out of scope.
+- [ ] Authorized security round: verify and correct critical search report injection, order update email abuse and private-service access before publishing.
+- [ ] After security verification, align initial Home loading and both admin banner previews; verify responsive stability and reduced motion.
+- DNS, catalog, checkout and publication remain out of scope for this round.
 
 ## Updated 3D motion release
 - [x] Verify 360/390/768/1440 widths, system reduced motion, toggle persistence, reactivation and stopped hero/PDP autoplay; 155 tests passed.
