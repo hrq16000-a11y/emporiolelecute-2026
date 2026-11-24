@@ -17,14 +17,14 @@ const canRun = process.env.RUN_LOCAL_RLS_TESTS === "1" && isLocalRlsUrl(url) && 
 const suite = canRun ? describe : describe.skip;
 
 suite("RLS — configuração da busca é admin-only", () => {
-  const anon = createClient(url!, anonKey!, {
+  const anon = () => createClient(url!, anonKey!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
   const FAKE_UUID = "00000000-0000-0000-0000-000000000000";
 
   it("bloqueia INSERT anônimo em search_boosts", async () => {
-    const { error } = await anon
+    const { error } = await anon()
       .from("search_boosts")
       .insert({ term: "teste-rls", product_id: FAKE_UUID, weight: 99 } as never);
     expect(error).toBeTruthy();
@@ -34,17 +34,17 @@ suite("RLS — configuração da busca é admin-only", () => {
   });
 
   it("bloqueia UPDATE anônimo em search_boosts", async () => {
-    const { error, data } = await anon
+    const { error, data } = await anon()
       .from("search_boosts")
       .update({ weight: 1 } as never)
       .eq("id", FAKE_UUID)
       .select();
     // Ou erro explícito de permissão, ou zero linhas afetadas (RLS filtrou tudo).
-    expect(error ? true : (data ?? []).length === 0).toBe(true);
+    expect(error ? error.code === '42501' : Array.isArray(data) && data.length === 0).toBe(true);
   });
 
   it("bloqueia INSERT anônimo em search_synonyms", async () => {
-    const { error } = await anon
+    const { error } = await anon()
       .from("search_synonyms")
       .insert({ canonical_term: "teste-rls", aliases: ["x"] } as never);
     expect(error).toBeTruthy();
@@ -54,11 +54,11 @@ suite("RLS — configuração da busca é admin-only", () => {
   });
 
   it("bloqueia DELETE anônimo em search_synonyms", async () => {
-    const { error, data } = await anon
+    const { error, data } = await anon()
       .from("search_synonyms")
       .delete()
       .eq("id", FAKE_UUID)
       .select();
-    expect(error ? true : (data ?? []).length === 0).toBe(true);
+    expect(error ? error.code === '42501' : Array.isArray(data) && data.length === 0).toBe(true);
   });
 });
