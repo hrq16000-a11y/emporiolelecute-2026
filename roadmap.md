@@ -1,5 +1,20 @@
 # Boutique editorial
 
+## Daily close — 2026-11-24
+- [x] Confirm GitHub received f68623a0 and PR #9 stays isolated.
+- [x] Observe Vercel already auto-promoted f68623a0 to Production READY despite documented NO-GO; no manual deployment or rollback.
+- [x] Record actual production SHA/status and read-only domain/catalog/product/cart checks; see docs/qa/daily-close-2026-11-24.md. No next round.
+- [ ] Controlled promotion remains blocked: Git main pushes currently auto-deploy; separately authorize synchronization/promotion separation before future functional changes.
+
+## Next-day queue — separate authorization required
+- [ ] Atomic server catalog pricing and pre-persistence divergence contract.
+- [ ] Isolated real authentication, email, RLS and SSE homologation.
+- [ ] Order-code resend/discovery authorization.
+- [ ] Anonymous carrier authorization.
+- [ ] Browser-bound visitor history authorization.
+- [ ] Finish isolated PR #9 without duplicating its runner or weakening CI gates.
+- [ ] Future TanStack Start/SSR migration awaits explicit specific authorization; no migration now.
+
 ## 360° Round 2.1 — blocking confirmation-email security
 - [x] Prove selected guest-email abuse using existing reports and an isolated handler reproduction; no full scan.
 - [x] Gate customer confirmations on server-verified confirmed matching identity; preserve guest checkout and store inbox.
