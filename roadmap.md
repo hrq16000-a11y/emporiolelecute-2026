@@ -1,5 +1,12 @@
 # Boutique editorial
 
+## 360° Round 2.1 — blocking confirmation-email security
+- [x] Prove selected guest-email abuse using existing reports and an isolated handler reproduction; no full scan.
+- [x] Gate customer confirmations on server-verified confirmed matching identity; preserve guest checkout and store inbox.
+- [x] Run 21 directly affected tests and synthetic 390/1440 checkout, compare PR #9, and document unchanged Round 2 protections.
+- [x] Save checkpoint and homologation report; no deployment, publication, production writes or automatic next round.
+- [ ] Operational verification waits for isolated real auth/mail validation and explicit deployment approval; Round 2 gates still apply.
+
 ## 360° Round 2 — commercial integrity and consent
 - [x] Recover current HEAD and compare PR #9 files; no local isolated backend is immediately available.
 - [x] Inspect existing catalog/checkout protections; add fresh active-catalog preflight, customer review, submission lock and cent-based display totals.
@@ -10,7 +17,8 @@
 
 ## Selected security findings — 2026-11-24
 - [x] Fix and test seven selected findings: active shipping catalog, three postcode leaks, GSC CSV, subscription ownership and unpublished paths. Twenty-two focused tests and automatic build passed.
-- [ ] Guest email/carrier authorization and browser-bound visitor histories await contextual approval.
+- [x] Guest customer-email confirmation restriction authorized and corrected in Round 2.1; not deployed.
+- [ ] Separate order-code resend/discovery, carrier authorization and browser-bound visitor histories remain outside Round 2.1 scope.
 - [x] Update seven verified selected findings; keep four active awaiting approval. No other findings changed; no deployment or frontend publication.
 
 ## 360° Round 1 — order privacy and notification authorization

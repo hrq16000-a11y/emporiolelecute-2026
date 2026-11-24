@@ -19,6 +19,7 @@
 - Image retries use a role-checked RPC; service-only leased claims fence completion and reclaim interrupted work, while clients cannot directly update job state.
 - Support threads are route-derived and account-scoped; server-owned messages, authenticated order email checks, mandatory help retrieval and a human inbox prevent cross-customer exposure and unsupported answers; resolved threads reject further messages.
 - Search print reports insert visitor-provided values with textContent; status emails require a verified admin and use saved order fields, preventing stored script execution and forged notifications.
+- Customer order confirmations require a server-verified confirmed non-anonymous account matching the saved recipient; guest checkout and fixed store-inbox sends stay independent because guest-written addresses do not establish mailbox ownership.
 - Indexation monitoring requires admin or private worker credentials and a fixed HTTPS store-origin allowlist for requested and sitemap URLs, with redirects disabled to prevent private-service access.
 - Administrative SEO and media workers share server-verified admin or exact private worker authentication before any effects; public crawler rendering filters unpublished pages.
 - Business schema is a route-owned script with a stable public logo and sorted configured profiles to avoid asynchronous head duplication; product and crawler schemas omit unsupported stock, review counts and invalid offers.

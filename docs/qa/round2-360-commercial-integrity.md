@@ -74,3 +74,52 @@
 - `AGENTS.md`, `roadmap.md`, este relatório.
 
 Skills aplicados: `lelecute-commerce-experience` e `lelecute-storefront-qa`.
+
+## Rodada 2.1 — Segurança bloqueante e integridade comercial
+
+24/11/2026. Autorização incremental sem publicação. Base local e GitHub main confirmadas em `89c04ea927e4d06c3669975337be521222d2c126`. Nenhuma implantação, migration, alteração em banco compartilhado, pedido/cobrança/e-mail real, infraestrutura paga ou scan completo.
+
+### Finding identificado, causa e reprodução
+
+- **Critical `lov_finding_60a346d1c4470da4`**, scanner `agent_security_v2`: confirmação de pedido enviada a caixa postal escolhida por terceiro.
+- Relatório persistido consultado, sem iniciar varredura. Checkout convidado grava um endereço não verificado; a função usava esse endereço como destinatário sem validar identidade ou posse da caixa postal. Ler o endereço salvo não estabelece autorização, pois sua origem é o visitante.
+- Exploração comprovada no handler real com banco/auth/transportador de e-mail inteiramente simulados: antes da correção, uma chamada anônima para pedido recente enviou duas mensagens, uma à loja e outra a `third-party@example.test`. O teste de segurança falhou exatamente pelo segundo destinatário indevido. Sem pedidos ou mensagens reais.
+- Impacto: envio não solicitado em nome da loja, consumo do serviço de mensagens e dano de reputação. Janela de 30 minutos e limitador por instância não comprovam posse do destinatário.
+
+### Correção exclusiva da causa
+
+- Antes da confirmação ao cliente, valida sessão no servidor com `auth.getUser(token)`, exige usuário não anônimo com e-mail confirmado no registro de autenticação e correspondência com o destinatário salvo (normalização de caixa e espaços).
+- Não aceita confirmação/role em metadados editáveis, destinatários/totais/itens do payload nem dispensa correspondência por role administrativa.
+- Ausência, falha ou divergência de identidade suprime somente a confirmação opcional ao cliente. Checkout convidado, conclusão/WhatsApp, notificação à caixa fixa da loja, orçamento e atualização administrativa continuam independentes.
+- Dados da mensagem continuam vindo do pedido salvo. Preservados os controles existentes de status administrativo, frescor e limite por instância. Não acrescentado sistema paralelo de pedidos ou migration.
+- Apenas este finding foi marcado corrigido via `manage_security_finding`; nenhum outro foi corrigido ou ignorado. O código **não está implantado**, portanto isso não declara resolução em produção.
+
+### Testes e preservação
+
+| Evidência | Resultado |
+| --- | --- |
+| Reprodução anônima antes da correção | FAIL esperado: envio ao terceiro comprovado no transporte simulado |
+| `bun run test --run src/test/round21-order-confirmation.test.ts src/test/critical-security-boundaries.test.ts` | **21 PASS** (17 novos + 4 diretamente relacionados) |
+| Casos novos | Convidado, sessão inválida/ausente, e-mail não confirmado, metadata forjada, conta terceira/admin divergente, identidade anônima, falha de auth, destinatário inválido, conta confirmada correspondente, payload forjado, pedido antigo, orçamento e status administrativo |
+| Lint do teste novo e `git diff --check` | PASS |
+| Compilação automática | **build OK 05:42:29 UTC**; nenhum build manual |
+| Playwright 390/1440 com todas as chamadas externas interceptadas | PASS: conclusão real da UI de convidado, uma criação sintética, handler real executado com dependências simuladas, envio somente à loja, total retornado pelo servidor em WhatsApp, ausência de tracking opcional e erros/overflow |
+| Fonte comercial/consentimento comparada com `89c04ea9` | Nenhuma alteração em Carrinho, cart-catalog, cartTotals, cartStore, cookie-consent, analytics, visitor, useVisitorTracking, TrackingScripts, banner ou Footer |
+| Suíte anterior de 221 testes | Preservada sem alterações; não reexecutada integralmente por restrição desta rodada |
+
+Capturas temporárias em `/tmp/browser/round21/guest-{390,1440}.png` e `guest-heading-{390,1440}.png`; não são anexos persistentes. Testes não substituem auth/RLS ou entrega real em ambiente isolado. Não houve nova homologação visual/SEO de superfícies não afetadas.
+
+### Compatibilidade com PR #9 e checkpoint
+
+- GitHub consultado por **Henrique's GitHub API**, somente leitura: PR #9 continua aberta/draft, head `33378f2bd9d5b428a283cbddc210a7190241ae37`.
+- Seus oito arquivos permanecem isolados: os mesmos listados na tabela original de escopo protegido. Interseção com os arquivos desta rodada: **zero**; compatibilidade por escopo de arquivos, não prova de merge/execução remota.
+- Não alterado CI, workflow, runner, seed ou testes da PR. Não disparado workflow, merge ou tarefa Codex indisponível; execução técnica local com dependências isoladas e inspeção GitHub, sem duplicar runner.
+- Arquivos modificados: `supabase/functions/send-order-email/index.ts`, `src/test/round21-order-confirmation.test.ts` (novo), `AGENTS.md`, `roadmap.md`, este relatório.
+- Checkpoint: commit que contém este adendo, SHA informado na entrega. A sincronização ao GitHub é gerenciada pela plataforma; SHA remoto novo deve ser confirmado por leitura da referência após sincronização, não inferido do commit local.
+
+### Pendências objetivas e GO/NO-GO
+
+- **GO para iniciar Rodada 2.2 em revisão/homologação isolada**, com nova autorização e sem publicar. Nenhuma próxima rodada iniciada automaticamente.
+- **NO-GO para integração operacional/publicação**: permanecem os gates da Rodada 2 — RPC efetivo no runner isolado, autorização atômica de preços/divergência pré-persistência, auth/RLS/SSE reais e limite distribuído.
+- Validar identidade confirmada e transporte de e-mail no runner isolado; implantar somente após autorização explícita. Correção validada em código, não no servidor publicado.
+- Três findings fora do escopo continuam ativos: consulta/reenvio por código de pedido (`lov_finding_0c91c63b1e3dbad1`), uso anônimo de carrier (`lov_finding_96f54a0807f4fb32`) e histórico de visitante (`lov_finding_d763c38cd05f0709`). Sem mudanças ou ignores. Reenvio à loja por código e descoberta de pedido permanecem pendência separada; esta rodada bloqueia exclusivamente o destinatário de cliente não verificado.

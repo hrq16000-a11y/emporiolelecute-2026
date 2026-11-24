@@ -671,9 +671,24 @@ const handler = async (req: Request): Promise<Response> => {
         html: storeEmailHtml,
       });
 
-      // Always use the canonical email from DB (not client-supplied) to send confirmation
+      // Guest-written order email is not proof of mailbox ownership.
+      // Customer confirmations require a server-verified confirmed matching account.
+      // Authentication failure suppresses only this optional send, not guest checkout.
       const recipient = dbOrder.customer_email;
-      if (recipient && isValidEmail(recipient)) {
+      let verifiedCustomerEmail: string | null = null;
+      const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+      if (token) {
+        try {
+          const { data, error: identityError } = await supabaseAdmin.auth.getUser(token);
+          const user = data?.user;
+          if (!identityError && user?.id && user.email_confirmed_at && !user.is_anonymous && isValidEmail(user.email)) {
+            verifiedCustomerEmail = user.email.trim().toLowerCase();
+          }
+        } catch {
+          verifiedCustomerEmail = null;
+        }
+      }
+      if (isValidEmail(recipient) && verifiedCustomerEmail === recipient.trim().toLowerCase()) {
         const customerEmailHtml = generateCustomerEmailHtml(order);
         await resend.emails.send({
           from: "Empório LeleCute <onboarding@resend.dev>",
