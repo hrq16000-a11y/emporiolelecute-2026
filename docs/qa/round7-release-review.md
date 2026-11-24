@@ -105,3 +105,12 @@ Esses riscos impedem recomendar divulgação irrestrita como “100% segura”. 
 
 ## Próximo passo
 Aprovar uma rodada específica para riscos comerciais/privacidade remanescentes e aguardar o novo resultado de segurança antes de liberar publicação; domínio continua separado e requer preservar email.
+
+## Atualização de fechamento — análise recebida às 01:36 UTC
+A tarefa terminou, mas a cobertura de código consta **incomplete**: resultado parcial com **2 críticos e 71 avisos de código**, mais **6 avisos e 9 informações de banco**. Esses resultados substituem a contagem anterior como estado do scanner e reintroduziram avisos de caminhos já corrigidos; não se subtraem automaticamente as marcações anteriores desse novo conjunto.
+
+- Crítico de leitura de Search Console em seo-gsc-coverage: já protegido e verificado nesta rodada (anônimo 401, cliente 403); novo identificador marcado corrigido após conferir o mesmo caminho.
+- **Crítico ainda aberto: rastreamento público devolve nome, email, telefone e endereço completo a quem possui/adivinha código de pedido gerado sem aleatoriedade criptográfica.** Exige revisão específica do rastreamento e criação de códigos, com teste de privacidade de pedidos.
+- Estado persistido após esta única marcação: **1 crítico, 77 avisos e 9 informações** (87 achados). Não constitui revalidação das últimas mudanças pelo scanner.
+
+**NO-GO mantido**: não publicar/divulgar antes de tratar o acesso a dados de pedidos e revisar os resultados reintroduzidos. Correções anteriores continuam respaldadas pelos testes direcionados; nenhuma garantia de segurança integral.
