@@ -10,6 +10,7 @@
  */
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { isTrackingPath, sanitizeDiagnosticValue } from './tracking-privacy';
 
 declare global {
   interface Window {
@@ -20,13 +21,15 @@ declare global {
 }
 
 const safeGtag = (...args: any[]) => {
+  if (typeof location !== 'undefined' && isTrackingPath(location.pathname)) return;
   if (typeof window !== "undefined" && typeof window.gtag === "function") {
-    window.gtag(...args);
+    window.gtag(...args.map(value => sanitizeDiagnosticValue(value)));
   }
 };
 const safeFbq = (...args: any[]) => {
+  if (typeof location !== 'undefined' && isTrackingPath(location.pathname)) return;
   if (typeof window !== "undefined" && typeof window.fbq === "function") {
-    window.fbq(...args);
+    window.fbq(...args.map(value => sanitizeDiagnosticValue(value)));
   }
 };
 
@@ -217,11 +220,12 @@ if (typeof window !== "undefined") {
 }
 
 export const trackFunnelEvent = (name: string, payload: FunnelPayload = {}) => {
+  if (typeof location !== 'undefined' && isTrackingPath(location.pathname)) return;
   event(name, payload);
   if (!FUNNEL_EVENTS.has(name)) return;
   if (typeof window === "undefined") return;
 
-  const { source, product_slug, quantity, personalized, ...rest } = payload;
+  const { source, product_slug, quantity, personalized, ...rest } = sanitizeDiagnosticValue(payload) as FunnelPayload;
   FUNNEL_QUEUE.push({
     event_name: name,
     source: source ?? null,

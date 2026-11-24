@@ -1,11 +1,11 @@
-// Preferências de notificação do cliente (e-mail / Web Push).
-// Acesso público, mas toda leitura/escrita exige e-mail + código de pedido válidos.
+// Notification preferences require a confirmed matching account before order lookup.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Cache-Control": "no-store",
 };
 
 const json = (body: unknown, status = 200) =>
@@ -34,35 +34,37 @@ Deno.serve(async (req: Request) => {
     return json({ vapid_public_key: Deno.env.get("VAPID_PUBLIC_KEY") || null });
   }
 
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  const backendUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!backendUrl || !serviceKey) return json({ error: "service_unavailable" }, 503);
+  const admin = createClient(backendUrl, serviceKey);
+
+  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!token) return json({ error: "sign_in_required" }, 401);
+  const { data: authData, error: authError } = await admin.auth.getUser(token);
+  const authUser = authData?.user;
+  if (authError || !authUser?.email_confirmed_at || !authUser.email) {
+    return json({ error: "sign_in_required" }, 401);
+  }
 
   const email = String(body.email || "").trim().toLowerCase();
   const orderCode = String(body.order_code || "").trim().toUpperCase();
 
+  if (authUser.email.trim().toLowerCase() !== email) return json({ error: "not_authorized" }, 403);
+
   if (!EMAIL_RE.test(email) || email.length > 160) return json({ error: "invalid_email" }, 400);
   if (!CODE_RE.test(orderCode)) return json({ error: "invalid_order_code" }, 400);
 
-  // Verificação de posse: o e-mail precisa bater com um pedido real.
+  // Query only the confirmed caller's own orders; failures never distinguish third-party orders.
   const { data: order } = await admin
     .from("orders")
     .select("id, order_code, customer_email")
     .eq("order_code", orderCode)
+    .ilike("customer_email", email.replace(/[%_\\]/g, match => `\\${match}`))
     .maybeSingle();
 
   if (!order || String(order.customer_email || "").trim().toLowerCase() !== email) {
-    return json({ error: "order_not_found" }, 404);
-  }
-
-  // Mailbox proof: an order code is not enough to change someone's alerts.
-  // The caller must be signed in with a confirmed account for this email.
-  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  const { data: authData } = token ? await admin.auth.getUser(token) : { data: { user: null } };
-  const authUser = authData?.user;
-  if (!authUser || !authUser.email_confirmed_at || String(authUser.email || "").trim().toLowerCase() !== email) {
-    return json({ error: "sign_in_required" }, 401);
+    return json({ error: "not_authorized" }, 403);
   }
 
   const loadState = async () => {
@@ -140,8 +142,8 @@ Deno.serve(async (req: Request) => {
     }
 
     return json({ error: "unknown_action" }, 400);
-  } catch (e) {
-    console.error("[notification-prefs] error", e);
+  } catch {
+    console.error("[notification-prefs] operation failed");
     return json({ error: "internal_error" }, 500);
   }
 });

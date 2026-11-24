@@ -4,7 +4,7 @@
 // `stale_bundle_logs` so admins can diagnose production issues without
 // needing the user's devtools.
 import { supabase } from "@/integrations/supabase/client";
-import { redactTrackingText } from '@/lib/tracking-privacy';
+import { redactTrackingText, sanitizeDiagnosticValue } from '@/lib/tracking-privacy';
 
 type ErrorSource =
   | "react-boundary"
@@ -106,7 +106,7 @@ function shouldThrottle(key: string) {
 }
 
 export async function logClientError(params: LogParams) {
-  const { source, message, stack, componentStack, extra } = JSON.parse(redactTrackingText(JSON.stringify(params))) as LogParams;
+  const { source, message, stack, componentStack, extra } = sanitizeDiagnosticValue(params) as LogParams;
   const route = typeof location !== "undefined" ? redactTrackingText(location.pathname + location.search) : "";
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
   const viewport =

@@ -1,5 +1,5 @@
 // SSE (Server-Sent Events) — status do pedido em tempo real.
-// GET /order-stream?code=LC123456
+// POST /order-stream with the capability in the body, never the URL.
 // Emite: "ready" (snapshot inicial), "status" (mudanças), "ping" (heartbeat).
 // O cliente faz fallback automático para polling se a conexão falhar.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -10,7 +10,7 @@ const limitTracking = createTrackingLimiter();
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const POLL_MS = 5000;
@@ -19,7 +19,7 @@ const MAX_LIFETIME_MS = 10 * 60 * 1000; // 10 min — cliente reconecta sozinho
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "GET") {
+  if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -30,8 +30,10 @@ Deno.serve(async (req: Request) => {
   if (retryAfter) return new Response(JSON.stringify({ error: 'Muitas tentativas. Aguarde e tente novamente.' }), {
     status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) },
   });
-  const url = new URL(req.url);
-  const code = (url.searchParams.get("code") || "").trim().toUpperCase();
+  let body: unknown;
+  try { body = await req.json(); } catch { body = null; }
+  const code = body && typeof body === 'object' && 'code' in body && typeof body.code === 'string'
+    ? body.code.trim().toUpperCase() : '';
   if (!/^[A-Z0-9]{4,20}$/.test(code)) {
     return new Response(JSON.stringify({ error: "Invalid order code" }), {
       status: 400,

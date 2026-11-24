@@ -21,7 +21,8 @@ import {
 } from "@/lib/webPush";
 
 const ERROR_LABEL: Record<string, string> = {
-  order_not_found: "Não encontramos um pedido com esse código e e-mail. Confira os dados.",
+  sign_in_required: "Entre na sua conta com o mesmo e-mail do pedido para alterar seus avisos.",
+  not_authorized: "Não foi possível autorizar esta solicitação. Confira os dados da sua conta e tente novamente.",
   invalid_email: "E-mail inválido.",
   invalid_order_code: "Código de pedido inválido.",
   permission_denied: "Você bloqueou as notificações no navegador. Libere nas configurações do site.",

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { readOrderStreamEvents } from '@/lib/order-stream-events';
 
 const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 const RECONNECT_MS = 8000;
@@ -27,43 +28,56 @@ export const useOrderStream = ({ orderCode, enabled = true, onUpdate }: UseOrder
       setConnected(false);
       return;
     }
-    if (typeof window === "undefined" || typeof EventSource === "undefined") {
+    if (typeof window === "undefined" || typeof ReadableStream === "undefined") {
       setConnected(false);
       return;
     }
 
-    let source: EventSource | null = null;
+    let controller: AbortController | null = null;
     let retry: number | undefined;
     let disposed = false;
 
-    const connect = () => {
+    const connect = async () => {
       if (disposed) return;
-      const url = `${FUNCTIONS_BASE}/order-stream?code=${encodeURIComponent(orderCode)}`;
-      source = new EventSource(url);
-
-      source.addEventListener("ready", () => setConnected(true));
-      source.addEventListener("status", () => {
-        setConnected(true);
-        onUpdateRef.current();
-      });
-      source.addEventListener("ping", () => setConnected(true));
-
-      source.onerror = () => {
-        setConnected(false);
-        source?.close();
-        source = null;
-        // Reconexão com respiro; enquanto isso o polling assume.
-        retry = window.setTimeout(connect, RECONNECT_MS);
-      };
+      controller = new AbortController();
+      let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+      try {
+        const response = await fetch(`${FUNCTIONS_BASE}/order-stream`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+          body: JSON.stringify({ code: orderCode }), signal: controller.signal, cache: 'no-store',
+        });
+        if (!response.ok || !response.body) return;
+        reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (!disposed) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const parsed = readOrderStreamEvents(buffer + decoder.decode(value, { stream: true }));
+          buffer = parsed.remainder;
+          for (const event of parsed.events) {
+            if (disposed) break;
+            setConnected(true);
+            if (event === 'status') onUpdateRef.current();
+          }
+        }
+      } catch { /* polling remains active while the stream is unavailable */ }
+      finally {
+        reader?.releaseLock();
+        if (!disposed) {
+          setConnected(false);
+          retry = window.setTimeout(() => { void connect(); }, RECONNECT_MS);
+        }
+      }
     };
 
-    connect();
+    void connect();
 
     return () => {
       disposed = true;
       setConnected(false);
       if (retry) window.clearTimeout(retry);
-      source?.close();
+      controller?.abort();
     };
   }, [orderCode, enabled]);
 

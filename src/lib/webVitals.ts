@@ -6,6 +6,7 @@
 import { onCLS, onINP, onLCP, onFCP, onTTFB, type Metric } from "web-vitals";
 import { supabase } from "@/integrations/supabase/client";
 import { getTelemetryCorrelationId } from "./telemetry";
+import { redactTrackingText } from './tracking-privacy';
 
 const sent = new Set<string>();
 
@@ -20,7 +21,7 @@ async function report(metric: Metric) {
   sent.add(key);
 
   const cid = getTelemetryCorrelationId();
-  const route = typeof location !== "undefined" ? location.pathname : "";
+  const route = typeof location !== "undefined" ? redactTrackingText(location.pathname) : "";
   const message =
     `[cid:${cid.slice(0, 8)}] [web-vital][${metric.name}] ` +
     `${metric.value.toFixed(2)} (${rating(metric)})`;

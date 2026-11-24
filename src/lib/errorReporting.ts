@@ -8,6 +8,8 @@
  * - No backend dependency: works even when the backend is unavailable.
  */
 
+import { sanitizeDiagnosticValue } from './tracking-privacy';
+
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /** Short, readable correlation ID (e.g. `ELC-7F2K9A`). */
@@ -85,7 +87,7 @@ export const reportError = (
     : `${base} Tente novamente em instantes. Código: ${correlationId}`;
 
   // eslint-disable-next-line no-console
-  console.error(`[${correlationId}] ${scope}`, { error, ...context });
+  console.error(`[${correlationId}] ${scope}`, sanitizeDiagnosticValue({ error, ...context }));
 
   return {
     correlationId,

@@ -1,5 +1,12 @@
 # Boutique editorial
 
+## 360° Round 1 — order privacy and notification authorization
+- [x] Compare official main HEAD and PR #9 before edits; main matches local 5038af3b, PR affects isolated QA files only.
+- [x] Close remaining diagnostic/analytics redaction and notification lookup oracle using existing privacy mechanisms; SSE uses POST body.
+- [x] Validate affected flows with isolated synthetic inputs; 22 tests and 390/1440 browser flows passed. Report: docs/qa/round1-360-privacy-review.md.
+- [ ] Release validation awaits an isolated backend runner and explicit deployment approval; no deployment/publication performed.
+- Rounds 2 and 3 remain on hold until separately requested.
+
 ## Round 8 — targeted tracking privacy review (2026-11-24)
 - [x] Tighten public tracking allowlist and redact tracking routes from visitor telemetry; preserve authenticated details and commercial flows.
 - [x] Verify synthetic tracking, invalid codes, authorization boundaries and 390/1440 layouts; record scanner freshness and NO-GO decision. Per-worker limiter tests pass but remote 429 is not demonstrated.

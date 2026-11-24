@@ -21,7 +21,8 @@ const callPrefs = async <T,>(payload: Record<string, unknown>): Promise<T> => {
   const { data, error } = await supabase.functions.invoke("notification-prefs", { body: payload });
   if (error) {
     const status = (error as { context?: Response }).context?.status;
-    if (status === 401) throw new Error("Entre na sua conta com o mesmo e-mail do pedido para alterar seus avisos.");
+    if (status === 401) throw new Error("sign_in_required");
+    if (status === 403) throw new Error("not_authorized");
     throw error;
   }
   if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);

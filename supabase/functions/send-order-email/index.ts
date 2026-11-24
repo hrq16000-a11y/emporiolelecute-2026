@@ -729,7 +729,7 @@ const handler = async (req: Request): Promise<Response> => {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error in send-order-email function:", error);
+    console.error("Order email request failed");
     return new Response(
       JSON.stringify({ success: false, error: "Erro ao processar solicitação" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },

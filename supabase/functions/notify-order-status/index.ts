@@ -143,7 +143,7 @@ Deno.serve(async (req: Request) => {
         } else if (result.expired) {
           await admin.from("push_subscriptions").delete().eq("id", sub.id);
         } else {
-          console.error("[notify-order-status] push failed", result.status, result.error);
+          console.error("[notify-order-status] push failed", result.status);
         }
       }
 

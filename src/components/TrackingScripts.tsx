@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTrackingConfig, pathMatches } from "@/hooks/useTrackingConfig";
-import { isTrackingPath } from '@/lib/tracking-privacy';
+import { isTrackingPath, redactTrackingText } from '@/lib/tracking-privacy';
 
 /**
  * Strict format validators for admin-managed tracking IDs. These prevent a
@@ -71,12 +71,12 @@ export const TrackingScripts = () => {
   // Track page changes for SPA
   useEffect(() => {
     if (!cfg?.enabled) return;
-    const path = location.pathname + location.search;
+    const path = redactTrackingText(location.pathname + location.search);
     if (isTrackingPath(location.pathname)) return;
     if (pathMatches(location.pathname, cfg.disabled_paths)) return;
     if (cfg.enabled_paths.length && !pathMatches(location.pathname, cfg.enabled_paths)) return;
     // @ts-ignore
-    if (cfg.ga4_id && window.gtag) window.gtag("event", "page_view", { page_path: path });
+    if (cfg.ga4_id && window.gtag) window.gtag("event", "page_view", { page_path: path, page_location: redactTrackingText(window.location.href), page_referrer: redactTrackingText(document.referrer) });
     // @ts-ignore
     if (cfg.meta_pixel_id && window.fbq) window.fbq("track", "PageView");
   }, [location, cfg]);

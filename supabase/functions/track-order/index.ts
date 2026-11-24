@@ -72,7 +72,7 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     if (orderError) {
-      console.error("Error fetching order:", orderError.message);
+      console.error("Tracking order lookup failed");
       return new Response(
         JSON.stringify({ error: "Failed to fetch order" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
