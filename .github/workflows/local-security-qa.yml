@@ -69,8 +69,18 @@ jobs:
               after = f"SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = '{job}';"
               assert patched.count(before) == 1, "Historical migration drift: " + job
               patched = patched.replace(before, after, 1)
+          for job, schedule in (
+              ("seo-sitemap-auto-resubmit-15m", "7 * * * *"),
+              ("telemetry-alert-monitor-15m", "23 * * * *"),
+              ("instagram-sync-hourly", "0 */6 * * *"),
+              ("instagram-bulk-refresh-hourly", "17 */6 * * *"),
+          ):
+              before = f"SELECT cron.alter_job((SELECT jobid FROM cron.job WHERE jobname = '{job}'), schedule := '{schedule}');"
+              after = f"SELECT cron.alter_job(jobid, schedule := '{schedule}') FROM cron.job WHERE jobname = '{job}';"
+              assert patched.count(before) == 1, "Historical migration drift: " + job
+              patched = patched.replace(before, after, 1)
           p.write_text(patched)
-          print("Local-only adaptation: three historical cron cleanup statements now skip absent jobs.")
+          print("Local-only adaptation: three removals and four reschedules skip absent historical jobs.")
           PY
           git diff --stat -- supabase/migrations
       - name: Start disposable Supabase (no edge runtime)

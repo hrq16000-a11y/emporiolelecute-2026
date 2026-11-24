@@ -11,3 +11,7 @@ Os testes não foram executados ao gravar esta rodada. Falhas no ambiente ou nos
 ## Rodada 2A.5 — bloqueio de bootstrap
 
 Run [45312276220](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45312276220): checkout, CLI, isolamento e limpeza concluídos; bootstrap falhou com SQLSTATE XX000 durante `cron.unschedule` na migration histórica de 20260814154716. Testes de segurança não executados. O workflow adapta exclusivamente no workspace descartável as três chamadas de remoção de jobs antigos para usar IDs existentes; não altera a migration versionada, não fabrica jobs e não ignora outras falhas. O ambiente resultante é uma homologação adaptada, não prova de replay integral das migrations originais. Exceção temporária do CI convencional permanece até revisão segura antes de merge.
+
+## Rodada 2A.6 — segundo bloqueio de bootstrap
+
+Run [45315103719](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45315103719): adaptação anterior executou; replay avançou até alteração de agendamento ausente na mesma migration, com `job_id can not be NULL (SQLSTATE XX000)`. Adaptadas no workspace as quatro chamadas de `cron.alter_job` de padrão idêntico, preservando os horários de jobs existentes. Verificados os 13 arquivos de migration a partir desse ponto: a única chamada posterior encontrada de alter_job já filtra por linha existente. Nenhuma migration versionada, RLS, RPC ou política alterada. Testes funcionais continuam não executados até novo run. CI convencional permanece restrito a esta branch até homologação segura antes do merge.
