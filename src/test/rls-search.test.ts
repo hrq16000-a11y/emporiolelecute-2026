@@ -2,16 +2,17 @@
  * RLS guard — search_boosts / search_synonyms.
  *
  * Garante que um cliente anônimo (sem sessão de admin) não consegue
- * escrever nas tabelas de configuração da busca. Estes testes tocam o
- * backend real; quando as variáveis públicas não estão disponíveis
- * (ex.: CI sem env), o bloco é ignorado em vez de falhar.
+ * escrever nas tabelas de configuração da busca. Estes testes só executam no Supabase local, com opt-in explícito.
+ * Em CI sem ambiente isolado, o bloco é ignorado.
  */
 import { describe, it, expect } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-const canRun = Boolean(url && anonKey);
+const isLocalRlsUrl = (value: string | undefined): boolean =>
+  typeof value === 'string' && /^http:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):54321\/?$/.test(value) && !/[\r\n]/.test(value);
+const canRun = process.env.RUN_LOCAL_RLS_TESTS === "1" && isLocalRlsUrl(url) && Boolean(anonKey);
 
 const suite = canRun ? describe : describe.skip;
 

@@ -3,16 +3,21 @@
 // continues to be the only path for guest checkout.
 //
 // Run with:
-//   deno test --allow-net --allow-env supabase/functions/_tests/orders_rls_test.ts
+//   RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_ANON_KEY=<local-anon-key> deno test --allow-net=127.0.0.1:54321 --allow-env supabase/functions/_tests/orders_rls_test.ts
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "https://xfqffqxqiuqauefrrcxn.supabase.co";
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmcWZmcXhxaXVxYXVlZnJyY3huIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTQ3MjUsImV4cCI6MjA4MDM5MDcyNX0.9SA2YpnZQV7QtsrQlHR661f2ExmB8fl-u5Na7JXQqk0";
+const isLocalRlsUrl = (value: string | undefined): boolean =>
+  typeof value === 'string' && /^http:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):54321\/?$/.test(value) && !/[\r\n]/.test(value);
 
-const anon = () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+if (Deno.env.get("RUN_LOCAL_RLS_TESTS") !== "1" || !isLocalRlsUrl(SUPABASE_URL) || !SUPABASE_ANON_KEY) {
+  throw new Error("RLS tests require explicit RUN_LOCAL_RLS_TESTS=1, local Supabase on port 54321 and a local anon key.");
+}
+
+const anon = () => createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!);
 
 const randomCode = () => "LCT" + Math.random().toString(36).slice(2, 7).toUpperCase();
 

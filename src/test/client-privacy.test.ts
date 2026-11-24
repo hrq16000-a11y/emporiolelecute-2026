@@ -10,7 +10,9 @@ import { createClient } from "@supabase/supabase-js";
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-const canRun = Boolean(url && anonKey);
+const isLocalRlsUrl = (value: string | undefined): boolean =>
+  typeof value === 'string' && /^http:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):54321\/?$/.test(value) && !/[\r\n]/.test(value);
+const canRun = process.env.RUN_LOCAL_RLS_TESTS === "1" && isLocalRlsUrl(url) && Boolean(anonKey);
 
 const suite = canRun ? describe : describe.skip;
 
