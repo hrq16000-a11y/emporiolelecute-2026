@@ -57,9 +57,23 @@ jobs:
           sudo chmod 600 "$RUNNER_TEMP/local-status.json"
       - name: Run actual handlers with real local sessions and persistence
         run: |
-          sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_SELECTED_LOCAL_QA=1 LOCAL_STATUS_FILE="$RUNNER_TEMP/local-status.json" "$(command -v bun)" scripts/selected-security-homologation.mjs
+          set -euo pipefail
+          qa=/tmp/lelecute-selected-qa
+          mkdir -p "$qa/scripts" "$qa/supabase/functions"
+          cp scripts/selected-security-homologation.mjs "$qa/scripts/"
+          cp -a node_modules "$qa/"
+          for name in _shared calculate-shipping send-order-email track-visit; do
+            cp -a "supabase/functions/$name" "$qa/supabase/functions/"
+          done
+          install -m 755 "$(command -v bun)" "$qa/bun"
+          chmod -R a+rX "$qa"
+          sudo cp "$RUNNER_TEMP/local-status.json" "$qa/local-status.json"
+          sudo chown leleqa "$qa/local-status.json"
+          sudo chmod 600 "$qa/local-status.json"
+          sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_SELECTED_LOCAL_QA=1 LOCAL_STATUS_FILE="$qa/local-status.json" "$qa/bun" --cwd "$qa" scripts/selected-security-homologation.mjs
       - name: Destroy disposable stack
         if: always() && steps.isolate.outcome == 'success'
         run: |
           supabase stop --workdir "$RUNNER_TEMP/selected-stack" --no-backup
           rm -f "$RUNNER_TEMP/local-status.json" "$RUNNER_TEMP/stack-start.log"
+          sudo rm -rf /tmp/lelecute-selected-qa
