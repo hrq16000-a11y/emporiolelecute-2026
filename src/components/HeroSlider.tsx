@@ -176,7 +176,7 @@ function SlideBannerMobile({
 
   return (
     // hidden on md+ (desktop)
-    <div className="block md:hidden w-full animate-fade-in pt-2">
+    <div className="block md:hidden w-full animate-fade-in pt-2 hero-frame">
       <img
         src={imgSrc}
         alt={alt}
@@ -184,7 +184,7 @@ function SlideBannerMobile({
         // @ts-expect-error fetchpriority is valid HTML
         fetchpriority={isPriority ? "high" : "auto"}
         decoding="async"
-        className="w-full h-auto block"
+        className="w-full h-auto block hero-kenburns"
         style={{ maxWidth: "100%", display: "block" }}
       />
     </div>
@@ -207,7 +207,7 @@ function SlideBannerDesktop({
 
   return (
     // hidden on mobile (< md)
-    <div className="hidden md:block w-full animate-fade-in md:pt-3 lg:pt-16 xl:pt-20">
+    <div className="hidden md:block w-full animate-fade-in md:pt-3 lg:pt-16 xl:pt-20 hero-frame">
       <img
         src={imgSrc}
         alt={alt}
@@ -215,7 +215,7 @@ function SlideBannerDesktop({
         // @ts-expect-error fetchpriority is valid HTML
         fetchpriority={isPriority ? "high" : "auto"}
         decoding="async"
-        className="w-full h-auto block"
+        className="w-full h-auto block hero-kenburns"
         style={{ maxWidth: "100%", display: "block" }}
       />
     </div>
@@ -456,6 +456,15 @@ const HeroSlider = () => {
             <Sparkles className="h-8 w-8 animate-pulse-slow" fill="currentColor" />
           </div>
         </>
+      )}
+
+      {/* Camadas decorativas suaves (profundidade) — puramente visuais */}
+      {hasAnyBanner && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
+          <span className="hero-orb hero-orb-a" />
+          <span className="hero-orb hero-orb-b" />
+          <span className="hero-veil" />
+        </div>
       )}
 
       {/* Cross-fade stage: previous + current slide stacked, opacity transition */}

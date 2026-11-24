@@ -671,3 +671,41 @@
     transform: scale(1.04);
   }
 }
+
+/* ---------------------------------------------------------------
+   Hero premium — zoom lento (Ken Burns), camadas flutuantes e véu
+   de transição para a próxima seção. Só transform/opacity (GPU).
+--------------------------------------------------------------- */
+.hero-frame { overflow: hidden; }
+.hero-orb {
+  position: absolute; border-radius: 9999px; filter: blur(48px);
+  background: hsl(var(--primary) / 0.16); will-change: transform;
+}
+.hero-orb-a { width: 22rem; height: 22rem; left: -6rem; bottom: 4rem; }
+.hero-orb-b { width: 16rem; height: 16rem; right: -4rem; top: 20%; background: hsl(var(--accent) / 0.22); }
+.hero-veil {
+  position: absolute; inset: auto 0 0 0; height: 4.5rem;
+  background: linear-gradient(to bottom, transparent, hsl(var(--background)));
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.motion-reduced) .hero-kenburns {
+    animation: hero-kenburns 14s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+    transform-origin: 40% 50%;
+  }
+  html:not(.motion-reduced) .hero-orb-a { animation: hero-drift 18s ease-in-out infinite alternate; }
+  html:not(.motion-reduced) .hero-orb-b { animation: hero-drift 22s ease-in-out -6s infinite alternate-reverse; }
+}
+@keyframes hero-kenburns {
+  from { transform: scale(1.06); }
+  to { transform: scale(1); }
+}
+@keyframes hero-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(2.5rem, -1.5rem, 0); }
+}
+
+/* Microinterações: botões primários respondem ao toque com leveza */
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.motion-reduced) button:active:not(:disabled),
+  html:not(.motion-reduced) a[role="button"]:active { transform: scale(0.98); }
+}
