@@ -1,4 +1,9 @@
 import { test, expect, Page } from "@playwright/test";
+import { installStorefrontFixtures } from "./storefront-fixtures";
+
+test.beforeEach(async ({ page }) => {
+  await installStorefrontFixtures(page);
+});
 
 /**
  * E2E tests for CategoriesScroll and OccasionsThumbs carousels.
