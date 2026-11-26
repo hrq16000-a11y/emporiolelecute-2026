@@ -13,14 +13,30 @@ async function openCatalog(page: Page, query = "") {
 }
 
 async function storedOccasion(page: Page) {
-  return page.evaluate((key) => window.localStorage.getItem(key), OCCASION_STORAGE_KEY);
+  try {
+    return await page.evaluate((key) => window.localStorage.getItem(key), OCCASION_STORAGE_KEY);
+  } catch (error) {
+    // URL-synced filters may cause a document navigation; let expect.poll retry in the new context.
+    if (String(error).includes("Execution context was destroyed")) return "__navigation_pending__";
+    throw error;
+  }
 }
 
 async function clearFilters(page: Page) {
   const primary = page.getByTestId("clear-filters");
   const fallback = page.getByTestId("clear-filters-empty");
-  if (await primary.count()) await primary.first().click();
-  else await fallback.first().click();
+
+  // The URL effect persists the occasion before taxonomy data finishes loading.
+  // Wait until the matching clear action is actually rendered before clicking it.
+  await expect.poll(async () => (await primary.count()) + (await fallback.count())).toBeGreaterThan(0);
+
+  if (await primary.count()) {
+    await expect(primary.first()).toBeVisible();
+    await primary.first().click();
+  } else {
+    await expect(fallback.first()).toBeVisible();
+    await fallback.first().click();
+  }
 }
 
 test.describe("Catálogo — limpar filtros", () => {
