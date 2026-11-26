@@ -30,7 +30,7 @@ async function openAndSettle(page: Page, url: string) {
   await expect.poll(() => canonicalHref(page)).not.toBeNull();
   // DynamicSEO owns robots after React mounts; wait for that contract instead
   // of reading the static document before hydration completes.
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /^(index, follow|noindex,follow)$/, { timeout: 15000 });
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /^(index,\s*follow|noindex,\s*follow)$/, { timeout: 15000 });
 }
 
 test.describe("SEO — canonical em páginas filtradas", () => {
