@@ -1,0 +1,54 @@
+name: Production smoke (read-only)
+
+on:
+  push:
+    branches:
+      - chore/production-smoke-phase2-20261126
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Production smoke (${{ matrix.project }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop-chromium, tablet-768, mobile]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - name: Install frozen dependencies
+        run: bun install --frozen-lockfile
+      - name: Install only the browser required by this viewport
+        shell: bash
+        run: |
+          case "${{ matrix.project }}" in
+            desktop-chromium) bunx playwright install --with-deps chromium ;;
+            tablet-768|mobile) bunx playwright install --with-deps webkit ;;
+            *) echo "Unsupported Playwright project: ${{ matrix.project }}"; exit 1 ;;
+          esac
+      - name: Run read-only production smoke tests
+        run: bunx playwright test e2e/production-smoke.spec.ts --project=${{ matrix.project }}
+        env:
+          CI: "true"
+          BASE_URL: https://emporiolelecute.com.br
+          PW_NO_SERVER: "1"
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-smoke-${{ matrix.project }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
