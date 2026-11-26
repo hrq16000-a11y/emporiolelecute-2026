@@ -1,6 +1,6 @@
 # Rodada 2A.3 — QA local descartável
 
-O workflow dedicado é opt-in: acionamento manual quando disponível na branch padrão ou label `qa-local-approved` em PR da branch exata, no mesmo repositório. Não abrir PR nem aplicar label sem conferir a franquia do GitHub Actions. Job único, runner padrão, timeout 15 minutos. Nenhum deploy, link remoto ou secret de produção.
+O workflow dedicado roda somente em push na branch exata `fix/round-2a-local-rls-test-isolation`, acionamento manual dessa branch ou label `qa-local-approved` em PR da mesma branch e repositório. Job único, runner padrão, timeout 15 minutos. Nenhum deploy, link remoto ou secret de produção.
 
 Reutiliza `supabase/config.toml`, migrations e `supabase/seed.sql` em runner descartável; remove configuração de ambiente remota e troca o project_id somente no workspace. Antes de iniciar, bloqueia saída externa dos containers Docker e restringe o usuário de testes ao loopback. Edge runtime não é iniciado. A instalação da CLI e o download de imagens ainda requerem rede do runner. Se o isolamento, o seed ou as migrations falharem, a execução deve falhar, não recorrer à nuvem.
 
