@@ -29,3 +29,8 @@ Run [45316707355](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/
 ## Rodada 2A.9 — execução do processo de teste isolado
 
 Run [45864871288](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45864871288): o stack descartável completou o replay das migrations e o seed corrigido; o passo de segurança iniciou, mas o usuário sem privilégios não conseguiu executar o binário em `/usr/local/bin/node` (`spawn EACCES`). O workflow agora copia o binário Node resolvido para o diretório temporário compartilhado e executa essa cópia como `leleqa`, preservando o bloqueio de rede externa do usuário. Os testes de Auth/RLS/checkout ainda não foram executados; a homologação continua NO-GO até o próximo run completo.
+
+
+## Rodada 2A.10 — filesystem noexec do runner
+
+Run [45865563129](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45865563129): o Node copiado para `/tmp` também recebeu `EACCES`, indicando que o diretório temporário não permite execução para o usuário isolado. O runtime e os arquivos de teste passam para um diretório temporário dentro de `GITHUB_WORKSPACE`, com permissões de leitura/execução explícitas e verificação `node --version` como `leleqa` antes dos testes. Nenhum teste de segurança foi aprovado ainda.
