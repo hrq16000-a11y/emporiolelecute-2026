@@ -41,6 +41,19 @@ export default defineConfig({
       },
     },
     {
+      // Production smoke uses the requested exact 768px tablet width.
+      name: "tablet-768",
+      use: {
+        ...devices["iPad (gen 7)"],
+        viewport: { width: 768, height: 1024 },
+        hasTouch: true,
+        isMobile: true,
+        userAgent:
+          "Mozilla/5.0 (iPad; CPU OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+        defaultBrowserType: "webkit",
+      },
+    },
+    {
       // Explicit mobile preset: iPhone 13-like viewport + touch + UA
       name: "mobile",
       use: {
