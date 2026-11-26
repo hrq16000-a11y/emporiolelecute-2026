@@ -51,16 +51,48 @@ const PRODUCT = {
   segments: [],
 };
 
-const CATEGORIES = [
-  { id: "00000000-0000-4000-a000-000000000010", name: "Sabonetes Artesanais", slug: "sabonetes", position: 1, is_indexed: true, is_draft: false, icon: "Gift", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
-  { id: "00000000-0000-4000-a000-000000000011", name: "Papelaria Personalizada", slug: "papelaria-personalizada", position: 2, is_indexed: true, is_draft: false, icon: "Heart", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
-  { id: "00000000-0000-4000-a000-000000000012", name: "Velas Aromáticas", slug: "velas-aromaticas", position: 3, is_indexed: true, is_draft: false, icon: "Sparkles", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
+const CATEGORY_NAMES = [
+  "Sabonetes Artesanais", "Papelaria Personalizada", "Velas Aromáticas",
+  "Kits Personalizados", "Lembrancinhas", "Brindes Especiais",
+  "Calendários", "Agendas", "Cadernos", "Presentes",
+  "Chá de Bebê", "Casamento",
 ];
-const OCCASIONS = [
-  { id: "00000000-0000-4000-a000-000000000020", name: "Aniversário", slug: "aniversario", position: 1, is_indexed: true, is_draft: false, icon: "Cake", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
-  { id: "00000000-0000-4000-a000-000000000021", name: "Maternidade", slug: "maternidade", position: 2, is_indexed: true, is_draft: false, icon: "Heart", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
-  { id: "00000000-0000-4000-a000-000000000022", name: "Casamento", slug: "casamento", position: 3, is_indexed: true, is_draft: false, icon: "Flower2", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
+const CATEGORY_SLUGS = [
+  "sabonetes", "papelaria-personalizada", "velas-aromaticas",
+  "kits-personalizados", "lembrancinhas", "brindes-especiais",
+  "calendarios", "agendas", "cadernos", "presentes", "cha-de-bebe", "casamento",
 ];
+const CATEGORIES = CATEGORY_NAMES.map((name, index) => ({
+  id: `00000000-0000-4000-a000-${String(10 + index).padStart(12, "0")}`,
+  name,
+  slug: CATEGORY_SLUGS[index],
+  position: index + 1,
+  is_indexed: true,
+  is_draft: false,
+  icon: ["Gift", "Heart", "Sparkles", "Package"][index % 4],
+  image_url: null,
+  created_at: "2026-01-01T00:00:00.000Z",
+}));
+const OCCASION_NAMES = [
+  "Aniversário e Festas", "Maternidade e Chá de Bebê", "Casamento e Bodas",
+  "Batizado e Primeira Comunhão", "Eventos Corporativos", "Chá Revelação",
+  "Formatura", "Natal", "Páscoa", "Dia das Mães", "Dia dos Pais", "Agradecimento",
+];
+const OCCASION_SLUGS = [
+  "aniversario", "maternidade", "casamento", "batizado", "corporativo",
+  "cha-revelacao", "formatura", "natal", "pascoa", "dia-das-maes", "dia-dos-pais", "agradecimento",
+];
+const OCCASIONS = OCCASION_NAMES.map((name, index) => ({
+  id: `00000000-0000-4000-a000-${String(20 + index).padStart(12, "0")}`,
+  name,
+  slug: OCCASION_SLUGS[index],
+  position: index + 1,
+  is_indexed: true,
+  is_draft: false,
+  icon: ["Cake", "Heart", "Flower2", "Gift"][index % 4],
+  image_url: null,
+  created_at: "2026-01-01T00:00:00.000Z",
+}));
 const HOME_SECTIONS = [
   { id: "00000000-0000-4000-a000-000000000032", section_key: "hero", component_name: "HeroSlider", label: "Banners", description: null, is_visible: true, position: 1, editable_props: {}, created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },
   { id: "00000000-0000-4000-a000-000000000030", section_key: "categories", component_name: "CategoriesScroll", label: "Categorias", description: null, is_visible: true, position: 10, editable_props: {}, created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },

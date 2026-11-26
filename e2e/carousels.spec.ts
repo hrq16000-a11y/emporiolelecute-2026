@@ -50,7 +50,7 @@ test.describe("Carousels — keyboard navigation", () => {
     expect(last).not.toBe(first);
 
     // ARIA live region announces focused category.
-    await expect(page.locator('[aria-live="polite"]').first()).toContainText(/Categoria em foco/i);
+    await expect(page.locator('section[aria-label="Categorias"] [aria-live="polite"]')).toContainText(/Categoria em foco/i);
   });
 
   test("Occasions: arrow keys move active item and announce via aria-live", async ({ page }) => {
@@ -105,31 +105,27 @@ test.describe("Carousels — mouse scroll (desktop only)", () => {
   });
 });
 
-test.describe("Carousels — touch swipe (mobile + tablet)", () => {
+test.describe("Carousels — native horizontal scroll (mobile + tablet)", () => {
   test.skip(({ isMobile, browserName }) => !isMobile && browserName !== "webkit", "Touch tests only on mobile/tablet projects");
 
   async function swipeLeft(page: Page, selector: string) {
-    const box = await page.locator(selector).boundingBox();
+    const carousel = page.locator(selector);
+    const box = await carousel.boundingBox();
     if (!box) throw new Error("Carousel not found");
-    const y = box.y + box.height / 2;
-    const startX = box.x + box.width * 0.85;
-    const endX   = box.x + box.width * 0.15;
-    await page.touchscreen.tap(startX, y); // ensure focus
-    // Programmatic touch sequence
-    await page.evaluate(({ sel, sx, ex, ty }) => {
-      const el = document.querySelector(sel) as HTMLElement | null;
-      if (!el) return;
-      const t = (x: number) => new Touch({ identifier: 1, target: el, clientX: x, clientY: ty, radiusX: 1, radiusY: 1 });
-      el.dispatchEvent(new TouchEvent("touchstart", { touches: [t(sx)], bubbles: true, cancelable: true }));
-      el.dispatchEvent(new TouchEvent("touchmove",  { touches: [t(ex)], bubbles: true, cancelable: true }));
-      el.dispatchEvent(new TouchEvent("touchend",   { changedTouches: [t(ex)], bubbles: true, cancelable: true }));
-      // Also nudge scrollLeft to simulate the native scroll consequence.
-      el.scrollBy({ left: sx - ex, behavior: "smooth" });
-    }, { sel: selector, sx: startX, ex: endX, ty: y });
-    await page.waitForTimeout(600);
+    // Mobile WebKit does not permit constructing synthetic Touch instances.
+    // Exercise the native horizontal-scroll outcome consumed by the carousel
+    // scroll listener, rather than dispatching an invalid synthetic TouchEvent.
+    await carousel.evaluate((el) => {
+      const node = el as HTMLElement;
+      node.scrollBy({ left: Math.max(160, node.clientWidth * 0.7), behavior: "auto" });
+    });
+    await expect.poll(async () =>
+      carousel.locator('[aria-selected="true"]').first().getAttribute("id")
+    ).not.toBeNull();
+    await page.waitForTimeout(250);
   }
 
-  test("Categories: swipe left changes the active category", async ({ page }) => {
+  test("Categories: horizontal scroll changes the active category", async ({ page }) => {
     await waitForCarousels(page);
     const carousel = page.locator(CATEGORIES);
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
@@ -138,7 +134,7 @@ test.describe("Carousels — touch swipe (mobile + tablet)", () => {
     expect(after).not.toBe(before);
   });
 
-  test("Occasions: swipe left changes the active occasion", async ({ page }) => {
+  test("Occasions: horizontal scroll changes the active occasion", async ({ page }) => {
     await waitForCarousels(page);
     const carousel = page.locator(OCCASIONS);
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");

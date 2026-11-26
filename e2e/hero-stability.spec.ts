@@ -12,7 +12,7 @@ test("initial section and slide loading retain the final banner geometry", async
   });
   await page.route('**/rest/v1/hero_slides?*', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
-    await route.continue();
+    await route.fallback();
   });
   await page.goto('/');
   const loading = page.getByRole('region', { name: 'Carregando banners' });
@@ -31,6 +31,7 @@ test("hero retains document geometry across zoom, slides and motion opt-out", as
   await page.goto("/");
   const hero = page.locator("#inicio");
   await hero.locator(".hero-slide-active img:visible").first().waitFor();
+  await page.getByRole("button", { name: "Slide 2", exact: true }).scrollIntoViewIfNeeded();
   const geometry = () => hero.evaluate((element) => {
     const bounds = element.getBoundingClientRect();
     return { height: bounds.height, top: bounds.top + window.scrollY, scroll: window.scrollY };

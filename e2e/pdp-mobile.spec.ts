@@ -77,12 +77,13 @@ test.describe("PDP mobile — layout integrity", () => {
     const viewport = await page.evaluate(() => ({
       width: window.innerWidth,
       height: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio,
     }));
     expect(screenshot.subarray(0, 8)).toEqual(
       Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
     );
-    expect(screenshot.readUInt32BE(16)).toBe(viewport.width);
-    expect(screenshot.readUInt32BE(20)).toBe(viewport.height);
+    expect(screenshot.readUInt32BE(16)).toBe(viewport.width * viewport.devicePixelRatio);
+    expect(screenshot.readUInt32BE(20)).toBe(viewport.height * viewport.devicePixelRatio);
     expect(screenshot.byteLength).toBeGreaterThan(10_000);
 
     const gallery = await rect(page.locator('[data-testid="pdp-gallery-main"]'));
