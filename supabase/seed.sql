@@ -97,9 +97,9 @@ values ('Aniversário', 'aniversario', 'Lembranças e kits para festas.', 1, fal
 on conflict (slug) do nothing;
 
 -- Dados sintéticos com peso positivo, conforme a regra atual de inserção.
-insert into public.products (name, slug, description, price, is_active, category_id, weight_kg)
+insert into public.products (name, slug, description, price, is_active, category_id, weight, weight_kg)
 select v.name, v.slug, v.description, v.price, true,
-       (select id from public.categories where slug = 'papelaria-personalizada'), 0.30::numeric
+       (select id from public.categories where slug = 'papelaria-personalizada'), 0.30::numeric, 0.30::numeric
 from (values
   ('Caderno Personalizado A5', 'caderno-personalizado-a5',
    'Caderno artesanal A5 com capa personalizada. Produto de exemplo (seed local).', 39.90::numeric),
