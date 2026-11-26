@@ -38,6 +38,21 @@ test.describe("SEO — canonical em páginas filtradas", () => {
     expect((await robotsContent(page)) ?? "").toContain("noindex");
   });
 
+  test("paginação legada page=2 também recebe noindex", async ({ page }) => {
+    await openAndSettle(page, "/produtos?page=2");
+    const href = await canonicalHref(page);
+    expect(new URL(href!).pathname).toBe("/produtos");
+    expect(new URL(href!).search).toBe("");
+    expect((await robotsContent(page)) ?? "").toContain("noindex");
+  });
+
+  test("filtros múltiplos não resolvidos continuam noindex", async ({ page }) => {
+    await openAndSettle(page, "/produtos?categoria=qa-categoria-inexistente&ocasiao=qa-ocasiao-inexistente");
+    const href = await canonicalHref(page);
+    expect(new URL(href!).pathname).toBe("/produtos");
+    expect((await robotsContent(page)) ?? "").toContain("noindex");
+  });
+
   test("canonical permanece sem parâmetros após reload", async ({ page }) => {
     await openAndSettle(page, "/produtos?ocasiao=maternidade&search=lavanda");
     const before = await canonicalHref(page);
