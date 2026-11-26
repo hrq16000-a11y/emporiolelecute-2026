@@ -2,22 +2,53 @@ import { expect, test, type Page, type Request } from "@playwright/test";
 
 const PRODUCT_PATH = "/produto/lembrancinha-sabonete-natal-presepio-sagrada-familia";
 
-function watchBrowser(page: Page) {
+async function watchBrowser(page: Page) {
   const errors: string[] = [];
+  const cancellations: string[] = [];
+  const navigations: string[] = [];
   const pending = new Set<Request>();
 
+  // Capture chunk-load errors before the app's own handler can preventDefault()
+  // and initiate a recovery reload.
+  await page.addInitScript(() => {
+    const w = window as typeof window & { __productionSmokeErrors?: string[] };
+    w.__productionSmokeErrors = [];
+    window.addEventListener("error", (event) => {
+      const message = event.message || (event.target instanceof HTMLScriptElement ? event.target.src : "resource error");
+      w.__productionSmokeErrors?.push(`window.error: ${message}`);
+    }, true);
+    window.addEventListener("unhandledrejection", (event) => {
+      const reason = event.reason as Error | string | undefined;
+      w.__productionSmokeErrors?.push(`unhandledrejection: ${typeof reason === "string" ? reason : reason?.message ?? "unknown"}`);
+    }, true);
+  });
+
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) navigations.push(frame.url());
+  });
   page.on("request", (request) => pending.add(request));
   page.on("requestfinished", (request) => pending.delete(request));
   page.on("requestfailed", (request) => {
     pending.delete(request);
-    errors.push(`requestfailed: ${request.method()} ${request.url()} — ${request.failure()?.errorText ?? "unknown"}`);
+    const failure = request.failure()?.errorText ?? "unknown";
+    const detail = `${request.method()} ${request.url()} — ${failure}`;
+    if (failure === "net::ERR_ABORTED" || failure === "Load request cancelled") {
+      cancellations.push(detail);
+    } else {
+      errors.push(`requestfailed: ${detail}`);
+    }
+  });
+  page.on("response", (response) => {
+    if (response.status() >= 500 || (response.status() === 404 && /\\.(js|css|woff2?|png|jpe?g|webp|svg)(?:[?#]|$)/i.test(response.url()))) {
+      errors.push(`response ${response.status()}: ${response.url()}`);
+    }
   });
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
 
-  return { errors, pending };
+  return { errors, cancellations, navigations, pending };
 }
 
 async function waitForNetworkIdle(pending: Set<Request>) {
@@ -57,12 +88,24 @@ async function fillRequiredPersonalization(page: Page) {
   }
 }
 
-async function expectBrowserClean(page: Page, errors: string[], pending: Set<Request>) {
-  // page.goto waits for document load, not every dynamic import triggered by
-  // hydration. Wait for browser network quiescence before closing the page so
-  // Playwright does not report teardown-induced ERR_ABORTED as app failures.
+async function expectBrowserClean(
+  page: Page,
+  browser: { errors: string[]; cancellations: string[]; navigations: string[]; pending: Set<Request> },
+) {
+  // Let hydration and lazy imports settle before the browser fixture closes.
   await page.waitForLoadState("networkidle", { timeout: 20000 });
-  await waitForNetworkIdle(pending);
+  await page.waitForTimeout(1000);
+  await waitForNetworkIdle(browser.pending);
+  const runtimeErrors = await page.evaluate(() => {
+    const w = window as typeof window & { __productionSmokeErrors?: string[] };
+    return w.__productionSmokeErrors ?? [];
+  });
+  console.log("[production-smoke] browser diagnostics", JSON.stringify({
+    navigations: browser.navigations,
+    cancellations: browser.cancellations,
+    runtimeErrors,
+  }));
+  const errors = [...browser.errors, ...runtimeErrors];
   expect(errors, errors.join("\n")).toEqual([]);
 }
 
@@ -73,7 +116,7 @@ test("Production home carrega e não apresenta overflow", async ({ page }) => {
   await expect(page).toHaveTitle(/Empório LeleCute/i);
   await expect(page.locator("main")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(page, browser.errors, browser.pending);
+  await expectBrowserClean(page, browser);
 });
 
 test("Production catálogo carrega produtos e imagens", async ({ page }) => {
@@ -83,7 +126,7 @@ test("Production catálogo carrega produtos e imagens", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: /Sabonete Personalizado/i })).toBeVisible();
   await expectFirstMainImageLoaded(page);
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(page, browser.errors, browser.pending);
+  await expectBrowserClean(page, browser);
 });
 
 test("Production página de produto carrega imagem e CTA", async ({ page }) => {
@@ -94,7 +137,7 @@ test("Production página de produto carrega imagem e CTA", async ({ page }) => {
   await expectFirstMainImageLoaded(page);
   await expect(page.getByRole("button", { name: /Adicionar ao Carrinho/i }).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(page, browser.errors, browser.pending);
+  await expectBrowserClean(page, browser);
 });
 
 test("Production carrinho vazio apresenta estado correto", async ({ page }) => {
@@ -103,7 +146,7 @@ test("Production carrinho vazio apresenta estado correto", async ({ page }) => {
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { name: "Carrinho vazio" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(page, browser.errors, browser.pending);
+  await expectBrowserClean(page, browser);
 });
 
 test("checkout integrado abre com produto real sem criar pedido nem pagamento", async ({ page }) => {
@@ -120,7 +163,7 @@ test("checkout integrado abre com produto real sem criar pedido nem pagamento", 
 
   await page.goto(PRODUCT_PATH);
   await expect(page.getByRole("heading", { level: 1, name: /Lembrancinha Sabonete Natal - Presépio Sagrada Família/i })).toBeVisible();
-  await expectBrowserClean(page, browser.errors, browser.pending);
+  await expectBrowserClean(page, browser);
   await fillRequiredPersonalization(page);
 
   const addToCart = page.getByRole("button", { name: /Adicionar ao Carrinho/i }).first();
@@ -140,7 +183,7 @@ test("checkout integrado abre com produto real sem criar pedido nem pagamento", 
   await expect(page.locator("#finalize-whatsapp-btn")).toBeVisible();
   await expect(page.locator("#finalize-whatsapp-btn")).toBeEnabled();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(page, browser.errors, browser.pending);
+  await expectBrowserClean(page, browser);
 
   // Não clicar em "Finalizar pelo WhatsApp": a homologação não cria pedidos nem inicia pagamentos.
   expect(commercialWrites).toEqual([]);
@@ -155,5 +198,5 @@ test("rota administrativa protege o painel e apresenta somente o login sem sess�
   await expect(page.locator("#email")).toBeVisible();
   await expect(page.locator("#password")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(page, browser.errors, browser.pending);
+  await expectBrowserClean(page, browser);
 });
