@@ -107,10 +107,10 @@ jobs:
           cp scripts/local-security-qa.mjs "$tmp/scripts/"
           cp supabase/functions/track-order/privacy.ts "$tmp/supabase/functions/track-order/"
           node_bin="$(readlink -f "$(command -v node)")"
-          sudo install -m 0755 "$node_bin" /usr/bin/node22
+          install -m 0755 "$node_bin" "$tmp/node22"
           chmod -R a+rX "$tmp"
-          sudo -u leleqa /usr/bin/node22 --version
-          sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL="$api" SUPABASE_ANON_KEY="$key" /usr/bin/node22 --experimental-strip-types --test "$tmp/scripts/local-security-qa.mjs"
+          sudo -u leleqa "$tmp/node22" --version
+          sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL="$api" SUPABASE_ANON_KEY="$key" "$tmp/node22" --experimental-strip-types --test "$tmp/scripts/local-security-qa.mjs"
       - name: Destroy local stack
         if: always() && steps.isolate.outcome == 'success'
         run: supabase stop --no-backup
