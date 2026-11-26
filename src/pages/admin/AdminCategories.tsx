@@ -21,6 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { markPublicTaxonomyDirty, invalidatePublicTaxonomy } from '@/lib/taxonomyAutomation';
 import { Button } from '@/components/ui/button';
@@ -405,7 +406,8 @@ const AdminCategories = () => {
     value: boolean,
   ) => {
     try {
-      const { error } = await supabase.from('categories').update({ [field]: value }).eq('id', id);
+      const patch = { [field]: value } as Database['public']['Tables']['categories']['Update'];
+      const { error } = await supabase.from('categories').update(patch).eq('id', id);
       if (error) throw error;
       invalidatePublicTaxonomy(queryClient, 'categories');
       void markPublicTaxonomyDirty('categories');

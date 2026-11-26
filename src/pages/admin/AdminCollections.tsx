@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -35,7 +36,8 @@ export default function AdminCollections() {
 
   const toggleField = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: "is_active" | "show_on_home"; value: boolean }) => {
-      const { error } = await supabase.from("collections").update({ [field]: value }).eq("id", id);
+      const patch = { [field]: value } as Database["public"]["Tables"]["collections"]["Update"];
+      const { error } = await supabase.from("collections").update(patch).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-collections"] }),
