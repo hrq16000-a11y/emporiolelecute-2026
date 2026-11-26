@@ -1,4 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import { installStorefrontFixtures } from "./storefront-fixtures";
+
+test.beforeEach(async ({ page }) => {
+  await installStorefrontFixtures(page);
+});
 
 /**
  * Regressão: "Limpar filtros" deve apagar a ocasião persistida no navegador,
