@@ -9,7 +9,11 @@ function watchBrowser(page: Page) {
   });
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("requestfailed", (request) => {
-    errors.push(`requestfailed: ${request.method()} ${request.url()} — ${request.failure()?.errorText ?? "unknown"}`);
+    const error = request.failure()?.errorText ?? "unknown";
+    // Chromium/WebKit report ERR_ABORTED when SPA navigation cancels requests
+    // from the previous route. Keep real network failures visible and failing.
+    if (error === "net::ERR_ABORTED") return;
+    errors.push(`requestfailed: ${request.method()} ${request.url()} — ${error}`);
   });
   return errors;
 }
@@ -25,8 +29,9 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 async function expectFirstMainImageLoaded(page: Page) {
-  const image = page.locator("main img").first();
+  const image = page.locator("main img:visible").first();
   await expect(image).toBeVisible();
+  await image.scrollIntoViewIfNeeded();
   await expect.poll(() => image.evaluate((node) => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
 }
 
