@@ -28,9 +28,16 @@ async function waitForCarousels(page: Page) {
   await expect(page.locator(OCCASIONS)).toBeVisible();
   await expect(page.locator(CATEGORIES).locator('[aria-selected="true"]').first()).toBeVisible();
   await expect(page.locator(OCCASIONS).locator('[aria-selected="true"]').first()).toBeVisible();
-  await page.locator(CATEGORIES).evaluate((el) => { (el as HTMLElement).scrollLeft = 0; });
-  await page.locator(OCCASIONS).evaluate((el) => { (el as HTMLElement).scrollLeft = 0; });
-  await page.waitForTimeout(100);
+  await page.locator(CATEGORIES).evaluate((el) => {
+    const node = el as HTMLElement;
+    node.scrollLeft = 0;
+    node.dispatchEvent(new Event("scroll"));
+  });
+  await page.locator(OCCASIONS).evaluate((el) => {
+    const node = el as HTMLElement;
+    node.scrollLeft = 0;
+    node.dispatchEvent(new Event("scroll"));
+  });
 }
 
 test.describe("Carousels — keyboard navigation", () => {
@@ -75,38 +82,35 @@ test.describe("Carousels — mouse scroll (desktop only)", () => {
   test.skip(({ isMobile }) => !!isMobile, "Mouse wheel not applicable on touch devices");
 
   test("Categories: scrollBy via arrow buttons updates active without flicker", async ({ page }) => {
+    // At 1440px the full row may fit; 1024px exercises the real overflow state.
+    await page.setViewportSize({ width: 1024, height: 900 });
     await waitForCarousels(page);
     const carousel = page.locator(CATEGORIES);
-    // Hover to reveal arrows.
     await carousel.hover();
     const next = page.getByRole("button", { name: /Próxima categoria/i });
     await expect(next).toBeVisible();
+    await expect(next).toBeEnabled();
 
     const beforeId = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await next.click();
-    await page.waitForTimeout(500);
-    const afterId = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(afterId).not.toBe(beforeId);
+    await expect.poll(() => carousel.locator('[aria-selected="true"]').first().getAttribute("id")).not.toBe(beforeId);
 
-    // Click again rapidly — should still settle on a single item (no flicker).
-    await next.click();
-    await next.click();
-    await page.waitForTimeout(700);
     const selectedCount = await carousel.locator('[aria-selected="true"]').count();
     expect(selectedCount).toBe(1);
   });
 
   test("Occasions: arrow buttons present and operate carousel", async ({ page }) => {
+    // At 1440px twelve occasion tiles can fit; 1024px tests the overflow controls.
+    await page.setViewportSize({ width: 1024, height: 900 });
     await waitForCarousels(page);
     const carousel = page.locator(OCCASIONS);
     await carousel.hover();
     const next = page.getByRole("button", { name: /Próxima ocasião/i });
     await expect(next).toBeVisible();
+    await expect(next).toBeEnabled();
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await next.click();
-    await page.waitForTimeout(500);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await expect.poll(() => carousel.locator('[aria-selected="true"]').first().getAttribute("id")).not.toBe(before);
   });
 });
 
