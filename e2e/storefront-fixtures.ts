@@ -198,5 +198,5 @@ export async function installStorefrontFixtures(page: Page) {
       },
       body: JSON.stringify(data),
     });
-  });;
+  });
 }
