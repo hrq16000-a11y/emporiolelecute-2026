@@ -34,3 +34,8 @@ Run [45864871288](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/
 ## Rodada 2A.10 — filesystem noexec do runner
 
 Run [45865563129](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45865563129): o Node copiado para `/tmp` também recebeu `EACCES`, indicando que o diretório temporário não permite execução para o usuário isolado. O runtime e os arquivos de teste passam para um diretório temporário dentro de `GITHUB_WORKSPACE`, com permissões de leitura/execução explícitas e verificação `node --version` como `leleqa` antes dos testes. Nenhum teste de segurança foi aprovado ainda.
+
+
+## Rodada 2A.11 — diagnóstico GoTrue
+
+Run [45869364405](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45869364405): o processo Node executou sob `leleqa`, o seed completou e o teste puro de privacidade passou. A primeira autenticação do usuário sintético `admin@local.test` recebeu HTTP 500 do GoTrue, antes das verificações RLS/checkout. O helper de teste passa a imprimir somente os campos de erro `code/error/msg/message` da resposta local, sem tokens, senhas ou dados reais, para identificar a causa na próxima execução.
