@@ -26,6 +26,8 @@ async function waitForCarousels(page: Page) {
   await page.goto("/");
   await expect(page.locator(CATEGORIES)).toBeVisible();
   await expect(page.locator(OCCASIONS)).toBeVisible();
+  await expect(page.locator(CATEGORIES).locator('[aria-selected="true"]').first()).toBeVisible();
+  await expect(page.locator(OCCASIONS).locator('[aria-selected="true"]').first()).toBeVisible();
   await page.locator(CATEGORIES).evaluate((el) => { (el as HTMLElement).scrollLeft = 0; });
   await page.locator(OCCASIONS).evaluate((el) => { (el as HTMLElement).scrollLeft = 0; });
   await page.waitForTimeout(100);
