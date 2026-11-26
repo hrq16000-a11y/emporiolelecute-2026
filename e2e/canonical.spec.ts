@@ -45,6 +45,7 @@ test.describe("SEO — canonical em páginas filtradas", () => {
     expect(new URL(href!).pathname).toBe("/produtos");
     expect(new URL(href!).search).toBe("");
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    expect(await page.locator('meta[name="robots"]').count()).toBe(1);
     expect((await robotsContent(page)) ?? "").toContain("noindex");
   });
 
