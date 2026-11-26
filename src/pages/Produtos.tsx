@@ -93,7 +93,7 @@ const Produtos = () => {
   useEffect(() => {
     try { localStorage.setItem('produtos:filtersOpen', filtersOpen ? '1' : '0'); } catch { /* ignore */ }
   }, [filtersOpen]);
-  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('pagina')) || 1);
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('pagina') ?? searchParams.get('page')) || 1);
 
   // Debounce search for better performance
   const debouncedSearch = useDebounce(search, 300);
@@ -105,7 +105,7 @@ const Produtos = () => {
     const urlOcasiao = searchParams.get('ocasiao');
     const urlSegmento = searchParams.get('segmento');
     const urlTag = searchParams.get('tag');
-    const urlPage = searchParams.get('pagina');
+    const urlPage = searchParams.get('pagina') ?? searchParams.get('page');
 
     setSearch(urlSearch ?? "");
     setSelectedCategory(urlCategoria);
@@ -192,6 +192,7 @@ const Produtos = () => {
       newParams.delete('categoria');
     }
     newParams.delete('pagina');
+    newParams.delete('page');
     setSearchParams(newParams);
   };
 
@@ -205,6 +206,7 @@ const Produtos = () => {
       newParams.delete('ocasiao');
     }
     newParams.delete('pagina');
+    newParams.delete('page');
     setSearchParams(newParams);
   };
 
@@ -217,6 +219,7 @@ const Produtos = () => {
       newParams.delete('tag');
     }
     newParams.delete('pagina');
+    newParams.delete('page');
     setSearchParams(newParams);
   };
 
@@ -229,6 +232,7 @@ const Produtos = () => {
       newParams.delete('segmento');
     }
     newParams.delete('pagina');
+    newParams.delete('page');
     setSearchParams(newParams);
   };
 
@@ -239,6 +243,7 @@ const Produtos = () => {
       newParams.set('pagina', String(page));
     } else {
       newParams.delete('pagina');
+    newParams.delete('page');
     }
     setSearchParams(newParams);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -473,23 +478,38 @@ const Produtos = () => {
     },
   ];
 
+  // SEO must follow the URL even while taxonomy data is loading or a slug no
+  // longer resolves. Otherwise filtered URLs can briefly (or permanently)
+  // inherit the indexable catalog robots directive.
+  const rawStructuralCount = ['categoria', 'ocasiao', 'segmento']
+    .filter((key) => Boolean(searchParams.get(key))).length;
+  const rawTag = Boolean(searchParams.get('tag'));
+  const rawSearch = Boolean((searchParams.get('busca') ?? searchParams.get('search') ?? '').trim());
+  const rawPage = Number(searchParams.get('pagina') ?? searchParams.get('page') ?? 1);
+  const hasPagination = Number.isFinite(rawPage) && rawPage > 1;
+  const hasUnresolvedStructuralFilter = rawStructuralCount > structuralCount;
+  const hasFilteredQuery = rawStructuralCount >= 2 || rawTag || rawSearch ||
+    hasPagination || hasUnresolvedStructuralFilter || currentPage > 1 ||
+    Boolean(resolvedTag) || Boolean(debouncedSearch.trim());
+
   // SEO copy otimizada (visível, indexável) — só na visão sem nenhum filtro
-  const seoCopyVisible = !resolvedCategory && !resolvedOccasion && !resolvedSegment && !resolvedTag && !debouncedSearch;
+  const seoCopyVisible = rawStructuralCount === 0 && !rawTag && !rawSearch &&
+    !resolvedCategory && !resolvedOccasion && !resolvedSegment && !resolvedTag && !debouncedSearch;
 
   // === Anti-canibalização SEO ===
-  // 0 filtros estruturais (+ sem tag/busca) -> indexável, canonical /produtos
-  // 1 filtro estrutural (sem outros)        -> canonical para taxonomia oficial (não duplica)
-  // 2+ filtros / tag / busca / paginação    -> noindex,follow + canonical /produtos
+  // 0 filtros estruturais (+ sem tag/busca/página) -> indexável, canonical /produtos
+  // 1 filtro estrutural válido e isolado             -> canonical para taxonomia oficial
+  // múltiplos filtros, parâmetros não resolvidos, busca/tag ou página > 1 -> noindex
   const SITE = 'https://emporiolelecute.com.br';
   let canonicalUrl = `${SITE}/produtos`;
-  let isIndexable = true;
+  let isIndexable = !hasFilteredQuery;
 
-  if (structuralCount === 1 && !resolvedTag && !debouncedSearch && currentPage === 1) {
+  if (!hasFilteredQuery && rawStructuralCount === 1 && structuralCount === 1) {
     const only = structuralFilters[0]!;
     if (resolvedCategory) canonicalUrl = `${SITE}/categoria/${only.slug}`;
     else if (resolvedOccasion) canonicalUrl = `${SITE}/ocasiao/${only.slug}`;
     else if (resolvedSegment) canonicalUrl = `${SITE}/segmento/${only.slug}`;
-  } else if (structuralCount >= 2 || resolvedTag || debouncedSearch || currentPage > 1) {
+  } else if (hasFilteredQuery) {
     isIndexable = false;
     canonicalUrl = `${SITE}/produtos`;
   }
