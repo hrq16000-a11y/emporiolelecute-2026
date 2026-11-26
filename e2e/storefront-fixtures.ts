@@ -161,13 +161,42 @@ export async function installStorefrontFixtures(page: Page) {
     }
   });
   await page.route(/\/rest\/v1\//, async (route: Route) => {
-    const url = new URL(route.request().url());
+    const request = route.request();
+    const requestHeaders = request.headers();
+    const origin = requestHeaders.origin ?? "http://localhost:8080";
+    const corsHeaders = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-credentials": "true",
+      "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
+      "access-control-allow-headers":
+        requestHeaders["access-control-request-headers"] ??
+        "apikey,authorization,content-type,x-client-info",
+      "access-control-expose-headers": "content-range,content-location,preference-applied",
+      "vary": "Origin",
+      ...(requestHeaders["access-control-request-private-network"] === "true"
+        ? { "access-control-allow-private-network": "true" }
+        : {}),
+    };
+
+    if (request.method() === "OPTIONS") {
+      await route.fulfill({
+        status: 204,
+        headers: { ...corsHeaders, "access-control-max-age": "86400" },
+      });
+      return;
+    }
+
+    const url = new URL(request.url());
     const data = payloadFor(url.pathname);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      headers: { "content-range": "0-0/1", "cache-control": "no-store" },
+      headers: {
+        ...corsHeaders,
+        "content-range": "0-0/1",
+        "cache-control": "no-store",
+      },
       body: JSON.stringify(data),
     });
-  });
+  });;
 }
