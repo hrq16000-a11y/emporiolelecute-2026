@@ -7,6 +7,7 @@ interface DynamicSEOProps {
   description?: string;
   image?: string;
   url?: string;
+  robots?: string;
   type?: string;
   /** Metadados de produto para Open Graph / Merchant (product namespace). */
   product?: {
@@ -30,12 +31,16 @@ const buildCanonical = (pathname: string) => {
   return `${SITE_ORIGIN}${clean}`;
 };
 
-const DynamicSEO = ({ title, description, image, url, type = 'website', product }: DynamicSEOProps) => {
+const DynamicSEO = ({ title, description, image, url, robots = 'index, follow', type = 'website', product }: DynamicSEOProps) => {
   const { data: seoConfig, isLoading } = useSEOConfig();
   const location = useLocation();
 
   if (isLoading || !seoConfig) {
-    return null;
+    return (
+      <Helmet>
+        <meta name="robots" content={robots} />
+      </Helmet>
+    );
   }
 
   const pageTitle = title || seoConfig.site_title;
@@ -49,6 +54,7 @@ const DynamicSEO = ({ title, description, image, url, type = 'website', product 
       <title>{pageTitle}</title>
       <meta name="description" content={pageDescription} />
       <meta name="keywords" content={seoConfig.site_keywords} />
+      <meta name="robots" content={robots} />
       <link rel="canonical" href={pageUrl} />
 
       {/* Open Graph */}
