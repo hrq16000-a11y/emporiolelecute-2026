@@ -1,6 +1,9 @@
 name: Local security QA (disposable)
 
 on:
+  push:
+    branches:
+      - fix/round-2a-local-rls-test-isolation
   workflow_dispatch:
   pull_request:
     types: [labeled]
@@ -16,6 +19,7 @@ jobs:
   local-security:
     if: >-
       (github.event_name == 'workflow_dispatch' && github.ref_name == 'fix/round-2a-local-rls-test-isolation') ||
+      (github.event_name == 'push' && github.ref_name == 'fix/round-2a-local-rls-test-isolation') ||
       (github.event_name == 'pull_request' && github.event.label.name == 'qa-local-approved' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.head.ref == 'fix/round-2a-local-rls-test-isolation')
