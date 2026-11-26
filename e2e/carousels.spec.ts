@@ -72,8 +72,7 @@ test.describe("Carousels — keyboard navigation", () => {
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await page.keyboard.press("ArrowRight");
     await page.waitForTimeout(350);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await expect.poll(() => carousel.locator('[aria-selected="true"]').first().getAttribute("id")).not.toBe(before);
     await expect(page.locator('text=/Ocasião em foco/i').first()).toBeVisible();
   });
 });
@@ -119,17 +118,13 @@ test.describe("Carousels — native horizontal scroll (mobile + tablet)", () => 
 
   async function swipeLeft(page: Page, selector: string) {
     const carousel = page.locator(selector);
-    const box = await carousel.boundingBox();
-    if (!box) throw new Error("Carousel not found");
-    // Mobile WebKit does not permit constructing synthetic Touch instances.
-    // Exercise the native horizontal-scroll outcome consumed by the carousel
-    // scroll listener, rather than dispatching an invalid synthetic TouchEvent.
-    await carousel.evaluate((el) => {
-      const node = el as HTMLElement;
-      node.scrollLeft = node.scrollWidth;
-      node.dispatchEvent(new Event("scroll"));
-    });
-    await page.waitForTimeout(250);
+    const initialScrollLeft = await carousel.evaluate((el) => el.scrollLeft);
+    const lastItem = carousel.locator('[role="option"]').last();
+    // Scroll the real last option into view. This uses the browser's native
+    // horizontal overflow behavior instead of assigning scrollLeft synthetically,
+    // which WebKit may clamp differently for centered flex content.
+    await lastItem.scrollIntoViewIfNeeded();
+    await expect.poll(() => carousel.evaluate((el) => el.scrollLeft)).toBeGreaterThan(initialScrollLeft + 4);
   }
 
   test("Categories: horizontal scroll changes the active category", async ({ page }) => {

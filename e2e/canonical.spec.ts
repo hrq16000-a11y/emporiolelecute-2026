@@ -47,7 +47,9 @@ test.describe("SEO — canonical em páginas filtradas", () => {
     await openAndSettle(page, "/produtos?ocasiao=maternidade&search=lavanda");
     const before = await canonicalHref(page);
 
-    await page.reload({ waitUntil: "domcontentloaded" });
+    // Full document navigation to the same URL verifies reload persistence.
+    // WebKit's page.reload() can be cancelled by its policy check in this local fixture.
+    await page.goto(page.url(), { waitUntil: "domcontentloaded" });
     await expect(page.locator("main")).toBeVisible();
     await expect.poll(() => canonicalHref(page)).toBe(before);
 
