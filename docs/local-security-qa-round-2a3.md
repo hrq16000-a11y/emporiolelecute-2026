@@ -39,3 +39,8 @@ Run [45865563129](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/
 ## Rodada 2A.11 — diagnóstico GoTrue
 
 Run [45869364405](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45869364405): o processo Node executou sob `leleqa`, o seed completou e o teste puro de privacidade passou. A primeira autenticação do usuário sintético `admin@local.test` recebeu HTTP 500 do GoTrue, antes das verificações RLS/checkout. O helper de teste passa a imprimir somente os campos de erro `code/error/msg/message` da resposta local, sem tokens, senhas ou dados reais, para identificar a causa na próxima execução.
+
+
+## Rodada 2A.12 — causa exata do HTTP 500 local
+
+Run [45870576400](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45870576400) incluiu logs do GoTrue: `sql: Scan error on column 3, name "confirmation_token": converting NULL to string is unsupported`. O seed criava o usuário sintético diretamente em `auth.users` sem preencher os campos de token, que ficaram NULL. A correção preenche explicitamente os campos string de token com `''`, `email_change_confirm_status=0` e flags booleanas com `false`. Isso altera somente `supabase/seed.sql` usado no stack descartável; nenhum usuário de Production será atualizado. A causa e correção correspondem à orientação oficial do Supabase: <https://supabase.com/kb/troubleshooting/scan-error-on-column-confirmation_token-converting-null-to-string-is-unsupported-during-auth-login-a0c686>.
