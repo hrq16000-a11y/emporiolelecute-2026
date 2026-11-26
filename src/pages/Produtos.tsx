@@ -105,7 +105,7 @@ const Produtos = () => {
     const urlOcasiao = searchParams.get('ocasiao');
     const urlSegmento = searchParams.get('segmento');
     const urlTag = searchParams.get('tag');
-    const urlPage = searchParams.get('pagina') ?? searchParams.get('page');
+    const urlPage = searchParams.get('pagina') || searchParams.get('page');
 
     setSearch(urlSearch ?? "");
     setSelectedCategory(urlCategoria);
@@ -485,8 +485,8 @@ const Produtos = () => {
   const rawStructuralCount = ['categoria', 'ocasiao', 'segmento']
     .filter((key) => Boolean(searchParams.get(key))).length;
   const rawTag = Boolean(searchParams.get('tag'));
-  const rawSearch = Boolean((searchParams.get('busca') || searchParams.get('search') ?? '').trim());
-  const rawPage = Number(searchParams.get('pagina') ?? searchParams.get('page') ?? 1);
+  const rawSearch = Boolean((searchParams.get('busca') || searchParams.get('search') || '').trim());
+  const rawPage = Number(searchParams.get('pagina') || searchParams.get('page') || 1);
   const hasPagination = Number.isFinite(rawPage) && rawPage > 1;
   const hasUnresolvedStructuralFilter = rawStructuralCount > structuralCount;
   const hasFilteredQuery = rawStructuralCount >= 2 || rawTag || rawSearch ||
