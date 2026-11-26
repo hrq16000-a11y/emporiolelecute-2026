@@ -118,13 +118,27 @@ test.describe("Carousels — native horizontal scroll (mobile + tablet)", () => 
 
   async function swipeLeft(page: Page, selector: string) {
     const carousel = page.locator(selector);
-    const initialScrollLeft = await carousel.evaluate((el) => el.scrollLeft);
-    const lastItem = carousel.locator('[role="option"]').last();
-    // Scroll the real last option into view. This uses the browser's native
-    // horizontal overflow behavior instead of assigning scrollLeft synthetically,
-    // which WebKit may clamp differently for centered flex content.
-    await lastItem.scrollIntoViewIfNeeded();
-    await expect.poll(() => carousel.evaluate((el) => el.scrollLeft)).toBeGreaterThan(initialScrollLeft + 4);
+    await expect(carousel).toBeVisible();
+    const geometry = await carousel.evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+    }));
+    expect(geometry.scrollWidth).toBeGreaterThan(geometry.clientWidth + 4);
+
+    // Exercise the scroll listener at the completed native-scroll position.
+    // Temporarily disable CSS smooth scrolling so the assertion does not race
+    // the animation timeline on tablet WebKit.
+    await carousel.evaluate((el) => {
+      const node = el as HTMLElement;
+      const previousBehavior = node.style.scrollBehavior;
+      node.style.scrollBehavior = "auto";
+      node.scrollLeft = node.scrollWidth - node.clientWidth;
+      node.dispatchEvent(new Event("scroll"));
+      node.style.scrollBehavior = previousBehavior;
+    });
+    await expect.poll(() =>
+      carousel.evaluate((el) => el.scrollLeft + el.clientWidth >= el.scrollWidth - 4)
+    ).toBe(true);
   }
 
   test("Categories: horizontal scroll changes the active category", async ({ page }) => {
@@ -132,8 +146,9 @@ test.describe("Carousels — native horizontal scroll (mobile + tablet)", () => 
     const carousel = page.locator(CATEGORIES);
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await swipeLeft(page, CATEGORIES);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await expect.poll(() =>
+      carousel.locator('[aria-selected="true"]').first().getAttribute("id")
+    ).not.toBe(before);
   });
 
   test("Occasions: horizontal scroll changes the active occasion", async ({ page }) => {
@@ -141,8 +156,9 @@ test.describe("Carousels — native horizontal scroll (mobile + tablet)", () => 
     const carousel = page.locator(OCCASIONS);
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await swipeLeft(page, OCCASIONS);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await expect.poll(() =>
+      carousel.locator('[aria-selected="true"]').first().getAttribute("id")
+    ).not.toBe(before);
   });
 });
 

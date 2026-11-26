@@ -159,6 +159,9 @@ export async function installStorefrontFixtures(page: Page) {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     }
+    // Skip the app's one-time legacy cache cleanup reload in deterministic E2E runs.
+    localStorage.setItem("app:cache-version", "2026-05-15-v1");
+    sessionStorage.setItem("app:cache-cleanup-reloaded", "1");
   });
   await page.route(/\/rest\/v1\//, async (route: Route) => {
     const request = route.request();
