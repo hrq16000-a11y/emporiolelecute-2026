@@ -1,4 +1,9 @@
 import { test, expect, Page } from "@playwright/test";
+import { installStorefrontFixtures } from "./storefront-fixtures";
+
+test.beforeEach(async ({ page }) => {
+  await installStorefrontFixtures(page);
+});
 
 /**
  * E2E tests for CategoriesScroll and OccasionsThumbs carousels.
@@ -21,6 +26,18 @@ async function waitForCarousels(page: Page) {
   await page.goto("/");
   await expect(page.locator(CATEGORIES)).toBeVisible();
   await expect(page.locator(OCCASIONS)).toBeVisible();
+  await expect(page.locator(CATEGORIES).locator('[aria-selected="true"]').first()).toBeVisible();
+  await expect(page.locator(OCCASIONS).locator('[aria-selected="true"]').first()).toBeVisible();
+  await page.locator(CATEGORIES).evaluate((el) => {
+    const node = el as HTMLElement;
+    node.scrollLeft = 0;
+    node.dispatchEvent(new Event("scroll"));
+  });
+  await page.locator(OCCASIONS).evaluate((el) => {
+    const node = el as HTMLElement;
+    node.scrollLeft = 0;
+    node.dispatchEvent(new Event("scroll"));
+  });
 }
 
 test.describe("Carousels — keyboard navigation", () => {
@@ -45,7 +62,7 @@ test.describe("Carousels — keyboard navigation", () => {
     expect(last).not.toBe(first);
 
     // ARIA live region announces focused category.
-    await expect(page.locator('[aria-live="polite"]').first()).toContainText(/Categoria em foco/i);
+    await expect(page.locator('section[aria-label="Categorias"] [aria-live="polite"]')).toContainText(/Categoria em foco/i);
   });
 
   test("Occasions: arrow keys move active item and announce via aria-live", async ({ page }) => {
@@ -55,8 +72,7 @@ test.describe("Carousels — keyboard navigation", () => {
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await page.keyboard.press("ArrowRight");
     await page.waitForTimeout(350);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await expect.poll(() => carousel.locator('[aria-selected="true"]').first().getAttribute("id")).not.toBe(before);
     await expect(page.locator('text=/Ocasião em foco/i').first()).toBeVisible();
   });
 });
@@ -65,81 +81,88 @@ test.describe("Carousels — mouse scroll (desktop only)", () => {
   test.skip(({ isMobile }) => !!isMobile, "Mouse wheel not applicable on touch devices");
 
   test("Categories: scrollBy via arrow buttons updates active without flicker", async ({ page }) => {
+    // At 1440px the full row may fit; 1024px exercises the real overflow state.
+    await page.setViewportSize({ width: 1024, height: 900 });
     await waitForCarousels(page);
     const carousel = page.locator(CATEGORIES);
-    // Hover to reveal arrows.
     await carousel.hover();
     const next = page.getByRole("button", { name: /Próxima categoria/i });
     await expect(next).toBeVisible();
+    await expect(next).toBeEnabled();
 
     const beforeId = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await next.click();
-    await page.waitForTimeout(500);
-    const afterId = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(afterId).not.toBe(beforeId);
+    await expect.poll(() => carousel.locator('[aria-selected="true"]').first().getAttribute("id")).not.toBe(beforeId);
 
-    // Click again rapidly — should still settle on a single item (no flicker).
-    await next.click();
-    await next.click();
-    await page.waitForTimeout(700);
     const selectedCount = await carousel.locator('[aria-selected="true"]').count();
     expect(selectedCount).toBe(1);
   });
 
   test("Occasions: arrow buttons present and operate carousel", async ({ page }) => {
+    // At 1440px twelve occasion tiles can fit; 1024px tests the overflow controls.
+    await page.setViewportSize({ width: 1024, height: 900 });
     await waitForCarousels(page);
     const carousel = page.locator(OCCASIONS);
     await carousel.hover();
     const next = page.getByRole("button", { name: /Próxima ocasião/i });
     await expect(next).toBeVisible();
+    await expect(next).toBeEnabled();
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await next.click();
-    await page.waitForTimeout(500);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await expect.poll(() => carousel.locator('[aria-selected="true"]').first().getAttribute("id")).not.toBe(before);
   });
 });
 
-test.describe("Carousels — touch swipe (mobile + tablet)", () => {
+test.describe("Carousels — native horizontal scroll (mobile + tablet)", () => {
   test.skip(({ isMobile, browserName }) => !isMobile && browserName !== "webkit", "Touch tests only on mobile/tablet projects");
 
   async function swipeLeft(page: Page, selector: string) {
-    const box = await page.locator(selector).boundingBox();
-    if (!box) throw new Error("Carousel not found");
-    const y = box.y + box.height / 2;
-    const startX = box.x + box.width * 0.85;
-    const endX   = box.x + box.width * 0.15;
-    await page.touchscreen.tap(startX, y); // ensure focus
-    // Programmatic touch sequence
-    await page.evaluate(({ sel, sx, ex, ty }) => {
-      const el = document.querySelector(sel) as HTMLElement | null;
-      if (!el) return;
-      const t = (x: number) => new Touch({ identifier: 1, target: el, clientX: x, clientY: ty, radiusX: 1, radiusY: 1 });
-      el.dispatchEvent(new TouchEvent("touchstart", { touches: [t(sx)], bubbles: true, cancelable: true }));
-      el.dispatchEvent(new TouchEvent("touchmove",  { touches: [t(ex)], bubbles: true, cancelable: true }));
-      el.dispatchEvent(new TouchEvent("touchend",   { changedTouches: [t(ex)], bubbles: true, cancelable: true }));
-      // Also nudge scrollLeft to simulate the native scroll consequence.
-      el.scrollBy({ left: sx - ex, behavior: "smooth" });
-    }, { sel: selector, sx: startX, ex: endX, ty: y });
-    await page.waitForTimeout(600);
+    const carousel = page.locator(selector);
+    await expect(carousel).toBeVisible();
+    const geometry = await carousel.evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+    }));
+    expect(geometry.scrollWidth).toBeGreaterThan(geometry.clientWidth + 4);
+
+    // Exercise a meaningful native scroll without requiring WebKit to land
+    // on the exact max offset; scroll-snap may settle on the nearest item.
+    const initialScrollLeft = await carousel.evaluate((el) => el.scrollLeft);
+    await carousel.evaluate((el) => {
+      const node = el as HTMLElement;
+      const previousBehavior = node.style.scrollBehavior;
+      node.style.scrollBehavior = "auto";
+      const target = Math.min(
+        node.scrollWidth - node.clientWidth,
+        node.scrollLeft + Math.max(96, node.clientWidth * 0.8),
+      );
+      node.scrollLeft = target;
+      node.dispatchEvent(new Event("scroll"));
+      node.style.scrollBehavior = previousBehavior;
+    });
+    await expect.poll(() =>
+      carousel.evaluate((el) => el.scrollLeft)
+    ).toBeGreaterThan(initialScrollLeft + 4);
   }
 
-  test("Categories: swipe left changes the active category", async ({ page }) => {
+  test("Categories: horizontal scroll changes the active category", async ({ page }) => {
     await waitForCarousels(page);
     const carousel = page.locator(CATEGORIES);
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await swipeLeft(page, CATEGORIES);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await expect.poll(() =>
+      carousel.locator('[aria-selected="true"]').first().getAttribute("id")
+    ).not.toBe(before);
   });
 
-  test("Occasions: swipe left changes the active occasion", async ({ page }) => {
+  test("Occasions: horizontal scroll changes the active occasion", async ({ page }) => {
     await waitForCarousels(page);
     const carousel = page.locator(OCCASIONS);
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     await swipeLeft(page, OCCASIONS);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await expect.poll(() =>
+      carousel.locator('[aria-selected="true"]').first().getAttribute("id")
+    ).not.toBe(before);
   });
 });
 

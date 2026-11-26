@@ -1,4 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { installStorefrontFixtures } from "./storefront-fixtures";
+
+test.beforeEach(async ({ page }) => {
+  await installStorefrontFixtures(page);
+});
+
 test.beforeEach(async ({page})=>{
  await page.goto('/suporte'); await page.getByRole('heading', { name: 'Atendimento LeleCute' }).waitFor();
  await page.evaluate(()=>{localStorage.setItem('emporio-cart-storage',JSON.stringify({version:1,state:{items:[{id:'address-test',slug:'test',name:'Teste de endereço',price:5,quantity:1,minQuantity:1,image:''}]}}));localStorage.setItem('lc_address_v1',JSON.stringify({cep:'01001000',city:'',state:'',savedAt:Date.now()}));});

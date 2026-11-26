@@ -19,6 +19,13 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - name: TypeScript
+        run: bunx tsc --noEmit
+      - name: Production build (isolated from hosted Supabase)
+        run: bun run build
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: local-ci-placeholder
       - name: Shop safety gates (offline and read-only)
         run: |
           node --test scripts/check-storefront-guard.test.mjs
@@ -48,6 +55,14 @@ jobs:
             tablet|mobile) bunx playwright install --with-deps webkit ;;
             *) echo "Unsupported Playwright project: ${{ matrix.project }}"; exit 1 ;;
           esac
+      - name: Force isolated Supabase endpoint for browser tests
+        run: |
+          cat > .env.local <<'EOF'
+          VITE_SUPABASE_URL=http://127.0.0.1:54321
+          VITE_SUPABASE_PROJECT_ID=local
+          VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE3OTk1MzU2MDB9.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+          VITE_LOCAL_MODE=true
+          EOF
       - name: Run Playwright (${{ matrix.project }})
         run: bunx playwright test --project=${{ matrix.project }}
         env:

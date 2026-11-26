@@ -2,18 +2,13 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 /**
- * Normalizes URLs for SEO consistency:
- *  - strips trailing slash (except root)
- *  - removes known tracking params (utm_*, fbclid, gclid, msclkid, mc_cid, mc_eid, ref, _ga)
- *  - lowercases the pathname for case-insensitive routes
- *
- * Uses a 301-equivalent client-side replace (no history entry) and updates
- * the <link rel="canonical"> tag to match the cleaned URL.
+ * Normalizes public URLs and keeps a single canonical tag even when Helmet
+ * inserts route metadata after the router effect (for example after SEO config
+ * finishes loading). Admin URLs are intentionally left untouched.
  */
 const TRACKING_PARAMS = [
   "fbclid", "gclid", "msclkid", "mc_cid", "mc_eid", "ref", "_ga", "yclid",
 ];
-
 const ORIGIN = "https://emporiolelecute.com.br";
 
 function cleanSearch(search: string): string {
@@ -31,37 +26,30 @@ function cleanSearch(search: string): string {
 }
 
 function cleanPath(pathname: string): string {
-  let p = pathname;
-  // skip admin/api
-  if (p.startsWith("/admin")) return p;
-  // lowercase
-  p = p.toLowerCase();
-  // strip trailing slash (except root)
-  if (p.length > 1 && p.endsWith("/")) p = p.replace(/\/+$/, "");
-  return p;
+  if (pathname.startsWith("/admin")) return pathname;
+  let path = pathname.toLowerCase();
+  if (path.length > 1 && path.endsWith("/")) path = path.replace(/\/+$/, "");
+  return path;
 }
 
+/** Prefer Helmet's route-specific canonical; otherwise maintain our fallback. */
 function setCanonical(url: string) {
-  const links = Array.from(
-    document.querySelectorAll<HTMLLinkElement>('link[rel="canonical"]'),
-  );
-  // Helmet (data-rh="true") é a fonte de verdade quando presente:
-  // mantemos apenas UM canonical por página para não confundir crawlers.
-  const helmetLink = links.find((l) => l.dataset.rh === "true");
+  const links = Array.from(document.head.querySelectorAll<HTMLLinkElement>('link[rel="canonical"]'));
+  const helmetLink = links.find((link) => link.dataset.rh === "true");
   if (helmetLink) {
-    links.filter((l) => l !== helmetLink).forEach((l) => l.remove());
+    links.filter((link) => link !== helmetLink).forEach((link) => link.remove());
     return;
   }
-  let link = links[0];
-  links.slice(1).forEach((l) => l.remove());
-  if (!link) {
-    link = document.createElement("link");
-    link.rel = "canonical";
-    document.head.appendChild(link);
-  }
-  link.href = url;
-}
 
+  const [canonical, ...duplicates] = links;
+  duplicates.forEach((link) => link.remove());
+  const target = canonical ?? document.createElement("link");
+  if (!canonical) {
+    target.rel = "canonical";
+    document.head.appendChild(target);
+  }
+  target.href = url;
+}
 
 export default function CanonicalNormalizer() {
   const location = useLocation();
@@ -70,21 +58,20 @@ export default function CanonicalNormalizer() {
   useEffect(() => {
     const cleanedPath = cleanPath(location.pathname);
     const cleanedSearch = cleanSearch(location.search);
-    const needsRedirect =
-      cleanedPath !== location.pathname || cleanedSearch !== location.search;
-
-    if (needsRedirect) {
+    if (cleanedPath !== location.pathname || cleanedSearch !== location.search) {
       navigate(`${cleanedPath}${cleanedSearch}${location.hash}`, { replace: true });
       return;
     }
 
-    setCanonical(`${ORIGIN}${cleanedPath}`);
-    // Helmet injeta o canonical da rota logo após a montagem; roda de novo
-    // para eliminar qualquer duplicata remanescente.
-    const t = window.setTimeout(() => setCanonical(`${ORIGIN}${cleanedPath}`), 400);
-    return () => window.clearTimeout(t);
-  }, [location.pathname, location.search, location.hash, navigate]);
+    const canonicalUrl = `${ORIGIN}${cleanedPath}`;
+    setCanonical(canonicalUrl);
 
+    // Helmet may mount later than this effect when its SEO query resolves.
+    // Observe only head child insertions; deduplication is idempotent.
+    const observer = new MutationObserver(() => setCanonical(canonicalUrl));
+    observer.observe(document.head, { childList: true });
+    return () => observer.disconnect();
+  }, [location.pathname, location.search, location.hash, navigate]);
 
   return null;
 }

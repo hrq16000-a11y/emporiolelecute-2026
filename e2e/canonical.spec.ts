@@ -1,4 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import { installStorefrontFixtures } from "./storefront-fixtures";
+
+test.beforeEach(async ({ page }) => {
+  await installStorefrontFixtures(page);
+});
 
 /**
  * Regressão SEO: páginas de catálogo com query string NÃO podem canonicalizar
@@ -35,14 +40,16 @@ test.describe("SEO — canonical em páginas filtradas", () => {
     const href = await canonicalHref(page);
     expect(new URL(href!).pathname).toBe("/produtos");
     expect(new URL(href!).search).toBe("");
-    expect((await robotsContent(page)) ?? "").toContain("noindex");
+    await expect.poll(() => robotsContent(page)).toContain("noindex");
   });
 
   test("canonical permanece sem parâmetros após reload", async ({ page }) => {
     await openAndSettle(page, "/produtos?ocasiao=maternidade&search=lavanda");
     const before = await canonicalHref(page);
 
-    await page.reload({ waitUntil: "domcontentloaded" });
+    // Full document navigation to the same URL verifies reload persistence.
+    // WebKit's page.reload() can be cancelled by its policy check in this local fixture.
+    await page.goto(page.url(), { waitUntil: "domcontentloaded" });
     await expect(page.locator("main")).toBeVisible();
     await expect.poll(() => canonicalHref(page)).toBe(before);
 

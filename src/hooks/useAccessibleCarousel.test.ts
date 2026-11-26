@@ -7,6 +7,13 @@ function setupDom(total: number, itemW = 100, viewport = 100) {
   Object.defineProperty(scroller, "clientWidth", { configurable: true, value: viewport });
   Object.defineProperty(scroller, "scrollWidth", { configurable: true, value: itemW * total });
   scroller.scrollLeft = 0;
+  const rect = (left: number, width: number): DOMRect => ({
+    x: left, y: 0, left, right: left + width, top: 0, bottom: 50,
+    width, height: 50, toJSON: () => ({}),
+  } as DOMRect);
+  Object.defineProperty(scroller, "getBoundingClientRect", {
+    configurable: true, value: () => rect(0, viewport),
+  });
   scroller.scrollTo = vi.fn((opts: ScrollToOptions) => {
     scroller.scrollLeft = opts.left ?? 0;
   }) as unknown as typeof scroller.scrollTo;
@@ -16,8 +23,9 @@ function setupDom(total: number, itemW = 100, viewport = 100) {
   const items: HTMLElement[] = [];
   for (let i = 0; i < total; i++) {
     const el = document.createElement("a");
-    Object.defineProperty(el, "offsetLeft", { configurable: true, value: i * itemW });
-    Object.defineProperty(el, "offsetWidth", { configurable: true, value: itemW });
+    Object.defineProperty(el, "getBoundingClientRect", {
+      configurable: true, value: () => rect(i * itemW - scroller.scrollLeft, itemW),
+    });
     el.focus = vi.fn();
     items.push(el);
   }

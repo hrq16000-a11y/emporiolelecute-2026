@@ -127,7 +127,7 @@ const OccasionsThumbs = () => {
             aria-activedescendant={list[activeIdx]?.id ? `occ-item-${list[activeIdx].id}` : undefined}
             className={cn(
               "flex gap-3 md:gap-4 overflow-x-auto py-4 px-12 md:px-14",
-              "justify-start md:justify-center",
+              canLeft || canRight ? "justify-start" : "justify-center",
               "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
               "[-webkit-overflow-scrolling:touch] [touch-action:pan-x] [overscroll-behavior-x:contain]",
               "snap-x snap-mandatory scroll-smooth",

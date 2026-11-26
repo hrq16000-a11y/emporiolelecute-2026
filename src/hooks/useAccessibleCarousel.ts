@@ -84,14 +84,17 @@ export function useAccessibleCarousel({
     setCanLeft(el.scrollLeft > 4);
     setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
 
-    const center = el.scrollLeft + el.clientWidth / 2;
+    // offsetLeft is relative to offsetParent, not necessarily this scroller.
+    // getBoundingClientRect keeps selection correct inside transformed home sections.
+    const scrollerRect = el.getBoundingClientRect();
+    const center = scrollerRect.left + scrollerRect.width / 2;
     let bestIdx = lastActiveRef.current;
     let bestDist = Infinity;
     let activeDist = Infinity;
     itemsRef.current.forEach((node, i) => {
       if (!node) return;
-      const c = node.offsetLeft + node.offsetWidth / 2;
-      const d = Math.abs(c - center);
+      const rect = node.getBoundingClientRect();
+      const d = Math.abs(rect.left + rect.width / 2 - center);
       if (d < bestDist) { bestDist = d; bestIdx = i; }
       if (i === lastActiveRef.current) activeDist = d;
     });
@@ -127,10 +130,17 @@ export function useAccessibleCarousel({
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
-    updateState();
+    const initialFrame = requestAnimationFrame(updateState);
     el.addEventListener("scroll", updateState, { passive: true });
     window.addEventListener("resize", updateState);
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateState) : null;
+    observer?.observe(el);
+    itemsRef.current.forEach((node) => {
+      if (node) observer?.observe(node);
+    });
     return () => {
+      cancelAnimationFrame(initialFrame);
+      observer?.disconnect();
       el.removeEventListener("scroll", updateState);
       window.removeEventListener("resize", updateState);
     };
@@ -153,7 +163,14 @@ export function useAccessibleCarousel({
     const node = itemsRef.current[i];
     const el = scrollerRef.current;
     if (!node || !el) return;
-    const target = node.offsetLeft - el.clientWidth / 2 + node.offsetWidth / 2;
+    const scrollerRect = el.getBoundingClientRect();
+    const nodeRect = node.getBoundingClientRect();
+    const scaleX = scrollerRect.width > 0 && el.clientWidth > 0
+      ? scrollerRect.width / el.clientWidth
+      : 1;
+    const nodeCenterInContent =
+      el.scrollLeft + (nodeRect.left - scrollerRect.left) / scaleX + nodeRect.width / scaleX / 2;
+    const target = nodeCenterInContent - el.clientWidth / 2;
     el.scrollTo({ left: target, behavior: "smooth" });
     if (focus) requestAnimationFrame(() => node.focus({ preventScroll: true }));
   }, []);

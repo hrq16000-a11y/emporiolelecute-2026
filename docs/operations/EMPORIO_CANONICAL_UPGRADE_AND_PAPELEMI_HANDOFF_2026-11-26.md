@@ -1,97 +1,114 @@
-# Registro de continuidade — Empório Lele Cute → PapeLemi
-**Data:** 26/11/2026  
-**Repositório de origem:** `hrq16000-a11y/emporiolelecute-2026`  
-**Repositório de destino:** `hrq16000-a11y/papelemi-2026`
+# Empório Lele Cute — Upgrade canônico e handoff PapeLemi
+**Checkpoint:** 26/11/2026  
+**Repositório:** `hrq16000-a11y/emporiolelecute-2026`  
+**Produção:** https://emporiolelecute.com.br  
+**Equipe Vercel:** `msolus`
 
-## 1. Decisão de arquitetura e sequência
+## 1. Estado canônico do Git
 
-O Empório Lele Cute é a **fonte canônica** do motor, da aplicação e das funcionalidades estruturais. A PapeLemi é o destino da replicação/adaptação.
+| Item | Estado confirmado |
+|---|---|
+| `main` | `96fdfe0a15b3394a75969434c181e7e700a8497f` |
+| PR #10 | Integrada; cinco commits preservados |
+| PR #11 | Aberta, não integrada |
+| Branch PR #11 | `fix/qa-stabilize-storefront-post-upgrade-20261126` |
+| Primeiro commit PR #11 | `602f33d47c8008885f6fff8b744cd824421a6f29` |
+| Último commit de implementação validado | `52444ed295963d338e0e66392c4f70057da925f3` |
+| CI da PR #11 | Workflow `45877598798` — PASS |
+| PR #9 | Aberta, Draft, frente separada de segurança |
 
-Sequência obrigatória:
-1. Atualizar e homologar o Empório na origem.
-2. Registrar um checkpoint versionado e documentado da origem.
-3. Comparar a PapeLemi com esse checkpoint.
-4. Transferir em lotes os módulos e migrations compatíveis, adaptando identidade, configuração e integração ao Supabase próprio da PapeLemi.
-5. Provar isolamento entre lojas com testes sintéticos.
-6. Só então integrar e publicar a PapeLemi, mediante gates e autorização próprios.
+O histórico da `main`, a PR #10, a branch original do upgrade e os commits existentes da PR #11 foram preservados. Não houve force push nem alteração direta na `main`.
 
-Não desenvolver a cópia como se fosse a fonte. Não transferir dados comerciais, pedidos, clientes, credenciais, secrets ou configurações privadas do Empório para a PapeLemi. Código e estrutura podem ser replicados; dados operacionais permanecem independentes.
+## 2. Stack do upgrade
 
-## 2. Estado confirmado do Empório
+- React 19.3.1 / React DOM 19.3.1
+- Vite 8.3.8 com pipeline Rolldown
+- TypeScript 6.0.3
+- Vitest 5.1.2
+- Playwright 1.65.1
+- Bun 1.4.5
 
-- `main`: `d01d843c266b5a32d03af22eeaac6eda4a7fcf0f`.
-- PR #10 — [atualização de dependências e compatibilidade](https://github.com/hrq16000-a11y/emporiolelecute-2026/pull/10).
-- Branch: `chore/force-dependency-refresh-20261126`.
-- HEAD observado: `7ff5a07eb5a59ca15b0035ce9d4c89846db1635f`.
-- PR #10 aberta, não Draft, base `main`, mergeável segundo o GitHub no momento da consulta. **Não integrar nesta etapa.**
-- PR #9 — homologação de segurança/RLS em ambiente descartável — continua aberta e Draft, HEAD observado `33378f2bd9d5b428a283cbddc210a7190241ae37`. Não considerar homologada.
-- PRs #1, #6 e #7 também permanecem abertas; reconciliar antes de qualquer fechamento ou merge.
+## 3. PR #11 — escopo e homologação
 
-## 3. Upgrade já realizado na PR #10
+A PR #11 contém correções de canonical/noindex, navegação de categorias e ocasiões, cálculo visual do item ativo em carrosséis transformados, alinhamento dinâmico quando há overflow, estabilidade da Home, galeria/PDP mobile, filtros, carrinho, fixtures reproduzíveis e testes de navegação/reload.
 
-A PR #10 contém atualização do stack, com:
-- Bun 1.4.5 e lockfile canônico `bun.lock`.
-- Vite 8.3.8 + Rolldown 1.2.19.
-- React/React DOM 19.3.1.
-- React Router DOM 7.18.7.
-- TypeScript 6.0.3 (TypeScript 7 foi descartado por incompatibilidade com a faixa suportada pelo typescript-eslint).
-- ESLint 10.15.0; typescript-eslint 8.74.0.
-- Vitest 5.1.2; Playwright 1.65.1.
-- Supabase JS 2.119.2.
-- Plugin React oficial/Oxc no lugar do plugin SWC.
-- Tailwind permanece 3.4.19; componentes com dependências de versões anteriores foram mantidos em versões compatíveis.
-- Correções de tipos Supabase/React 19, configuração TypeScript, Vite e setup Vitest.
+Arquivos alterados: 15. Não há migrations SQL, alteração de catálogo, preços, imagens comerciais, registros de clientes, pedidos ou pagamentos nesta PR.
 
-Evidências declaradas na PR (ainda precisam ser consideradas junto ao CI remoto):
-- instalação congelada, TypeScript e build de produção: PASS local;
-- 261 testes unitários em 40 arquivos: PASS local;
-- audit local: zero vulnerabilidades nos 913 pacotes examinados;
-- 5 testes Playwright direcionados e 15 combinações de rota/largura: PASS local;
-- não houve pedido, pagamento ou gravação comercial real.
+**Resultado do workflow `45877598798`, no commit `52444ed`:**
 
-## 4. CI remoto da PR #10 — bloqueio atual
+| Gate obrigatório | Resultado |
+|---|---|
+| Vitest | PASS |
+| Desktop Chromium | PASS |
+| Tablet WebKit | PASS |
+| Mobile WebKit | PASS |
 
-Workflow observado: `45769029866`.
-- Vitest unit: SUCCESS.
-- Playwright mobile: FAILURE (13 falhas).
-- Playwright desktop Chromium: FAILURE (10 falhas).
-- Playwright tablet: FAILURE (10 falhas).
+A PR está tecnicamente homologada para revisão de integração. Ainda não foi feito merge nem publicação a partir dela.
 
-Os logs apontam sobretudo seletores ausentes para `[data-testid="categories-carousel"]` e `[data-testid="pdp-gallery-main"]`, além de timeouts em filtros de catálogo e falhas de navegação/reload. Não assumir que são todos preexistentes sem comparação reproduzível no HEAD da main. O CI está vermelho; não fazer merge nem publicar.
+## 4. PR #9 — segurança, em trilha separada
 
-Outras pendências explicitadas na PR:
-- ESLint completo: 810 erros e 82 avisos, reportados também no HEAD original da main (precisa preservar a comparação como evidência).
-- Suíte Playwright completa com falhas de canonical/noindex, carrosséis e filtros.
-- O projeto atual é Vite SPA com `createRoot`, não SSR; não inventar gate de hidratação SSR.
-- Integração real Supabase/RLS não foi executada por falta de Supabase CLI/Docker no ambiente original. Nenhum dado Production foi alterado.
+- PR: https://github.com/hrq16000-a11y/emporiolelecute-2026/pull/9
+- Branch: `fix/round-2a-local-rls-test-isolation`
+- HEAD: `7f4777767abba86abab5e7a45e62d157ecd2eb99`
+- Base registrada: `16ac9da9aa1c92c541ce31bb86e1d0f4d20912e4`
+- Estado: aberta, Draft
+- Workflow local descartável: `45877362585` — SUCCESS
 
-## 5. O que foi feito na PapeLemi — somente auditoria, não publicação
+A inicialização do Supabase descartável foi concluída; o erro de bootstrap `cron.unschedule` deixou de bloquear a execução. Os testes locais de RLS, isolamento entre clientes, proteção administrativa e integridade do checkout passaram.
 
-Repositório: `hrq16000-a11y/papelemi-2026`. Durante a auditoria foram observadas PR #13 (transferência do motor) e PR #15 (três commits adicionais de administração de pedidos). Os SHAs mudaram várias vezes durante a inspeção; o último HEAD da PR #13 observado naquela sessão foi `4013d259b5367d2aa2b1d955e078b5e838c404bd`, com 77 commits. Reconfirmar antes de qualquer ação.
+Foi adicionada à branch #9 a migration:
 
-Achados da auditoria naquele snapshot:
-- O schema do engine importado tinha 150 tabelas estruturais e uma tabela operacional adicional; as tabelas comerciais não possuíam `store_key`.
-- As políticas RLS do engine não demonstravam isolamento por loja; as funções privilegiadas, RPCs, Edge Functions, Storage e clientes administrativos precisavam de revisão de contexto de tenant.
-- Catálogo e checkout estavam divididos entre `papelemi_engine` e `public`, com risco de seed inicial sem sincronização contínua.
-- A migration de seed identificava registros próprios da PapeLemi por `store_key='papelemi'`; não foi observada instrução para importar pedidos/clientes comerciais do Empório.
-- O schema `papelemi_engine` não estava aplicado no Supabase hospedado no momento da consulta.
-- PR #15 estava aberta/Draft, com três commits preservados, ainda não reconciliados com a linha atual da PR #13.
+`supabase/migrations/20261126180600_server_authoritative_order_totals.sql`
 
-**Limite da evidência:** esses achados são fotografias do snapshot consultado, não uma afirmação do estado atual. Revalidar o HEAD atual da PapeLemi quando começar a transferência. Nenhuma alteração foi enviada por esta auditoria à PapeLemi; nenhum merge, migration hospedada ou deploy foi executado.
+Ela espelha a regra de preço autoritativo da migration Drizzle `0014_order_return_server_totals.sql`: subtotal, total e preço unitário são calculados no servidor a partir do catálogo, e não aceitos dos valores enviados pelo cliente.
 
-## 6. Restrições de segurança e publicação
+O teste de adulteração enviava subtotal de R$ 0,01 para um produto cujo preço esperado era R$ 39,90. Após a migration na base local descartável, a homologação passou.
 
-- Não alterar `main` diretamente.
-- Não integrar PR #10 até corrigir/explicar os gates Playwright e concluir os gates pertinentes.
-- Não misturar a homologação da PR #9 com o upgrade de dependências sem ambiente descartável isolado.
-- Não executar migrations no Supabase Production nesta etapa.
-- Não publicar Production nem mexer em DNS.
-- Não importar dados, usuários, pedidos, clientes, tokens, secrets ou credenciais entre as lojas.
-- Manter micro-rodadas: uma frente de implementação e validação por vez; evitar repetir suítes inteiras sem mudança de código ou justificativa.
-- Registrar SHA, workflow, evidência e decisão a cada checkpoint.
+**Limite importante:** a migration foi aplicada somente no ambiente descartável do workflow. Não foi integrada na `main` nem executada no banco Production. A PR #9 continua independente e Draft.
 
-## 7. Próxima ação
+## 5. Production — Vercel
 
-Retomar a atualização **na origem Empório**, usando PR #10 como frente de upgrade já existente. Primeiro corrigir os três jobs Playwright remotos com base nos logs, separando falhas reais de regressões e problemas de fixture/seletores. Em seguida reexecutar apenas os testes afetados, depois os gates completos necessários. Reconciliar as PRs #9, #1, #6 e #7 sem descartar trabalho.
+| Verificação | Estado confirmado |
+|---|---|
+| Deployment Production atual | `dpl_9ACnH9Y8kgL3GGKUoq924C4fHcoV` |
+| Estado | READY |
+| Commit publicado | `96fdfe0a15b3394a75969434c181e7e700a8497f` |
+| `emporiolelecute.com.br` | Domínio verificado |
+| `www.emporiolelecute.com.br` | Domínio verificado; redirecionamento 308 para o principal |
 
-Após o upgrade do Empório estar aprovado e integrado em um checkpoint controlado, produzir um manifesto de transferência por módulo/migration para a PapeLemi. Até lá, a PapeLemi não é a fonte de atualização.
+O deployment acima é a Production atual, anterior à PR #11. Nenhum Preview foi promovido e nenhuma nova publicação Production foi feita neste checkpoint.
+
+## 6. Gate de segurança que impede o release
+
+O frontend de checkout utiliza a RPC `create_order_with_items`. A cadeia histórica de migrations Supabase contém uma implementação que aceita valores de subtotal/preço enviados pelo cliente. A migration Drizzle 0014 e a nova migration da PR #9 corrigem esse comportamento, mas não há evidência verificável de que a correção esteja aplicada ao banco Production.
+
+O estado do banco gerenciado do Empório não pôde ser consultado por uma conexão Supabase disponível nesta execução. Os checkpoints anteriores também não registravam aplicação dessas migrations em Production.
+
+Como o merge da PR #11 aciona a integração automática da Vercel com a `main`, publicar sem comprovar a autoridade de preços poderia colocar em Production um checkout com risco de adulteração financeira.
+
+**Decisão deste checkpoint: HOLD de merge e publicação.** A PR #11 permanece aberta e homologada. Não executar migration em Production sem autorização explícita e janela controlada. Antes de integrar/publicar, é necessário comprovar por consulta somente leitura que a função Production já usa preços do catálogo, ou obter autorização separada para aplicar a migration de segurança.
+
+## 7. Handoff para PapeLemi
+
+Até a conclusão do gate de segurança e do release:
+
+1. A referência canônica do Empório continua sendo `main` em `96fdfe0a15b3394a75969434c181e7e700a8497f`.
+2. Não tratar a branch da PR #11 como motor integrado.
+3. Não importar a branch Draft da PR #9 como estado de produção.
+4. Manter dados comerciais, pedidos, usuários, credenciais e banco da PapeLemi independentes.
+5. Após a liberação, atualizar este checkpoint com o SHA definitivo da `main`, o evento de merge da PR #11 e o deployment Production correspondente.
+
+O SHA do merge ainda não existe porque a PR #11 não foi integrada.
+
+## 8. Restrições preservadas nesta execução
+
+- Nenhum force push.
+- Nenhuma alteração direta na `main`.
+- Nenhuma migration executada em Production.
+- Nenhum pedido ou pagamento real criado.
+- Nenhum dado comercial alterado.
+- Nenhuma alteração de DNS ou secrets.
+- Nenhuma PR substituta criada.
+- Nenhum Preview promovido para Production.
+
+**Próximo marco:** comprovação da autoridade de preços no banco Production; depois, merge Squash da PR #11 e uma única publicação Production pela integração já configurada.
