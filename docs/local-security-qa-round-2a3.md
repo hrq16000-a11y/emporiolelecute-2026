@@ -24,3 +24,8 @@ Run [45315880759](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/
 ## Rodada 2A.8 — correção do campo de peso do seed
 
 Run [45316707355](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45316707355) confirmou que o replay das 199 migrations chega ao seed, mas a validação de produto ainda falha. A primeira correção havia preenchido apenas `weight_kg`; a implementação administrativa (`AdminProductForm.tsx`) e a RPC canônica `save_product_full` usam o campo `weight`. O seed local passa a preencher ambos com 0,30 kg, sem alterar triggers, constraints, dados de produção ou migrations. Próxima execução deve validar o seed e então executar os testes de Auth/RLS/privacidade/checkout. A homologação permanece NO-GO até o workflow completo passar.
+
+
+## Rodada 2A.9 — execução do processo de teste isolado
+
+Run [45864871288](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45864871288): o stack descartável completou o replay das migrations e o seed corrigido; o passo de segurança iniciou, mas o usuário sem privilégios não conseguiu executar o binário em `/usr/local/bin/node` (`spawn EACCES`). O workflow agora copia o binário Node resolvido para o diretório temporário compartilhado e executa essa cópia como `leleqa`, preservando o bloqueio de rede externa do usuário. Os testes de Auth/RLS/checkout ainda não foram executados; a homologação continua NO-GO até o próximo run completo.
