@@ -47,7 +47,7 @@ test.describe("SEO — canonical em páginas filtradas", () => {
     await openAndSettle(page, "/produtos?ocasiao=maternidade&search=lavanda");
     const before = await canonicalHref(page);
 
-    await page.reload({ waitUntil: "commit" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator("main")).toBeVisible();
     await expect.poll(() => canonicalHref(page)).toBe(before);
 
