@@ -21,7 +21,10 @@ async function request(path, { token = key, method = 'GET', body, prefer } = {})
   return { status: res.status, data: raw ? JSON.parse(raw) : null };
 }
 function success(r, label) {
-  assert.ok(r.status >= 200 && r.status < 300, label + ': HTTP ' + r.status + ' ' + (r.data?.code ?? ''));
+  const detail = [r.data?.code, r.data?.error, r.data?.msg, r.data?.message]
+    .filter(value => typeof value === 'string' || typeof value === 'number')
+    .join(' | ');
+  assert.ok(r.status >= 200 && r.status < 300, label + ': HTTP ' + r.status + (detail ? ' ' + detail : ''));
   return r.data;
 }
 function denied(r) {
