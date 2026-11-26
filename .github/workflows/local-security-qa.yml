@@ -110,7 +110,7 @@ jobs:
           install -m 0755 "$node_bin" "$tmp/node22"
           chmod -R a+rX "$tmp"
           sudo -u leleqa "$tmp/node22" --version
-          sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL="$api" SUPABASE_ANON_KEY="$key" "$tmp/node22" --experimental-strip-types --test "$tmp/scripts/local-security-qa.mjs"
+          sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL="$api" SUPABASE_ANON_KEY="$key" "$tmp/node22" --experimental-strip-types "$tmp/scripts/local-security-qa.mjs"
       - name: Destroy local stack
         if: always() && steps.isolate.outcome == 'success'
         run: supabase stop --no-backup
