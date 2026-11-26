@@ -41,8 +41,13 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-      - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium webkit
+      - name: Install Playwright browser for the selected project
+        run: |
+          case "${{ matrix.project }}" in
+            desktop-chromium) bunx playwright install --with-deps chromium ;;
+            tablet|mobile) bunx playwright install --with-deps webkit ;;
+            *) echo "Unsupported Playwright project: ${{ matrix.project }}"; exit 1 ;;
+          esac
       - name: Run Playwright (${{ matrix.project }})
         run: bunx playwright test --project=${{ matrix.project }}
         env:
