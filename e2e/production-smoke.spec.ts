@@ -110,7 +110,7 @@ async function expectBrowserClean(
 }
 
 test("Production home carrega e não apresenta overflow", async ({ page }) => {
-  const browser = watchBrowser(page);
+  const browser = await watchBrowser(page);
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
   await expect(page).toHaveTitle(/Empório LeleCute/i);
@@ -120,7 +120,7 @@ test("Production home carrega e não apresenta overflow", async ({ page }) => {
 });
 
 test("Production catálogo carrega produtos e imagens", async ({ page }) => {
-  const browser = watchBrowser(page);
+  const browser = await watchBrowser(page);
   const response = await page.goto("/produtos");
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { level: 1, name: /Sabonete Personalizado/i })).toBeVisible();
@@ -130,7 +130,7 @@ test("Production catálogo carrega produtos e imagens", async ({ page }) => {
 });
 
 test("Production página de produto carrega imagem e CTA", async ({ page }) => {
-  const browser = watchBrowser(page);
+  const browser = await watchBrowser(page);
   const response = await page.goto(PRODUCT_PATH);
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { level: 1, name: /Lembrancinha Sabonete Natal - Presépio Sagrada Família/i })).toBeVisible();
@@ -141,7 +141,7 @@ test("Production página de produto carrega imagem e CTA", async ({ page }) => {
 });
 
 test("Production carrinho vazio apresenta estado correto", async ({ page }) => {
-  const browser = watchBrowser(page);
+  const browser = await watchBrowser(page);
   const response = await page.goto("/carrinho");
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { name: "Carrinho vazio" })).toBeVisible();
@@ -150,7 +150,7 @@ test("Production carrinho vazio apresenta estado correto", async ({ page }) => {
 });
 
 test("checkout integrado abre com produto real sem criar pedido nem pagamento", async ({ page }) => {
-  const browser = watchBrowser(page);
+  const browser = await watchBrowser(page);
   const commercialWrites: string[] = [];
 
   page.on("request", (request) => {
@@ -190,7 +190,7 @@ test("checkout integrado abre com produto real sem criar pedido nem pagamento", 
 });
 
 test("rota administrativa protege o painel e apresenta somente o login sem sessão", async ({ page }) => {
-  const browser = watchBrowser(page);
+  const browser = await watchBrowser(page);
   const response = await page.goto("/admin");
   expect(response?.status()).toBe(200);
   await expect(page).toHaveURL(/\/admin\/login$/);
