@@ -28,6 +28,9 @@ async function openAndSettle(page: Page, url: string) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await expect(page.locator("main")).toBeVisible();
   await expect.poll(() => canonicalHref(page)).not.toBeNull();
+  // DynamicSEO owns robots after React mounts; wait for that contract instead
+  // of reading the static document before hydration completes.
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /^(index, follow|noindex,follow)$/, { timeout: 15000 });
 }
 
 test.describe("SEO — canonical em páginas filtradas", () => {
@@ -51,16 +54,22 @@ test.describe("SEO — canonical em páginas filtradas", () => {
 
   test("paginação legada page=2 também recebe noindex", async ({ page }) => {
     await openAndSettle(page, "/produtos?page=2");
+    expect(page.url()).toContain("page=2");
     const href = await canonicalHref(page);
     expect(new URL(href!).pathname).toBe("/produtos");
     expect(new URL(href!).search).toBe("");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    expect(await page.locator('meta[name="robots"]').count()).toBe(1);
     expect((await robotsContent(page)) ?? "").toContain("noindex");
   });
 
   test("filtros múltiplos não resolvidos continuam noindex", async ({ page }) => {
     await openAndSettle(page, "/produtos?categoria=qa-categoria-inexistente&ocasiao=qa-ocasiao-inexistente");
+    expect(page.url()).toContain("qa-categoria-inexistente");
     const href = await canonicalHref(page);
     expect(new URL(href!).pathname).toBe("/produtos");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    expect(await page.locator('meta[name="robots"]').count()).toBe(1);
     expect((await robotsContent(page)) ?? "").toContain("noindex");
   });
 
