@@ -19,3 +19,8 @@ Run [45315103719](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/
 ## Rodada 2A.7 — replay integral alcança o seed
 
 Run [45315880759](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45315880759): logs registram 199 migrations distintas aplicadas, exatamente o total versionado; a última foi 20261109024000_operational_controls_parity.sql. A execução então falhou no seed: peso obrigatório positivo (SQLSTATE 23514). Corrigido exclusivamente o seed local com peso sintético de 0,30 kg nos dois produtos. Nenhum trigger, constraint, RLS ou RPC foi modificado. A reconstrução adaptada passou da etapa de migrations; não há evidência de outro bloqueio estrutural de replay nesse run. Próxima execução deve comprovar seed, Auth, RLS, privacidade e checkout. CI normal deve voltar com ambiente isolado antes de merge; os E2E existentes incluem catálogo e PDP e precisam de fixtures representativas, não acesso à produção. Inventário dos 72 achados segue pendente.
+
+
+## Rodada 2A.8 — correção do campo de peso do seed
+
+Run [45316707355](https://github.com/hrq16000-a11y/emporiolelecute-2026/actions/runs/45316707355) confirmou que o replay das 199 migrations chega ao seed, mas a validação de produto ainda falha. A primeira correção havia preenchido apenas `weight_kg`; a implementação administrativa (`AdminProductForm.tsx`) e a RPC canônica `save_product_full` usam o campo `weight`. O seed local passa a preencher ambos com 0,30 kg, sem alterar triggers, constraints, dados de produção ou migrations. Próxima execução deve validar o seed e então executar os testes de Auth/RLS/privacidade/checkout. A homologação permanece NO-GO até o workflow completo passar.
