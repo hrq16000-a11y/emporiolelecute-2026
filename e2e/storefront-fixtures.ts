@@ -52,7 +52,7 @@ const PRODUCT = {
 };
 
 const CATEGORIES = [
-  { id: "00000000-0000-4000-a000-000000000010", name: "Sabonetes Artesanais", slug: "sabonetes-artesanais", position: 1, is_indexed: true, is_draft: false, icon: "Gift", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
+  { id: "00000000-0000-4000-a000-000000000010", name: "Sabonetes Artesanais", slug: "sabonetes", position: 1, is_indexed: true, is_draft: false, icon: "Gift", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
   { id: "00000000-0000-4000-a000-000000000011", name: "Papelaria Personalizada", slug: "papelaria-personalizada", position: 2, is_indexed: true, is_draft: false, icon: "Heart", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
   { id: "00000000-0000-4000-a000-000000000012", name: "Velas Aromáticas", slug: "velas-aromaticas", position: 3, is_indexed: true, is_draft: false, icon: "Sparkles", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
 ];
