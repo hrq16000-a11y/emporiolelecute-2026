@@ -98,6 +98,21 @@ const HOME_SECTIONS = [
   { id: "00000000-0000-4000-a000-000000000030", section_key: "categories", component_name: "CategoriesScroll", label: "Categorias", description: null, is_visible: true, position: 10, editable_props: {}, created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },
   { id: "00000000-0000-4000-a000-000000000031", section_key: "occasions", component_name: "OccasionsThumbs", label: "Ocasiões", description: null, is_visible: true, position: 20, editable_props: {}, created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },
 ];
+const HERO_SLIDES = [1, 2, 3].map((position) => ({
+  id: `00000000-0000-4000-a000-${String(40 + position).padStart(12, "0")}`,
+  display_mode: "banner_mobile",
+  tagline: "Ateliê Criativo",
+  title: `Banner sintético ${position}`,
+  subtitle: "Fixture visual de banner para testes automatizados.",
+  image_url: null,
+  image_mobile_url: "/src/assets/category-sabonetes.webp",
+  image_desktop_url: "/src/assets/category-sabonetes.webp",
+  image_alt: "Banner de teste Empório LeleCute",
+  cta_label: null,
+  cta_url: null,
+  position,
+  is_visible: true,
+}));
 const SEO = {
   site_title: "Empório LeleCute — Teste automatizado",
   site_description: "Catálogo sintético para testes E2E.",
@@ -128,7 +143,7 @@ function payloadFor(pathname: string): unknown {
   const table = pathname.split("/").pop() ?? "";
   switch (table) {
     case "home_sections": return HOME_SECTIONS;
-    case "hero_slides": return [];
+    case "hero_slides": return HERO_SLIDES;
     case "categories": return CATEGORIES;
     case "occasions": return OCCASIONS;
     case "store_settings": return SETTINGS;
@@ -139,6 +154,12 @@ function payloadFor(pathname: string): unknown {
 }
 
 export async function installStorefrontFixtures(page: Page) {
+  await page.addInitScript(() => {
+    for (const key of ["categoriesScroll:left", "occasionsThumbs:left"]) {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    }
+  });
   await page.route(/\/rest\/v1\//, async (route: Route) => {
     const url = new URL(route.request().url());
     const data = payloadFor(url.pathname);

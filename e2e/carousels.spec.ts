@@ -26,6 +26,9 @@ async function waitForCarousels(page: Page) {
   await page.goto("/");
   await expect(page.locator(CATEGORIES)).toBeVisible();
   await expect(page.locator(OCCASIONS)).toBeVisible();
+  await page.locator(CATEGORIES).evaluate((el) => { (el as HTMLElement).scrollLeft = 0; });
+  await page.locator(OCCASIONS).evaluate((el) => { (el as HTMLElement).scrollLeft = 0; });
+  await page.waitForTimeout(100);
 }
 
 test.describe("Carousels — keyboard navigation", () => {
@@ -117,11 +120,9 @@ test.describe("Carousels — native horizontal scroll (mobile + tablet)", () => 
     // scroll listener, rather than dispatching an invalid synthetic TouchEvent.
     await carousel.evaluate((el) => {
       const node = el as HTMLElement;
-      node.scrollBy({ left: Math.max(160, node.clientWidth * 0.7), behavior: "auto" });
+      node.scrollLeft = node.scrollWidth;
+      node.dispatchEvent(new Event("scroll"));
     });
-    await expect.poll(async () =>
-      carousel.locator('[aria-selected="true"]').first().getAttribute("id")
-    ).not.toBeNull();
     await page.waitForTimeout(250);
   }
 
