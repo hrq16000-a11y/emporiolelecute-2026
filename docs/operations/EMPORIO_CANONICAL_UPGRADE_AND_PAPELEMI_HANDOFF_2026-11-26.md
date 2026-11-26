@@ -1,79 +1,114 @@
-# Registro canônico de continuidade — Empório Lele Cute → PapeLemi
+# Empório Lele Cute — Upgrade canônico e handoff PapeLemi
+**Checkpoint:** 26/11/2026  
+**Repositório:** `hrq16000-a11y/emporiolelecute-2026`  
+**Produção:** https://emporiolelecute.com.br  
+**Equipe Vercel:** `msolus`
 
-**Atualizado:** 26/11/2026  
-**Origem:** `hrq16000-a11y/emporiolelecute-2026`  
-**Destino:** `hrq16000-a11y/papelemi-2026`
+## 1. Estado canônico do Git
 
-## 1. Fonte e sequência obrigatória
+| Item | Estado confirmado |
+|---|---|
+| `main` | `96fdfe0a15b3394a75969434c181e7e700a8497f` |
+| PR #10 | Integrada; cinco commits preservados |
+| PR #11 | Aberta, não integrada |
+| Branch PR #11 | `fix/qa-stabilize-storefront-post-upgrade-20261126` |
+| Primeiro commit PR #11 | `602f33d47c8008885f6fff8b744cd824421a6f29` |
+| Último commit de implementação validado | `52444ed295963d338e0e66392c4f70057da925f3` |
+| CI da PR #11 | Workflow `45877598798` — PASS |
+| PR #9 | Aberta, Draft, frente separada de segurança |
 
-O Empório Lele Cute é a fonte canônica do motor, da aplicação e das funcionalidades estruturais. A PapeLemi é o destino da replicação/adaptação.
+O histórico da `main`, a PR #10, a branch original do upgrade e os commits existentes da PR #11 foram preservados. Não houve force push nem alteração direta na `main`.
 
-1. Estabilizar e homologar o Empório na origem.
-2. Registrar checkpoint versionado.
-3. Comparar a PapeLemi com esse checkpoint.
-4. Transferir em lotes código, módulos e migrations compatíveis.
-5. Adaptar identidade, configuração e conexão ao Supabase próprio da PapeLemi.
-6. Provar isolamento entre lojas com dados sintéticos.
-7. Integrar/publicar a PapeLemi somente após gates próprios e autorização.
+## 2. Stack do upgrade
 
-Não transferir dados comerciais, pedidos, clientes, credenciais, secrets ou configurações privadas do Empório. Código e estrutura podem ser replicados; dados operacionais permanecem independentes.
+- React 19.3.1 / React DOM 19.3.1
+- Vite 8.3.8 com pipeline Rolldown
+- TypeScript 6.0.3
+- Vitest 5.1.2
+- Playwright 1.65.1
+- Bun 1.4.5
 
-## 2. Checkpoint remoto confirmado
+## 3. PR #11 — escopo e homologação
 
-- `main`: `96fdfe0a15b3394a75969434c181e7e700a8497f`.
-- PR #10: integrada em 26/11/2026; merge commit `96fdfe0a15b3394a75969434c181e7e700a8497f`.
-- Branch histórica `chore/force-dependency-refresh-20261126`: HEAD `533b763b5b5a71daa7a151ec036406d7b1ef2216`; preservar.
-- PR #9: aberta, Draft, base `main`, HEAD `33378f2bd9d5b428a283cbddc210a7190241ae37`; não homologada.
-- PR complementar de estabilização: branch `fix/qa-stabilize-storefront-post-upgrade-20261126`, iniciada na main confirmada.
+A PR #11 contém correções de canonical/noindex, navegação de categorias e ocasiões, cálculo visual do item ativo em carrosséis transformados, alinhamento dinâmico quando há overflow, estabilidade da Home, galeria/PDP mobile, filtros, carrinho, fixtures reproduzíveis e testes de navegação/reload.
 
-## 3. Stack canônico instalado
+Arquivos alterados: 15. Não há migrations SQL, alteração de catálogo, preços, imagens comerciais, registros de clientes, pedidos ou pagamentos nesta PR.
 
-- Bun 1.4.5; lockfile `bun.lock`.
-- React/React DOM 19.3.1.
-- Vite 8.3.8 + Rolldown 1.2.19.
-- React Router DOM 7.18.7.
-- TypeScript 6.0.3; ESLint 10.15.0; typescript-eslint 8.74.0.
-- Vitest 5.1.2; Playwright 1.65.1.
-- Supabase JS 2.119.2.
-- Plugin React oficial/Oxc.
-- Tailwind 3.4.19; react-day-picker 8.10.2, Recharts 2.15.4 e react-resizable-panels 2.1.9 mantidos em linhas compatíveis.
+**Resultado do workflow `45877598798`, no commit `52444ed`:**
 
-## 4. Evidência CI da main pós-merge
+| Gate obrigatório | Resultado |
+|---|---|
+| Vitest | PASS |
+| Desktop Chromium | PASS |
+| Tablet WebKit | PASS |
+| Mobile WebKit | PASS |
 
-Workflow CI #45855389664, commit `96fdfe0a`:
-- Vitest: SUCCESS.
-- Playwright Desktop Chromium: FAILURE, 9 testes.
-- Playwright Tablet/WebKit: FAILURE, 9 testes.
-- Playwright Mobile/WebKit: FAILURE, 11 testes.
-- Os logs identificam ausência do carrossel de categorias na home no ambiente E2E, falhas de canonical e, em mobile, regressões/fixtures da PDP.
-- Os relatórios Playwright foram enviados como artefatos do workflow.
-- Não considerar o upgrade integralmente homologado até fechar ou justificar os gates E2E.
+A PR está tecnicamente homologada para revisão de integração. Ainda não foi feito merge nem publicação a partir dela.
 
-O ESLint completo reportou 810 erros e 82 avisos também observados na main anterior; não desativar regras nem misturar correção ampla fora de escopo.
+## 4. PR #9 — segurança, em trilha separada
 
-## 5. Correção complementar em andamento
+- PR: https://github.com/hrq16000-a11y/emporiolelecute-2026/pull/9
+- Branch: `fix/round-2a-local-rls-test-isolation`
+- HEAD: `7f4777767abba86abab5e7a45e62d157ecd2eb99`
+- Base registrada: `16ac9da9aa1c92c541ce31bb86e1d0f4d20912e4`
+- Estado: aberta, Draft
+- Workflow local descartável: `45877362585` — SUCCESS
 
-Primeira correção de código: `CanonicalNormalizer` passa a observar inserções tardias no `head`, deduplicando canonical quando Helmet monta metadados após a consulta de SEO. Essa alteração requer CI direcionado e regressão E2E antes de ser considerada aprovada.
+A inicialização do Supabase descartável foi concluída; o erro de bootstrap `cron.unschedule` deixou de bloquear a execução. Os testes locais de RLS, isolamento entre clientes, proteção administrativa e integridade do checkout passaram.
 
-Carrosséis e PDP ainda exigem investigação específica. Os componentes contêm os seletores `categories-carousel`, `occasions-carousel` e `pdp-gallery-main`; a ausência no teste pode decorrer da configuração dinâmica da home, do estado do catálogo ou do fixture. Não inserir seletores artificiais nem mudar a configuração comercial para satisfazer testes.
+Foi adicionada à branch #9 a migration:
 
-## 6. Segurança — PR #9
+`supabase/migrations/20261126180600_server_authoritative_order_totals.sql`
 
-A PR #9 introduz um workflow de Supabase descartável e testes sintéticos, mas continua Draft. A documentação da própria PR registra bloqueio de bootstrap SQLSTATE XX000 em migration histórica durante `cron.unschedule`; os testes reais de RLS não foram executados naquela tentativa. Portanto, não há evidência suficiente de isolamento efetivo ainda.
+Ela espelha a regra de preço autoritativo da migration Drizzle `0014_order_return_server_totals.sql`: subtotal, total e preço unitário são calculados no servidor a partir do catálogo, e não aceitos dos valores enviados pelo cliente.
 
-Antes de homologar:
-- executar migrations somente em stack local descartável;
-- remover tokens/secrets remotos do ambiente do job;
-- bloquear egress dos containers;
-- validar RLS com anônimo, dois clientes sintéticos e administrador;
-- verificar pedidos, itens, preços, RPCs e funções privilegiadas;
-- garantir CI convencional sem exceção permanente para a branch;
-- nunca usar dados reais ou aplicar migrations em Production.
+O teste de adulteração enviava subtotal de R$ 0,01 para um produto cujo preço esperado era R$ 39,90. Após a migration na base local descartável, a homologação passou.
 
-## 7. Limites desta rodada
+**Limite importante:** a migration foi aplicada somente no ambiente descartável do workflow. Não foi integrada na `main` nem executada no banco Production. A PR #9 continua independente e Draft.
 
-Não fazer merge da PR complementar nem da PR #9 sem gates aprovados. Não publicar Production, alterar DNS, secrets ou banco hospedado. Não criar pedidos/pagamentos reais. A PapeLemi não recebe alterações nesta etapa.
+## 5. Production — Vercel
 
-## 8. Próximo checkpoint
+| Verificação | Estado confirmado |
+|---|---|
+| Deployment Production atual | `dpl_9ACnH9Y8kgL3GGKUoq924C4fHcoV` |
+| Estado | READY |
+| Commit publicado | `96fdfe0a15b3394a75969434c181e7e700a8497f` |
+| `emporiolelecute.com.br` | Domínio verificado |
+| `www.emporiolelecute.com.br` | Domínio verificado; redirecionamento 308 para o principal |
 
-Registrar SHA final, arquivos alterados, resultados CI por projeto, testes unitários/build/TypeScript, evidências de RLS local e pendências. Só depois iniciar a comparação e transferência integral do motor para a PapeLemi.
+O deployment acima é a Production atual, anterior à PR #11. Nenhum Preview foi promovido e nenhuma nova publicação Production foi feita neste checkpoint.
+
+## 6. Gate de segurança que impede o release
+
+O frontend de checkout utiliza a RPC `create_order_with_items`. A cadeia histórica de migrations Supabase contém uma implementação que aceita valores de subtotal/preço enviados pelo cliente. A migration Drizzle 0014 e a nova migration da PR #9 corrigem esse comportamento, mas não há evidência verificável de que a correção esteja aplicada ao banco Production.
+
+O estado do banco gerenciado do Empório não pôde ser consultado por uma conexão Supabase disponível nesta execução. Os checkpoints anteriores também não registravam aplicação dessas migrations em Production.
+
+Como o merge da PR #11 aciona a integração automática da Vercel com a `main`, publicar sem comprovar a autoridade de preços poderia colocar em Production um checkout com risco de adulteração financeira.
+
+**Decisão deste checkpoint: HOLD de merge e publicação.** A PR #11 permanece aberta e homologada. Não executar migration em Production sem autorização explícita e janela controlada. Antes de integrar/publicar, é necessário comprovar por consulta somente leitura que a função Production já usa preços do catálogo, ou obter autorização separada para aplicar a migration de segurança.
+
+## 7. Handoff para PapeLemi
+
+Até a conclusão do gate de segurança e do release:
+
+1. A referência canônica do Empório continua sendo `main` em `96fdfe0a15b3394a75969434c181e7e700a8497f`.
+2. Não tratar a branch da PR #11 como motor integrado.
+3. Não importar a branch Draft da PR #9 como estado de produção.
+4. Manter dados comerciais, pedidos, usuários, credenciais e banco da PapeLemi independentes.
+5. Após a liberação, atualizar este checkpoint com o SHA definitivo da `main`, o evento de merge da PR #11 e o deployment Production correspondente.
+
+O SHA do merge ainda não existe porque a PR #11 não foi integrada.
+
+## 8. Restrições preservadas nesta execução
+
+- Nenhum force push.
+- Nenhuma alteração direta na `main`.
+- Nenhuma migration executada em Production.
+- Nenhum pedido ou pagamento real criado.
+- Nenhum dado comercial alterado.
+- Nenhuma alteração de DNS ou secrets.
+- Nenhuma PR substituta criada.
+- Nenhum Preview promovido para Production.
+
+**Próximo marco:** comprovação da autoridade de preços no banco Production; depois, merge Squash da PR #11 e uma única publicação Production pela integração já configurada.
