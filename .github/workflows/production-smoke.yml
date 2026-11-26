@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         project: [desktop-chromium, tablet-768, mobile]
     steps:
@@ -38,7 +39,7 @@ jobs:
             *) echo "Unsupported Playwright project: ${{ matrix.project }}"; exit 1 ;;
           esac
       - name: Run read-only production smoke tests
-        run: bunx playwright test e2e/production-smoke.spec.ts --project=${{ matrix.project }}
+        run: bunx playwright test e2e/production-smoke.spec.ts --project=${{ matrix.project }} --workers=1 --retries=0
         env:
           CI: "true"
           BASE_URL: https://emporiolelecute.com.br
