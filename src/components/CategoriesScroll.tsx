@@ -96,7 +96,7 @@ const CategoriesScroll = () => {
             aria-activedescendant={visible[activeIdx]?.id ? `cat-item-${visible[activeIdx].id}` : undefined}
             className={cn(
               "flex gap-3 md:gap-7 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-3 md:pb-4 px-1 md:px-2",
-              "justify-start md:justify-center",
+              canLeft || canRight ? "justify-start" : "justify-center",
               "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
               "[-webkit-overflow-scrolling:touch] [touch-action:pan-x] [overscroll-behavior-x:contain]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl",
