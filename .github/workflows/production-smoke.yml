@@ -11,18 +11,13 @@ permissions:
 
 concurrency:
   group: production-smoke-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   smoke:
-    name: Production smoke (${{ matrix.project }})
+    name: Production smoke (1440 / 768 / 390)
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        project: [desktop-chromium, tablet-768, mobile]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -30,16 +25,22 @@ jobs:
           bun-version: 1.4.4
       - name: Install frozen dependencies
         run: bun install --frozen-lockfile
-      - name: Install only the browser required by this viewport
-        shell: bash
-        run: |
-          case "${{ matrix.project }}" in
-            desktop-chromium) bunx playwright install --with-deps chromium ;;
-            tablet-768|mobile) bunx playwright install --with-deps webkit ;;
-            *) echo "Unsupported Playwright project: ${{ matrix.project }}"; exit 1 ;;
-          esac
-      - name: Run read-only production smoke tests
-        run: bunx playwright test e2e/production-smoke.spec.ts --project=${{ matrix.project }} --workers=1 --retries=0
+      - name: Install Chromium once
+        run: bunx playwright install --with-deps chromium
+      - name: Run read-only Production smoke at 1440px
+        run: bunx playwright test e2e/production-smoke.spec.ts --project=desktop-chromium --workers=1 --retries=0
+        env:
+          CI: "true"
+          BASE_URL: https://emporiolelecute.com.br
+          PW_NO_SERVER: "1"
+      - name: Run read-only Production smoke at 768px
+        run: bunx playwright test e2e/production-smoke.spec.ts --project=tablet-768 --workers=1 --retries=0
+        env:
+          CI: "true"
+          BASE_URL: https://emporiolelecute.com.br
+          PW_NO_SERVER: "1"
+      - name: Run read-only Production smoke at 390px
+        run: bunx playwright test e2e/production-smoke.spec.ts --project=mobile-390-chromium --workers=1 --retries=0
         env:
           CI: "true"
           BASE_URL: https://emporiolelecute.com.br
@@ -48,7 +49,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: production-smoke-${{ matrix.project }}
+          name: production-smoke-readonly
           path: |
             playwright-report
             test-results
