@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useDbCategories } from '@/hooks/useProducts';
 import { useTags } from '@/hooks/useTags';
@@ -87,7 +88,7 @@ const BulkEditProductsDialog = ({ open, onOpenChange, selectedIds, onDone }: Pro
     if (!anyChecked || selectedIds.length === 0) return;
 
     // Patch comum (não envolve preço % nem keywords merge)
-    const patch: Record<string, unknown> = {};
+    const patch: Database['public']['Tables']['products']['Update'] = {};
     if (useCategory) patch.category_id = !categoryId || categoryId === '__none__' ? null : categoryId;
     if (useProductionDays) patch.production_days = parseInt(productionDays, 10) || 0;
     if (useMinQuantity) patch.min_quantity = Math.max(1, parseInt(minQuantity, 10) || 1);

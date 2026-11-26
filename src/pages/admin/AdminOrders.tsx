@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { 
   Package, 
   Search, 
@@ -173,7 +174,7 @@ const AdminOrders = () => {
       newStatus: string;
       tracking?: { code: string; carrier?: string; url?: string };
     }) => {
-      const update: Record<string, unknown> = { status: newStatus };
+      const update: Database['public']['Tables']['orders']['Update'] = { status: newStatus };
       if (newStatus === 'shipped' && tracking?.code) {
         update.tracking_code = tracking.code;
         update.tracking_carrier = tracking.carrier || null;

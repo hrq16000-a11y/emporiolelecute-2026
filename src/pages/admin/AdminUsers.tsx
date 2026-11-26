@@ -1,7 +1,7 @@
 // /admin/usuarios — Gestão de Usuários e Permissões Internas
 // Fase 3: removido suporte a "visitor" e "order" (essas origens vão para /admin/clientes).
 // Restam apenas duas categorias: Administradores/Editores (auth) e Clientes Cadastrados (CRM).
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useContactInfo } from "@/hooks/useContactInfo";
@@ -590,7 +590,7 @@ const AdminUsers = () => {
 };
 
 // ============== Auditoria por usuário ==============
-const UserAuditPanel = ({ email, statusBadge }: { email: string | null; statusBadge: (s: string) => JSX.Element }) => {
+const UserAuditPanel = ({ email, statusBadge }: { email: string | null; statusBadge: (s: string) => ReactElement }) => {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [status, setStatus] = useState("all");

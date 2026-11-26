@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { resolveProductSlug, recordProductSlugHit, type ResolvedVia, type ResolvedSlug } from '@/lib/productResolver';
 import { logSlugEvent } from '@/lib/slugObservability';
 import { useCatalogVersion } from '@/hooks/useSearchCacheVersion';
@@ -338,10 +339,11 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...product }: Partial<DbProduct> & { id: string }) => {
+    mutationFn: async ({ id, category: _category, occasions: _occasions, tags: _tags, segments: _segments, __slugMeta: _slugMeta, ...product }: Partial<DbProduct> & { id: string }) => {
+      const update = product as Database['public']['Tables']['products']['Update'];
       const { data, error } = await supabase
         .from('products')
-        .update(product)
+        .update(update)
         .eq('id', id)
         .select()
         .single();
