@@ -538,12 +538,12 @@ const Produtos = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <DynamicSEO title={seoTitle} description={seoDescription} url={canonicalUrl} />
-      {!isIndexable && (
-        <Helmet>
-          <meta name="robots" content="noindex,follow" />
-        </Helmet>
-      )}
+      <DynamicSEO
+        title={seoTitle}
+        description={seoDescription}
+        url={canonicalUrl}
+        robots={isIndexable ? "index, follow" : "noindex,follow"}
+      />
       <BreadcrumbStructuredData items={breadcrumbItems} />
 
       {/* FAQPage JSON-LD para rich snippet no Google */}
