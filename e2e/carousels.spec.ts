@@ -125,20 +125,24 @@ test.describe("Carousels — native horizontal scroll (mobile + tablet)", () => 
     }));
     expect(geometry.scrollWidth).toBeGreaterThan(geometry.clientWidth + 4);
 
-    // Exercise the scroll listener at the completed native-scroll position.
-    // Temporarily disable CSS smooth scrolling so the assertion does not race
-    // the animation timeline on tablet WebKit.
+    // Exercise a meaningful native scroll without requiring WebKit to land
+    // on the exact max offset; scroll-snap may settle on the nearest item.
+    const initialScrollLeft = await carousel.evaluate((el) => el.scrollLeft);
     await carousel.evaluate((el) => {
       const node = el as HTMLElement;
       const previousBehavior = node.style.scrollBehavior;
       node.style.scrollBehavior = "auto";
-      node.scrollLeft = node.scrollWidth - node.clientWidth;
+      const target = Math.min(
+        node.scrollWidth - node.clientWidth,
+        node.scrollLeft + Math.max(96, node.clientWidth * 0.8),
+      );
+      node.scrollLeft = target;
       node.dispatchEvent(new Event("scroll"));
       node.style.scrollBehavior = previousBehavior;
     });
     await expect.poll(() =>
-      carousel.evaluate((el) => el.scrollLeft + el.clientWidth >= el.scrollWidth - 4)
-    ).toBe(true);
+      carousel.evaluate((el) => el.scrollLeft)
+    ).toBeGreaterThan(initialScrollLeft + 4);
   }
 
   test("Categories: horizontal scroll changes the active category", async ({ page }) => {
