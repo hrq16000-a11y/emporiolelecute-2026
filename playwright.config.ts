@@ -44,13 +44,22 @@ export default defineConfig({
       // Production smoke uses the requested exact 768px tablet width.
       name: "tablet-768",
       use: {
-        ...devices["iPad (gen 7)"],
+        ...devices["Desktop Chrome"],
         viewport: { width: 768, height: 1024 },
         hasTouch: true,
         isMobile: true,
-        userAgent:
-          "Mozilla/5.0 (iPad; CPU OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
-        defaultBrowserType: "webkit",
+        defaultBrowserType: "chromium",
+      },
+    },
+    {
+      // Production smoke mobile viewport: exact 390px width using Chromium.
+      name: "mobile-390-chromium",
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        isMobile: true,
+        defaultBrowserType: "chromium",
       },
     },
     {
