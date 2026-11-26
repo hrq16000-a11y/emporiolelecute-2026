@@ -1,21 +1,27 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Request } from "@playwright/test";
 
 const PRODUCT_PATH = "/produto/lembrancinha-sabonete-natal-presepio-sagrada-familia";
 
 function watchBrowser(page: Page) {
   const errors: string[] = [];
+  const pending = new Set<Request>();
+
+  page.on("request", (request) => pending.add(request));
+  page.on("requestfinished", (request) => pending.delete(request));
+  page.on("requestfailed", (request) => {
+    pending.delete(request);
+    errors.push(`requestfailed: ${request.method()} ${request.url()} — ${request.failure()?.errorText ?? "unknown"}`);
+  });
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
-  page.on("requestfailed", (request) => {
-    const error = request.failure()?.errorText ?? "unknown";
-    // Chromium/WebKit report ERR_ABORTED when SPA navigation cancels requests
-    // from the previous route. Keep real network failures visible and failing.
-    if (error === "net::ERR_ABORTED") return;
-    errors.push(`requestfailed: ${request.method()} ${request.url()} — ${error}`);
-  });
-  return errors;
+
+  return { errors, pending };
+}
+
+async function waitForNetworkIdle(pending: Set<Request>) {
+  await expect.poll(() => pending.size, { timeout: 20000 }).toBe(0);
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -51,32 +57,53 @@ async function fillRequiredPersonalization(page: Page) {
   }
 }
 
-test("Production home, catálogo e página de produto carregam sem erros", async ({ page }) => {
-  const errors = watchBrowser(page);
+async function expectBrowserClean(errors: string[], pending: Set<Request>) {
+  await waitForNetworkIdle(pending);
+  expect(errors, errors.join("\n")).toEqual([]);
+}
 
-  const home = await page.goto("/");
-  expect(home?.status()).toBe(200);
+test("Production home carrega e não apresenta overflow", async ({ page }) => {
+  const browser = watchBrowser(page);
+  const response = await page.goto("/");
+  expect(response?.status()).toBe(200);
   await expect(page).toHaveTitle(/Empório LeleCute/i);
   await expect(page.locator("main")).toBeVisible();
   await expectNoHorizontalOverflow(page);
+  await expectBrowserClean(browser.errors, browser.pending);
+});
 
-  const catalog = await page.goto("/produtos");
-  expect(catalog?.status()).toBe(200);
+test("Production catálogo carrega produtos e imagens", async ({ page }) => {
+  const browser = watchBrowser(page);
+  const response = await page.goto("/produtos");
+  expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { level: 1, name: /Sabonete Personalizado/i })).toBeVisible();
   await expectFirstMainImageLoaded(page);
   await expectNoHorizontalOverflow(page);
-
-  const product = await page.goto(PRODUCT_PATH);
-  expect(product?.status()).toBe(200);
-  await expect(page.getByRole("heading", { level: 1, name: /Lembrancinha Sabonete Natal - Presépio Sagrada Família/i })).toBeVisible();
-  await expectFirstMainImageLoaded(page);
-  await expectNoHorizontalOverflow(page);
-
-  expect(errors, errors.join("\n")).toEqual([]);
+  await expectBrowserClean(browser.errors, browser.pending);
 });
 
-test("carrinho e checkout integrado carregam com item sintético de sessão, sem criar pedido", async ({ page }) => {
-  const errors = watchBrowser(page);
+test("Production página de produto carrega imagem e CTA", async ({ page }) => {
+  const browser = watchBrowser(page);
+  const response = await page.goto(PRODUCT_PATH);
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { level: 1, name: /Lembrancinha Sabonete Natal - Presépio Sagrada Família/i })).toBeVisible();
+  await expectFirstMainImageLoaded(page);
+  await expect(page.getByRole("button", { name: /Adicionar ao Carrinho/i }).first()).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await expectBrowserClean(browser.errors, browser.pending);
+});
+
+test("Production carrinho vazio apresenta estado correto", async ({ page }) => {
+  const browser = watchBrowser(page);
+  const response = await page.goto("/carrinho");
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "Carrinho vazio" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await expectBrowserClean(browser.errors, browser.pending);
+});
+
+test("checkout integrado abre com produto real sem criar pedido nem pagamento", async ({ page }) => {
+  const browser = watchBrowser(page);
   const commercialWrites: string[] = [];
 
   page.on("request", (request) => {
@@ -87,12 +114,9 @@ test("carrinho e checkout integrado carregam com item sintético de sessão, sem
     }
   });
 
-  const emptyCart = await page.goto("/carrinho");
-  expect(emptyCart?.status()).toBe(200);
-  await expect(page.getByRole("heading", { name: "Carrinho vazio" })).toBeVisible();
-
   await page.goto(PRODUCT_PATH);
   await expect(page.getByRole("heading", { level: 1, name: /Lembrancinha Sabonete Natal - Presépio Sagrada Família/i })).toBeVisible();
+  await expectBrowserClean(browser.errors, browser.pending);
   await fillRequiredPersonalization(page);
 
   const addToCart = page.getByRole("button", { name: /Adicionar ao Carrinho/i }).first();
@@ -112,15 +136,14 @@ test("carrinho e checkout integrado carregam com item sintético de sessão, sem
   await expect(page.locator("#finalize-whatsapp-btn")).toBeVisible();
   await expect(page.locator("#finalize-whatsapp-btn")).toBeEnabled();
   await expectNoHorizontalOverflow(page);
+  await expectBrowserClean(browser.errors, browser.pending);
 
-  // Não clicar em "Finalizar pelo WhatsApp": a homologação não deve criar pedidos nem iniciar pagamentos.
+  // Não clicar em "Finalizar pelo WhatsApp": a homologação não cria pedidos nem inicia pagamentos.
   expect(commercialWrites).toEqual([]);
-  expect(errors, errors.join("\n")).toEqual([]);
 });
 
 test("rota administrativa protege o painel e apresenta somente o login sem sessão", async ({ page }) => {
-  const errors = watchBrowser(page);
-
+  const browser = watchBrowser(page);
   const response = await page.goto("/admin");
   expect(response?.status()).toBe(200);
   await expect(page).toHaveURL(/\/admin\/login$/);
@@ -128,6 +151,5 @@ test("rota administrativa protege o painel e apresenta somente o login sem sess�
   await expect(page.locator("#email")).toBeVisible();
   await expect(page.locator("#password")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-
-  expect(errors, errors.join("\n")).toEqual([]);
+  await expectBrowserClean(browser.errors, browser.pending);
 });
