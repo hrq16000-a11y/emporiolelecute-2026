@@ -1,0 +1,66 @@
+name: Catalog SEO validation (isolated)
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/pages/Produtos.tsx"
+      - "e2e/canonical.spec.ts"
+      - "scripts/generate-sitemap.ts"
+      - ".github/workflows/catalog-seo-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-seo-validation
+  cancel-in-progress: true
+
+jobs:
+  canonical:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - name: Install frozen dependencies
+        run: bun install --frozen-lockfile
+      - name: Build with production sitemap writes disabled
+        run: bun run build
+        env:
+          CI: "true"
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+      - name: Start Vite without package lifecycle hooks
+        shell: bash
+        run: |
+          bunx vite --host 127.0.0.1 --port 8080 > "$RUNNER_TEMP/catalog-vite.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/catalog-vite.pid"
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:8080/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/catalog-vite.log"
+          exit 1
+      - name: Run canonical and robots regression tests
+        run: bunx playwright test e2e/canonical.spec.ts --project=desktop-chromium --workers=1 --retries=0
+        env:
+          BASE_URL: http://127.0.0.1:8080
+          PW_NO_SERVER: "1"
+          CI: "true"
+      - name: Upload Playwright evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-seo-validation
+          path: |
+            playwright-report
+            test-results
+            ${{ runner.temp }}/catalog-vite.log
+          retention-days: 7
