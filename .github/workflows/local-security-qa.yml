@@ -101,7 +101,7 @@ jobs:
           test "$api" = "http://127.0.0.1:54321"
           test -n "$key"
           echo "::add-mask::$key"
-          tmp="$(mktemp -d)"
+          tmp="$(mktemp -d "$GITHUB_WORKSPACE/.local-security-qa.XXXXXX")"
           trap 'rm -rf "$tmp"' EXIT
           mkdir -p "$tmp/scripts" "$tmp/supabase/functions/track-order"
           cp scripts/local-security-qa.mjs "$tmp/scripts/"
@@ -109,6 +109,7 @@ jobs:
           node_bin="$(readlink -f "$(command -v node)")"
           install -m 0755 "$node_bin" "$tmp/node"
           chmod -R a+rX "$tmp"
+          sudo -u leleqa "$tmp/node" --version
           sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL="$api" SUPABASE_ANON_KEY="$key" "$tmp/node" --experimental-strip-types --test "$tmp/scripts/local-security-qa.mjs"
       - name: Destroy local stack
         if: always() && steps.isolate.outcome == 'success'
