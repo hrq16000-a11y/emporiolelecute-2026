@@ -57,7 +57,11 @@ async function fillRequiredPersonalization(page: Page) {
   }
 }
 
-async function expectBrowserClean(errors: string[], pending: Set<Request>) {
+async function expectBrowserClean(page: Page, errors: string[], pending: Set<Request>) {
+  // page.goto waits for document load, not every dynamic import triggered by
+  // hydration. Wait for browser network quiescence before closing the page so
+  // Playwright does not report teardown-induced ERR_ABORTED as app failures.
+  await page.waitForLoadState("networkidle", { timeout: 20000 });
   await waitForNetworkIdle(pending);
   expect(errors, errors.join("\n")).toEqual([]);
 }
@@ -69,7 +73,7 @@ test("Production home carrega e não apresenta overflow", async ({ page }) => {
   await expect(page).toHaveTitle(/Empório LeleCute/i);
   await expect(page.locator("main")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(browser.errors, browser.pending);
+  await expectBrowserClean(page, browser.errors, browser.pending);
 });
 
 test("Production catálogo carrega produtos e imagens", async ({ page }) => {
@@ -79,7 +83,7 @@ test("Production catálogo carrega produtos e imagens", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: /Sabonete Personalizado/i })).toBeVisible();
   await expectFirstMainImageLoaded(page);
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(browser.errors, browser.pending);
+  await expectBrowserClean(page, browser.errors, browser.pending);
 });
 
 test("Production página de produto carrega imagem e CTA", async ({ page }) => {
@@ -90,7 +94,7 @@ test("Production página de produto carrega imagem e CTA", async ({ page }) => {
   await expectFirstMainImageLoaded(page);
   await expect(page.getByRole("button", { name: /Adicionar ao Carrinho/i }).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(browser.errors, browser.pending);
+  await expectBrowserClean(page, browser.errors, browser.pending);
 });
 
 test("Production carrinho vazio apresenta estado correto", async ({ page }) => {
@@ -99,7 +103,7 @@ test("Production carrinho vazio apresenta estado correto", async ({ page }) => {
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { name: "Carrinho vazio" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(browser.errors, browser.pending);
+  await expectBrowserClean(page, browser.errors, browser.pending);
 });
 
 test("checkout integrado abre com produto real sem criar pedido nem pagamento", async ({ page }) => {
@@ -116,7 +120,7 @@ test("checkout integrado abre com produto real sem criar pedido nem pagamento", 
 
   await page.goto(PRODUCT_PATH);
   await expect(page.getByRole("heading", { level: 1, name: /Lembrancinha Sabonete Natal - Presépio Sagrada Família/i })).toBeVisible();
-  await expectBrowserClean(browser.errors, browser.pending);
+  await expectBrowserClean(page, browser.errors, browser.pending);
   await fillRequiredPersonalization(page);
 
   const addToCart = page.getByRole("button", { name: /Adicionar ao Carrinho/i }).first();
@@ -136,7 +140,7 @@ test("checkout integrado abre com produto real sem criar pedido nem pagamento", 
   await expect(page.locator("#finalize-whatsapp-btn")).toBeVisible();
   await expect(page.locator("#finalize-whatsapp-btn")).toBeEnabled();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(browser.errors, browser.pending);
+  await expectBrowserClean(page, browser.errors, browser.pending);
 
   // Não clicar em "Finalizar pelo WhatsApp": a homologação não cria pedidos nem inicia pagamentos.
   expect(commercialWrites).toEqual([]);
@@ -151,5 +155,5 @@ test("rota administrativa protege o painel e apresenta somente o login sem sess�
   await expect(page.locator("#email")).toBeVisible();
   await expect(page.locator("#password")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expectBrowserClean(browser.errors, browser.pending);
+  await expectBrowserClean(page, browser.errors, browser.pending);
 });
