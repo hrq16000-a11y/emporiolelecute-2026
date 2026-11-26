@@ -93,7 +93,7 @@ const Produtos = () => {
   useEffect(() => {
     try { localStorage.setItem('produtos:filtersOpen', filtersOpen ? '1' : '0'); } catch { /* ignore */ }
   }, [filtersOpen]);
-  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('pagina') ?? searchParams.get('page')) || 1);
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('pagina') || searchParams.get('page')) || 1);
 
   // Debounce search for better performance
   const debouncedSearch = useDebounce(search, 300);
@@ -179,6 +179,7 @@ const Produtos = () => {
       else next.delete("busca");
       next.delete("search");
       next.delete("pagina");
+      next.delete("page");
       return next;
     }, { replace: true });
   };
@@ -484,7 +485,7 @@ const Produtos = () => {
   const rawStructuralCount = ['categoria', 'ocasiao', 'segmento']
     .filter((key) => Boolean(searchParams.get(key))).length;
   const rawTag = Boolean(searchParams.get('tag'));
-  const rawSearch = Boolean((searchParams.get('busca') ?? searchParams.get('search') ?? '').trim());
+  const rawSearch = Boolean((searchParams.get('busca') || searchParams.get('search') ?? '').trim());
   const rawPage = Number(searchParams.get('pagina') ?? searchParams.get('page') ?? 1);
   const hasPagination = Number.isFinite(rawPage) && rawPage > 1;
   const hasUnresolvedStructuralFilter = rawStructuralCount > structuralCount;
