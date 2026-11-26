@@ -101,7 +101,7 @@ jobs:
           test "$api" = "http://127.0.0.1:54321"
           test -n "$key"
           echo "::add-mask::$key"
-          tmp="$(mktemp -d "$GITHUB_WORKSPACE/.local-security-qa.XXXXXX")"
+          tmp="$(mktemp -d /tmp/local-security-qa.XXXXXX)"
           trap 'rm -rf "$tmp"' EXIT
           mkdir -p "$tmp/scripts" "$tmp/supabase/functions/track-order"
           cp scripts/local-security-qa.mjs "$tmp/scripts/"
