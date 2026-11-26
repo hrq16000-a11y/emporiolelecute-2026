@@ -111,6 +111,23 @@ jobs:
           chmod -R a+rX "$tmp"
           sudo -u leleqa "$tmp/node22" --version
           sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL="$api" SUPABASE_ANON_KEY="$key" "$tmp/node22" --experimental-strip-types "$tmp/scripts/local-security-qa.mjs"
+      - name: Capture local Auth and Postgres logs on failure
+        if: failure() && steps.isolate.outcome == 'success'
+        shell: bash
+        run: |
+          set +e
+          echo "=== disposable Supabase containers ==="
+          docker ps -a --format '{{.Names}}'
+          auth_container="$(docker ps -aq --filter name=supabase_auth | head -n1)"
+          if [ -n "$auth_container" ]; then
+            echo "=== Auth/GoTrue logs ==="
+            docker logs --tail 250 "$auth_container"
+          fi
+          db_container="$(docker ps -aq --filter name=supabase_db | head -n1)"
+          if [ -n "$db_container" ]; then
+            echo "=== Postgres logs ==="
+            docker logs --tail 250 "$db_container"
+          fi
       - name: Destroy local stack
         if: always() && steps.isolate.outcome == 'success'
         run: supabase stop --no-backup
