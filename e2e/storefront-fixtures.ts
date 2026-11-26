@@ -62,6 +62,7 @@ const OCCASIONS = [
   { id: "00000000-0000-4000-a000-000000000022", name: "Casamento", slug: "casamento", position: 3, is_indexed: true, is_draft: false, icon: "Flower2", image_url: null, created_at: "2026-01-01T00:00:00.000Z" },
 ];
 const HOME_SECTIONS = [
+  { id: "00000000-0000-4000-a000-000000000032", section_key: "hero", component_name: "HeroSlider", label: "Banners", description: null, is_visible: true, position: 1, editable_props: {}, created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },
   { id: "00000000-0000-4000-a000-000000000030", section_key: "categories", component_name: "CategoriesScroll", label: "Categorias", description: null, is_visible: true, position: 10, editable_props: {}, created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },
   { id: "00000000-0000-4000-a000-000000000031", section_key: "occasions", component_name: "OccasionsThumbs", label: "Ocasiões", description: null, is_visible: true, position: 20, editable_props: {}, created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },
 ];
@@ -95,6 +96,7 @@ function payloadFor(pathname: string): unknown {
   const table = pathname.split("/").pop() ?? "";
   switch (table) {
     case "home_sections": return HOME_SECTIONS;
+    case "hero_slides": return [];
     case "categories": return CATEGORIES;
     case "occasions": return OCCASIONS;
     case "store_settings": return SETTINGS;

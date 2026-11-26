@@ -1,9 +1,14 @@
 import { test, expect } from "@playwright/test";
+import { installStorefrontFixtures } from "./storefront-fixtures";
+
+test.beforeEach(async ({ page }) => {
+  await installStorefrontFixtures(page);
+});
 
 test("initial section and slide loading retain the final banner geometry", async ({ page }) => {
   await page.route('**/rest/v1/home_sections?*', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    await route.continue();
+    await route.fallback();
   });
   await page.route('**/rest/v1/hero_slides?*', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
