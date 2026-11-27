@@ -673,21 +673,15 @@
   }
 }
 
-/* Cartões de produto: elevação 3D suave no hover (só ponteiro fino) */
+/* Mídia de produto: perspectiva na fotografia, nunca no alvo de clique ou preço. */
+.product-card-media { perspective: 1000px; }
+.product-card-photo { transition: opacity 180ms ease-out; }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  html:not(.motion-reduced) .product-card {
-    transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 500ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms ease;
+  html:not(.motion-reduced) .product-card-photo {
+    transition: transform 220ms cubic-bezier(.22,1,.36,1), opacity 180ms ease-out;
   }
-  html:not(.motion-reduced) .product-card:hover {
-    transform: perspective(900px) rotateX(var(--tilt-x, 3deg)) rotateY(var(--tilt-y, 0deg)) translateY(-8px);
-    box-shadow: 0 22px 40px -24px hsl(var(--foreground) / 0.28);
-  }
-  html:not(.motion-reduced) .product-card img {
-    transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
-  }
-  html:not(.motion-reduced) .product-card:hover img {
-    transform: scale(1.04);
+  html:not(.motion-reduced) .product-card-media:hover .product-card-photo {
+    transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(1.035);
   }
 }
 
@@ -765,4 +759,22 @@
     html:not(.motion-reduced) .scroll-3d.is-in { opacity: 1; transform: none; }
   }
 }
-.product-card:hover { transition-duration: 180ms, 500ms, 300ms; }
+
+
+/* R8 · editorial do ateliê. A mídia move, não a área clicável nem o texto. */
+.atelier-hero-caption { border-bottom: 1px solid hsl(var(--border)); }
+.atelier-kicker { color: hsl(var(--foreground) / .72); font-size: .7rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+.atelier-primary-cta { transition: background-color 160ms ease-out, transform 160ms ease-out; }
+.atelier-primary-cta:hover { background-color: hsl(var(--primary) / .88); }
+.atelier-hero-caption a:focus-visible, .atelier-depth-tile:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 4px; }
+.atelier-depth-tile { background: #ecdfd3; perspective: 1000px; min-width: 0; min-height: 0; }
+.atelier-depth-photo { display: block; box-shadow: 0 18px 28px -20px #643c34a6; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html:not(.motion-reduced) .atelier-depth-photo { transition: transform 280ms cubic-bezier(.22,1,.36,1); transform-origin: 50% 55%; }
+  html:not(.motion-reduced) .atelier-depth-tile:hover .atelier-depth-photo { transform: rotateX(4deg) rotateY(-5deg) translateZ(14px); }
+  html:not(.motion-reduced) .atelier-depth-tile:nth-child(2):hover .atelier-depth-photo { transform: rotateX(3deg) rotateY(5deg) translateZ(12px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atelier-depth-photo, .atelier-primary-cta { transition: none !important; transform: none !important; }
+}
+.motion-reduced .atelier-depth-photo, .motion-reduced .atelier-primary-cta { transition: none !important; transform: none !important; }
