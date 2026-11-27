@@ -1,9 +1,9 @@
 # Design engineering premium — análise e adoção Emil Kowalski
 
-**Estado:** R0 — diagnóstico estático e diretriz documental; implementação NÃO iniciada.
+**Estado:** R0 + R1.1 — diagnóstico estático e baseline visual da Home; implementação NÃO iniciada.
 **Data:** 27/11/2026 • **Repositório:** hrq16000-a11y/emporiolelecute-2026 • **Checkpoint analisado da main:** `96fdfe0a15b3394a75969434c181e7e700a8497f`.
 
-Este documento é incremental. As regras locais de AGENTS.md, DESIGN.md, segurança, SEO, arquitetura, publicação, dados e funis prevalecem. Não autoriza alterações de runtime, instalações, custos, merge ou deploy. Não substitui a homologação visual da versão efetivamente publicada. O navegador ao vivo teve timeout nesta rodada; nenhuma inspeção de screenshots, teste visual, medição de performance ou aprovação de produção é reivindicada.
+Este documento é incremental. As regras locais de AGENTS.md, DESIGN.md, segurança, SEO, arquitetura, publicação, dados e funis prevalecem. Não autoriza alterações de runtime, instalações, custos, merge ou deploy. Não substitui a homologação visual da versão efetivamente publicada. R0 teve timeout do navegador; R1.1 registra abaixo a captura pública da Home. Nenhuma medição de performance, QA integral ou aprovação de produção é reivindicada.
 
 ## 1. Diagnóstico por projeto (evidência de leitura)
 
@@ -74,3 +74,17 @@ Se não existirem tokens equivalentes, avaliar curva de entrada/saída `cubic-be
 GO para implementação somente com baseline visual, brief próprio da marca, propósito de cada movimento, seleção dos módulos pertinentes e uma micro-superfície definida. GO para release somente com gates locais, comparação real nos viewports, interação funcional, reduced-motion, zero regressão crítica de performance/conversão, sem novos riscos de acessibilidade, SSR/SEO e privacidade. NO-GO se movimento interferir na ação, se houver conteúdo invisível, template copiado, alteração comercial incidental, bloqueio de dados, dependência sem justificativa ou validação inconclusiva.
 
 **Registro desta rodada:** leitura de referências e arquivos; documentação proposta/registrada em branch isolada. Nenhum código de aplicação, dependência, banco, DNS ou configuração de hospedagem foi alterado por esta diretriz.
+
+## 7. R1.1 — baseline visual real: Home Empório Lele Cute (27/11/2026)
+
+**Escopo:** https://emporiolelecute.com.br/; visita pública sem clicar em campanha, consentimento, carrinho ou realizar compra. Capturas após renderização de imagens, desktop 1440 CSS px (documento 1421 px) e mobile 390 CSS px (documento 371 px); nenhuma largura excedeu viewport nesta Home. Não equivale a QA de produtos/personalização/checkout, acessibilidade integral, Core Web Vitals ou vínculo comprovado com SHA de Production.
+
+| Passo e evidência | Observação | Prioridade |
+|---|---|---|
+| 01 — Home desktop | Fotografia de produto real, coral/creme, tom artesanal e benefícios visíveis; campanha natalina tem composição distinta. No estado capturado o convite natalino, notificação de avaliação, aviso de cookies e botão WhatsApp disputam atenção, embora cada um possa ter função. | P0 |
+| 02 — Home mobile | Convite natalino ocupa a maior parte do banner, encobrindo narrativa central; aviso de cookies cobre a próxima seção. Benefícios refluem em duas colunas. | P0 — hierarquia e gestão de camadas |
+| 03 — Estado inicial | Primeiro snapshot apresentou palco do carrossel quase vazio com controles, depois a foto apareceu. Investigar preload/placeholder/estabilidade, sem alegar medida de LCP. No snapshot DOM inicial não apareceu h1, e a leitura posterior retornou sem h1; verificar semântica efetiva da Home para não depender só de texto rasterizado em banners. | P1 |
+
+**Próxima intervenção cirúrgica proposta:** organizar exibição de campanha, notificações, WhatsApp e cookie consent (preservar escolhas e mensagens reais; sem bloqueio de interação). Garantir palco estável e mídia essencial visível, heading/CTA semanticamente legíveis. Em etapa separada, aprofundar estética editorial com fotografia, materialidade, detalhes e gesto discreto de galeria/personalização. Não usar 3D como ornamento global; adotar uma assinatura rara e fallback estático, respeitar reduced motion local e do sistema, proteger CEP, catálogo, checkout, documentação e outras PRs de segurança/compatibilidade.
+
+**Evidência capturada nesta sessão** (arquivos locais exatos, não integram o Git): `05-emporio-1440.png` SHA256 `a94f43f913f325135c41ba3f26d0336262575905195894ea2c68da577762b125`; `06-emporio-390.png` SHA256 `fdaab9a62a9127ecfb967c9b3833c7f95ea29ae8095888468673e30eff879dfd`.
