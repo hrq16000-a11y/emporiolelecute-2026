@@ -31,7 +31,7 @@ npx playwright test --ui
 
 - **Keyboard**: `ArrowLeft/Right`, `Home`, `End` move the active item; live region announces it.
 - **Mouse (desktop only)**: hover-revealed arrow buttons advance the carousel.
-- **Touch (mobile + tablet)**: a synthesized swipe-left changes the active item.
+- **Horizontal scrolling (mobile + tablet)**: verifies actual native scroll displacement and selection; physical finger gestures require device QA.
 - **Anti-flicker**: 10 tiny scroll jitters (±5px) must NOT change the active item (validates the 18px threshold).
 - **ARIA**: each carousel exposes `role="listbox"` with exactly one `aria-selected` option.
 

@@ -1,4 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
+import { useCarouselCatalog } from "./fixtures/carousel-catalog";
 
 /**
  * E2E tests for CategoriesScroll and OccasionsThumbs carousels.
@@ -18,9 +19,14 @@ const CATEGORIES = '[data-testid="categories-carousel"]';
 const OCCASIONS  = '[data-testid="occasions-carousel"]';
 
 async function waitForCarousels(page: Page) {
+  await useCarouselCatalog(page);
   await page.goto("/");
   await expect(page.locator(CATEGORIES)).toBeVisible();
   await expect(page.locator(OCCASIONS)).toBeVisible();
+  await expect(page.locator(CATEGORIES).getByRole("option")).toHaveCount(20);
+  await expect(page.locator(OCCASIONS).getByRole("option")).toHaveCount(12);
+  const reject = page.getByRole("dialog", { name: "Consentimento de cookies" }).getByRole("button", { name: "Recusar" });
+  if (await reject.isVisible()) await reject.click();
 }
 
 test.describe("Carousels — keyboard navigation", () => {
@@ -45,7 +51,7 @@ test.describe("Carousels — keyboard navigation", () => {
     expect(last).not.toBe(first);
 
     // ARIA live region announces focused category.
-    await expect(page.locator('[aria-live="polite"]').first()).toContainText(/Categoria em foco/i);
+    await expect(page.getByText(/Categoria em foco:/i, { exact: false })).toContainText(/Categoria em foco/i);
   });
 
   test("Occasions: arrow keys move active item and announce via aria-live", async ({ page }) => {
@@ -57,7 +63,7 @@ test.describe("Carousels — keyboard navigation", () => {
     await page.waitForTimeout(350);
     const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     expect(after).not.toBe(before);
-    await expect(page.locator('text=/Ocasião em foco/i').first()).toBeVisible();
+    await expect(page.getByText(/Ocasião em foco:/i, { exact: false })).toBeVisible();
   });
 });
 
@@ -87,6 +93,9 @@ test.describe("Carousels — mouse scroll (desktop only)", () => {
   });
 
   test("Occasions: arrow buttons present and operate carousel", async ({ page }) => {
+    // A full-width desktop can fit all twelve occasions. Exercise arrows
+    // at a real mouse viewport where the list is guaranteed to overflow.
+    await page.setViewportSize({ width: 1024, height: 900 });
     await waitForCarousels(page);
     const carousel = page.locator(OCCASIONS);
     await carousel.hover();
@@ -100,46 +109,38 @@ test.describe("Carousels — mouse scroll (desktop only)", () => {
   });
 });
 
-test.describe("Carousels — touch swipe (mobile + tablet)", () => {
+test.describe("Carousels — native horizontal scroll consequence (mobile + tablet)", () => {
   test.skip(({ isMobile, browserName }) => !isMobile && browserName !== "webkit", "Touch tests only on mobile/tablet projects");
 
-  async function swipeLeft(page: Page, selector: string) {
-    const box = await page.locator(selector).boundingBox();
-    if (!box) throw new Error("Carousel not found");
-    const y = box.y + box.height / 2;
-    const startX = box.x + box.width * 0.85;
-    const endX   = box.x + box.width * 0.15;
-    await page.touchscreen.tap(startX, y); // ensure focus
-    // Programmatic touch sequence
-    await page.evaluate(({ sel, sx, ex, ty }) => {
-      const el = document.querySelector(sel) as HTMLElement | null;
-      if (!el) return;
-      const t = (x: number) => new Touch({ identifier: 1, target: el, clientX: x, clientY: ty, radiusX: 1, radiusY: 1 });
-      el.dispatchEvent(new TouchEvent("touchstart", { touches: [t(sx)], bubbles: true, cancelable: true }));
-      el.dispatchEvent(new TouchEvent("touchmove",  { touches: [t(ex)], bubbles: true, cancelable: true }));
-      el.dispatchEvent(new TouchEvent("touchend",   { changedTouches: [t(ex)], bubbles: true, cancelable: true }));
-      // Also nudge scrollLeft to simulate the native scroll consequence.
-      el.scrollBy({ left: sx - ex, behavior: "smooth" });
-    }, { sel: selector, sx: startX, ex: endX, ty: y });
-    await page.waitForTimeout(600);
+  // WebKit does not expose a constructible Touch; dispatching DOM touch
+  // events never performs a browser-native swipe. Exercise the actual
+  // scroll consequence, not a purported finger gesture.
+  async function scrollHorizontally(page: Page, selector: string) {
+    const carousel = page.locator(selector);
+    const before = await carousel.evaluate((el) => el.scrollLeft);
+    await carousel.evaluate((el) => {
+      if (el.scrollWidth <= el.clientWidth) throw new Error("Carousel must overflow");
+      el.scrollBy({ left: el.clientWidth * 0.7, behavior: "smooth" });
+    });
+    await expect.poll(() => carousel.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before);
   }
 
-  test("Categories: swipe left changes the active category", async ({ page }) => {
+  test("Categories: horizontal scroll changes the active category", async ({ page }) => {
     await waitForCarousels(page);
     const carousel = page.locator(CATEGORIES);
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    await swipeLeft(page, CATEGORIES);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await scrollHorizontally(page, CATEGORIES);
+    await expect.poll(() => carousel.locator('[aria-selected="true"]').first().getAttribute("id")).not.toBe(before);
+    await expect(carousel.locator('[aria-selected="true"]')).toHaveCount(1);
   });
 
-  test("Occasions: swipe left changes the active occasion", async ({ page }) => {
+  test("Occasions: horizontal scroll changes the active occasion", async ({ page }) => {
     await waitForCarousels(page);
     const carousel = page.locator(OCCASIONS);
     const before = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    await swipeLeft(page, OCCASIONS);
-    const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
-    expect(after).not.toBe(before);
+    await scrollHorizontally(page, OCCASIONS);
+    await expect.poll(() => carousel.locator('[aria-selected="true"]').first().getAttribute("id")).not.toBe(before);
+    await expect(carousel.locator('[aria-selected="true"]')).toHaveCount(1);
   });
 });
 

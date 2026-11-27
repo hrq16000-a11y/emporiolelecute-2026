@@ -31,6 +31,8 @@ export function useAccessibleCarousel({
   const [canRight, setCanRight] = useState(true);
   const lastActiveRef = useRef(0);
   const lastBestDistRef = useRef(Infinity);
+  // Explicit keyboard focus wins over the geometric center during scroll.
+  const hasKeyboardSelection = useRef(false);
   const persistRaf = useRef<number | null>(null);
 
   // ---------- Drag-to-scroll (desktop pointer) ----------
@@ -39,6 +41,7 @@ export function useAccessibleCarousel({
 
   const DRAG_THRESHOLD = 6;
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    hasKeyboardSelection.current = false;
     if (e.pointerType === "touch") return; // let native touch handle mobile
     const el = scrollerRef.current;
     if (!el) return;
@@ -100,6 +103,7 @@ export function useAccessibleCarousel({
     // `activeSwitchThreshold` pixels closer to center than the
     // currently-active item. Micro-movements never cross this gap.
     const shouldSwitch =
+      !hasKeyboardSelection.current &&
       bestIdx !== lastActiveRef.current &&
       activeDist - bestDist > activeSwitchThreshold;
 
@@ -128,9 +132,12 @@ export function useAccessibleCarousel({
     const el = scrollerRef.current;
     if (!el) return;
     updateState();
+    const onWheel = () => { hasKeyboardSelection.current = false; };
+    el.addEventListener("wheel", onWheel, { passive: true });
     el.addEventListener("scroll", updateState, { passive: true });
     window.addEventListener("resize", updateState);
     return () => {
+      el.removeEventListener("wheel", onWheel);
       el.removeEventListener("scroll", updateState);
       window.removeEventListener("resize", updateState);
     };
@@ -154,31 +161,35 @@ export function useAccessibleCarousel({
     const el = scrollerRef.current;
     if (!node || !el) return;
     const target = node.offsetLeft - el.clientWidth / 2 + node.offsetWidth / 2;
-    el.scrollTo({ left: target, behavior: "smooth" });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollTo({ left: target, behavior: reduceMotion ? "instant" : "smooth" });
     if (focus) requestAnimationFrame(() => node.focus({ preventScroll: true }));
   }, []);
 
   const scrollBy = useCallback((dir: 1 | -1) => {
     const el = scrollerRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.8, 600), behavior: "smooth" });
+    hasKeyboardSelection.current = false;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.8, 600), behavior: reduceMotion ? "instant" : "smooth" });
   }, []);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!total) return;
-    let next = activeIdx;
+    let next = lastActiveRef.current;
     switch (e.key) {
-      case "ArrowRight": next = Math.min(activeIdx + 1, total - 1); break;
-      case "ArrowLeft":  next = Math.max(activeIdx - 1, 0); break;
+      case "ArrowRight": next = Math.min(lastActiveRef.current + 1, total - 1); break;
+      case "ArrowLeft":  next = Math.max(lastActiveRef.current - 1, 0); break;
       case "Home":       next = 0; break;
       case "End":        next = total - 1; break;
       default: return;
     }
     e.preventDefault();
+    hasKeyboardSelection.current = true;
     setActiveIdx(next);
     lastActiveRef.current = next;
     scrollToIndex(next, true);
-  }, [activeIdx, total, scrollToIndex]);
+  }, [total, scrollToIndex]);
 
   return {
     scrollerRef,

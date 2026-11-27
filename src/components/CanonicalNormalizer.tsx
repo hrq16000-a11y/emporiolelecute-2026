@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useLocation, useNavigate } from "react-router-dom";
 
 /**
@@ -41,50 +42,27 @@ function cleanPath(pathname: string): string {
   return p;
 }
 
-function setCanonical(url: string) {
-  const links = Array.from(
-    document.querySelectorAll<HTMLLinkElement>('link[rel="canonical"]'),
-  );
-  // Helmet (data-rh="true") é a fonte de verdade quando presente:
-  // mantemos apenas UM canonical por página para não confundir crawlers.
-  const helmetLink = links.find((l) => l.dataset.rh === "true");
-  if (helmetLink) {
-    links.filter((l) => l !== helmetLink).forEach((l) => l.remove());
-    return;
-  }
-  let link = links[0];
-  links.slice(1).forEach((l) => l.remove());
-  if (!link) {
-    link = document.createElement("link");
-    link.rel = "canonical";
-    document.head.appendChild(link);
-  }
-  link.href = url;
-}
-
-
 export default function CanonicalNormalizer() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const cleanedPath = cleanPath(location.pathname);
+  const cleanedSearch = cleanSearch(location.search);
+
   useEffect(() => {
-    const cleanedPath = cleanPath(location.pathname);
-    const cleanedSearch = cleanSearch(location.search);
     const needsRedirect =
       cleanedPath !== location.pathname || cleanedSearch !== location.search;
 
     if (needsRedirect) {
       navigate(`${cleanedPath}${cleanedSearch}${location.hash}`, { replace: true });
-      return;
     }
+  }, [cleanedPath, cleanedSearch, location.pathname, location.search, location.hash, navigate]);
 
-    setCanonical(`${ORIGIN}${cleanedPath}`);
-    // Helmet injeta o canonical da rota logo após a montagem; roda de novo
-    // para eliminar qualquer duplicata remanescente.
-    const t = window.setTimeout(() => setCanonical(`${ORIGIN}${cleanedPath}`), 400);
-    return () => window.clearTimeout(t);
-  }, [location.pathname, location.search, location.hash, navigate]);
-
-
-  return null;
+  // The fallback and route-specific canonical share a single Helmet owner.
+  // Later route metadata can override this fallback without a DOM/timer race.
+  return (
+    <Helmet>
+      <link rel="canonical" href={`${ORIGIN}${cleanedPath}`} />
+    </Helmet>
+  );
 }

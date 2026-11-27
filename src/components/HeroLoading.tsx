@@ -1,4 +1,5 @@
 import TrustBadges from '@/components/TrustBadges';
+import HeroEditorialCaption from '@/components/HeroEditorialCaption';
 
 // All asynchronous entry points reserve the same banner, controls and badges.
 const HeroLoading = () => (
@@ -10,6 +11,7 @@ const HeroLoading = () => (
     <div className="flex items-center justify-center gap-2 md:gap-3 pt-1.5 pb-0 md:pt-3 md:pb-2" aria-hidden="true">
       <span className="h-8 w-8" />
     </div>
+    <HeroEditorialCaption />
     <TrustBadges className="mt-1 md:mt-4" />
   </section>
 );

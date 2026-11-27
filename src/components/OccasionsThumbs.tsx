@@ -94,7 +94,7 @@ const OccasionsThumbs = () => {
               "flex absolute right-0 md:-right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-10 md:h-10 rounded-full bg-background/95 backdrop-blur-md shadow-medium items-center justify-center text-foreground border border-border/60 transition-all duration-200",
               "hover:bg-primary hover:text-primary-foreground hover:scale-110",
               "focus-visible:ring-2 focus-visible:ring-primary",
-              canRight ? "opacity-100 animate-pulse md:animate-none" : "opacity-0 pointer-events-none scale-90"
+              canRight ? "opacity-100" : "opacity-0 pointer-events-none scale-90"
             )}
           >
             <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
@@ -127,7 +127,7 @@ const OccasionsThumbs = () => {
             aria-activedescendant={list[activeIdx]?.id ? `occ-item-${list[activeIdx].id}` : undefined}
             className={cn(
               "flex gap-3 md:gap-4 overflow-x-auto py-4 px-12 md:px-14",
-              "justify-start md:justify-center",
+              "justify-start md:[justify-content:safe_center]",
               "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
               "[-webkit-overflow-scrolling:touch] [touch-action:pan-x] [overscroll-behavior-x:contain]",
               "snap-x snap-mandatory scroll-smooth",
@@ -169,10 +169,9 @@ const OccasionsThumbs = () => {
                 >
                   <div
                     className={cn(
-                      "relative w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/20 ring-1 ring-border/60 transition-all duration-300 group-hover:ring-primary group-hover:-translate-y-0.5 group-hover:shadow-medium animate-pingpong",
+                      "relative w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/20 ring-1 ring-border/60 transition-colors duration-200 group-hover:ring-primary",
                       isActive && "ring-primary scale-105 shadow-medium"
                     )}
-                    style={{ animationDelay: `${(i % 5) * 0.5}s`, animationDuration: `${6 + (i % 4) * 1.5}s` }}
                   >
                     {o.icon ? (
                       <div className="w-full h-full flex items-center justify-center">

@@ -47,3 +47,6 @@ Não importar identidade, preços, credenciais, funis ou ferramentas pagas da 0W
 - Checkout performs a fresh active-catalog display preflight before submission and stops for customer review after changes; this never replaces atomic server price authorization.
 - Optional visitor and advertising analytics share a fail-closed browser consent store; revocation discards queued events and reloads to stop already-executed third-party scripts.
 - Visitor mutations require a 256-bit browser secret deriving the UUID through domain-separated SHA-256; share the pure capability helper between browser and edge, never reattach legacy IDs, and ignore caller pageview IDs to prevent profile/history forgery without schema changes. Device fields remain allowlisted and tracking/lead routines service-only.
+
+## Padrão anti-site genérico — R8/10
+- Para trabalho visual autorizado, ler `docs/skills/ANTI_GENERIC_EXPERIENCE.md` antes do código. TasteSkill, Transitions.dev, React Bits e Emil Kowalski são referências de princípios; as regras específicas do projeto prevalecem.
