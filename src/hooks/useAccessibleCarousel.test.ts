@@ -106,3 +106,27 @@ describe("useAccessibleCarousel — keyboard navigation", () => {
     );
   });
 });
+
+describe("useAccessibleCarousel — keyboard intent ownership", () => {
+  it("keeps End selected through intermediate scroll events, then returns to geometry on direct input", () => {
+    const { result, scroller } = mount(4);
+    act(() => result.current.onKeyDown({ key: "End", preventDefault: vi.fn() } as unknown as React.KeyboardEvent<HTMLDivElement>));
+    expect(result.current.activeIdx).toBe(3);
+
+    // Native smooth scroll may publish positions of several other cards.
+    scrollTo(scroller, 90);
+    scrollTo(scroller, 190);
+    expect(result.current.activeIdx).toBe(3);
+
+    // A user-controlled wheel or touch/drag must regain selection ownership.
+    act(() => { scroller.dispatchEvent(new Event("wheel")); });
+    scrollTo(scroller, 100);
+    expect(result.current.activeIdx).toBe(1);
+
+    act(() => result.current.onKeyDown({ key: "Home", preventDefault: vi.fn() } as unknown as React.KeyboardEvent<HTMLDivElement>));
+    expect(result.current.activeIdx).toBe(0);
+    act(() => result.current.pointerHandlers.onPointerDown({ pointerType: "touch" } as React.PointerEvent<HTMLDivElement>));
+    scrollTo(scroller, 200);
+    expect(result.current.activeIdx).toBe(2);
+  });
+});

@@ -1,11 +1,18 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const PDP_PATH = "/produto/kit-wax-melts-difuso-rechaud";
+import { PDP_TEST_SLUG, usePdpCatalog } from "./fixtures/pdp-catalog";
+
+const PDP_PATH = `/produto/${PDP_TEST_SLUG}`;
 
 async function openPdp(page: Page) {
-  await page.goto(PDP_PATH, { waitUntil: "networkidle" });
+  await usePdpCatalog(page);
+  await page.goto(PDP_PATH, { waitUntil: "domcontentloaded" });
   await expect(page.locator("main")).toBeVisible();
   await expect(page.locator('[data-testid="pdp-gallery-main"]')).toBeVisible();
+  await expect(page.locator('[data-testid="pdp-badge"]')).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Kit de aromas — amostra visual" })).toBeVisible();
+  await expect.poll(() => page.locator('[data-testid="pdp-gallery-main"] img').first().evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+  await page.evaluate(() => document.fonts.ready);
 }
 
 async function rect(locator: Locator) {
@@ -53,10 +60,9 @@ test.describe("PDP mobile — layout integrity", () => {
     expect(favRect.height).toBeGreaterThanOrEqual(44);
 
     const badge = page.locator('[data-testid="pdp-badge"]');
-    if (await badge.count()) {
-      await expect(badge.first()).toBeVisible();
-      expect(intersects(favRect, await rect(badge.first())), "Badge da PDP não pode cobrir o favorito").toBe(false);
-    }
+    await expect(badge).toHaveCount(1);
+    await expect(badge).toBeVisible();
+    expect(intersects(favRect, await rect(badge)), "Badge da PDP não pode cobrir o favorito").toBe(false);
   });
 
   test("visual regression do primeiro viewport da PDP", async ({ page }, testInfo) => {
