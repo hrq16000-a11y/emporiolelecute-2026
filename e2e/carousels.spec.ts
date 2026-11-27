@@ -1,4 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
+import { useCarouselCatalog } from "./fixtures/carousel-catalog";
 
 /**
  * E2E tests for CategoriesScroll and OccasionsThumbs carousels.
@@ -18,9 +19,14 @@ const CATEGORIES = '[data-testid="categories-carousel"]';
 const OCCASIONS  = '[data-testid="occasions-carousel"]';
 
 async function waitForCarousels(page: Page) {
+  await useCarouselCatalog(page);
   await page.goto("/");
   await expect(page.locator(CATEGORIES)).toBeVisible();
   await expect(page.locator(OCCASIONS)).toBeVisible();
+  await expect(page.locator(CATEGORIES).getByRole("option")).toHaveCount(20);
+  await expect(page.locator(OCCASIONS).getByRole("option")).toHaveCount(12);
+  const reject = page.getByRole("dialog", { name: "Consentimento de cookies" }).getByRole("button", { name: "Recusar" });
+  if (await reject.isVisible()) await reject.click();
 }
 
 test.describe("Carousels — keyboard navigation", () => {
@@ -45,7 +51,7 @@ test.describe("Carousels — keyboard navigation", () => {
     expect(last).not.toBe(first);
 
     // ARIA live region announces focused category.
-    await expect(page.locator('[aria-live="polite"]').first()).toContainText(/Categoria em foco/i);
+    await expect(page.getByText(/Categoria em foco:/i, { exact: false })).toContainText(/Categoria em foco/i);
   });
 
   test("Occasions: arrow keys move active item and announce via aria-live", async ({ page }) => {
@@ -57,7 +63,7 @@ test.describe("Carousels — keyboard navigation", () => {
     await page.waitForTimeout(350);
     const after = await carousel.locator('[aria-selected="true"]').first().getAttribute("id");
     expect(after).not.toBe(before);
-    await expect(page.locator('text=/Ocasião em foco/i').first()).toBeVisible();
+    await expect(page.getByText(/Ocasião em foco:/i, { exact: false })).toBeVisible();
   });
 });
 
@@ -87,6 +93,9 @@ test.describe("Carousels — mouse scroll (desktop only)", () => {
   });
 
   test("Occasions: arrow buttons present and operate carousel", async ({ page }) => {
+    // A full-width desktop can fit all twelve occasions. Exercise arrows
+    // at a real mouse viewport where the list is guaranteed to overflow.
+    await page.setViewportSize({ width: 1024, height: 900 });
     await waitForCarousels(page);
     const carousel = page.locator(OCCASIONS);
     await carousel.hover();
@@ -109,7 +118,7 @@ test.describe("Carousels — touch swipe (mobile + tablet)", () => {
     const y = box.y + box.height / 2;
     const startX = box.x + box.width * 0.85;
     const endX   = box.x + box.width * 0.15;
-    await page.touchscreen.tap(startX, y); // ensure focus
+    // Do not tap an option before swiping: that would navigate to its link.
     // Programmatic touch sequence
     await page.evaluate(({ sel, sx, ex, ty }) => {
       const el = document.querySelector(sel) as HTMLElement | null;

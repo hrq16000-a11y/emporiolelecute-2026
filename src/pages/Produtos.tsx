@@ -482,16 +482,18 @@ const Produtos = () => {
   // 2+ filtros / tag / busca / paginação    -> noindex,follow + canonical /produtos
   const SITE = 'https://emporiolelecute.com.br';
   let canonicalUrl = `${SITE}/produtos`;
-  let isIndexable = true;
+  // Indexation follows requested URL filters even while taxonomy queries are pending.
+  // A missing/unresolved taxonomy must not temporarily index a compound URL.
+  const requestedStructuralCount = [selectedCategory, selectedOccasion, selectedSegment].filter(Boolean).length;
+  const requestedPage = Number(searchParams.get('pagina') || searchParams.get('page')) || 1;
+  const hasCompoundRequest = requestedStructuralCount >= 2 || Boolean(selectedTag || search.trim()) || requestedPage > 1 || currentPage > 1;
+  const isIndexable = !hasCompoundRequest;
 
-  if (structuralCount === 1 && !resolvedTag && !debouncedSearch && currentPage === 1) {
+  if (isIndexable && requestedStructuralCount === 1 && structuralCount === 1) {
     const only = structuralFilters[0]!;
     if (resolvedCategory) canonicalUrl = `${SITE}/categoria/${only.slug}`;
     else if (resolvedOccasion) canonicalUrl = `${SITE}/ocasiao/${only.slug}`;
     else if (resolvedSegment) canonicalUrl = `${SITE}/segmento/${only.slug}`;
-  } else if (structuralCount >= 2 || resolvedTag || debouncedSearch || currentPage > 1) {
-    isIndexable = false;
-    canonicalUrl = `${SITE}/produtos`;
   }
 
   // Dynamic title/description

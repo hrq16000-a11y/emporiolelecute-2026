@@ -35,7 +35,8 @@ test.describe("SEO — canonical em páginas filtradas", () => {
     const href = await canonicalHref(page);
     expect(new URL(href!).pathname).toBe("/produtos");
     expect(new URL(href!).search).toBe("");
-    expect((await robotsContent(page)) ?? "").toContain("noindex");
+    await expect.poll(() => robotsContent(page)).toContain("noindex");
+    await expect(page.locator('meta[name="robots"]')).toHaveCount(1);
   });
 
   test("canonical permanece sem parâmetros após reload", async ({ page }) => {
