@@ -8,11 +8,6 @@ import { installTelemetry } from "./lib/telemetry";
 import { installWebVitals } from "./lib/webVitals";
 import RootErrorBoundary from "./components/RootErrorBoundary";
 
-installChunkReloadHandler();
-installTelemetry();
-installWebVitals();
-runCacheCleanup();
-
 // Auditoria automática de acessibilidade (contraste + foco visível) apenas em dev.
 // Roda fora da árvore React, reporta no console e não vai para o bundle de produção.
 if (import.meta.env.DEV) {
@@ -39,11 +34,23 @@ if (import.meta.env.DEV) {
   })();
 }
 
-createRoot(document.getElementById("root")!).render(
-  <RootErrorBoundary>
-    <HelmetProvider>
-      <App />
-    </HelmetProvider>
-  </RootErrorBoundary>
-);
+// Finish the one-time cache cleanup before mounting React. If cleanup triggers
+// a reload, do not start loading lazy route chunks in the page being replaced.
+void (async () => {
+  const reloading = await runCacheCleanup();
+  if (reloading) return;
 
+  // Install runtime recovery and telemetry only after cache cleanup is settled.
+  // This prevents our own cleanup reload from being logged as a stale chunk.
+  installChunkReloadHandler();
+  installTelemetry();
+  installWebVitals();
+
+  createRoot(document.getElementById("root")!).render(
+    <RootErrorBoundary>
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>
+    </RootErrorBoundary>
+  );
+})();

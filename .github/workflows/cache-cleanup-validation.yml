@@ -1,0 +1,33 @@
+name: Cache cleanup boot validation
+
+on:
+  push:
+    branches:
+      - fix/cache-cleanup-boot-order-20261126
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cache-cleanup-boot-validation
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - name: Install frozen dependencies
+        run: bun install --frozen-lockfile
+      - name: Test one-time cache cleanup behavior
+        run: bunx vitest run src/lib/cacheCleanup.test.ts
+        env:
+          CI: "true"
+      - name: Build without running production sitemap prebuild
+        run: bunx vite build
+        env:
+          CI: "true"

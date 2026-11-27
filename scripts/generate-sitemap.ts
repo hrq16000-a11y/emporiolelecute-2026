@@ -50,6 +50,17 @@ function loadEnv(): Record<string, string> {
 }
 
 async function main(): Promise<void> {
+  // This script calls a service-role Edge Function that also updates
+  // store_settings.last_sitemap_update. Only a Vercel Production build may
+  // perform that write; local, CI and Preview builds preserve the tracked XML.
+  if (
+    process.env.VERCEL_ENV !== "production" &&
+    process.env.SITEMAP_GENERATION_ALLOW_NON_PRODUCTION !== "true"
+  ) {
+    console.log("[sitemap] skipped outside Production; preserving the tracked sitemap.");
+    return;
+  }
+
   const env = { ...loadEnv(), ...process.env };
   const url = env.VITE_SUPABASE_URL;
   const key = env.VITE_SUPABASE_PUBLISHABLE_KEY;

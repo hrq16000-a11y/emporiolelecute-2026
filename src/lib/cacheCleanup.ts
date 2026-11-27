@@ -4,11 +4,11 @@
 const APP_CACHE_VERSION = "2026-05-15-v1";
 const STORAGE_KEY = "app:cache-version";
 
-export async function runCacheCleanup() {
-  if (typeof window === "undefined") return;
+export async function runCacheCleanup(reload: () => void = () => window.location.reload()): Promise<boolean> {
+  if (typeof window === "undefined") return false;
   try {
     const current = localStorage.getItem(STORAGE_KEY);
-    if (current === APP_CACHE_VERSION) return;
+    if (current === APP_CACHE_VERSION) return false;
 
     // Unregister any existing service workers (legacy installs).
     if ("serviceWorker" in navigator) {
@@ -27,9 +27,11 @@ export async function runCacheCleanup() {
     // Reload once so the user immediately sees the fresh build.
     if (!sessionStorage.getItem("app:cache-cleanup-reloaded")) {
       sessionStorage.setItem("app:cache-cleanup-reloaded", "1");
-      window.location.reload();
+      reload();
+      return true;
     }
   } catch {
     // best-effort, never block app boot
   }
+  return false;
 }
