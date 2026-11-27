@@ -13,6 +13,12 @@ async function openPdp(page: Page) {
   await expect(page.getByRole("heading", { name: "Kit de aromas — amostra visual", level: 1, exact: true })).toBeVisible();
   await expect.poll(() => page.locator('[data-testid="pdp-gallery-main"] img').first().evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
   await page.evaluate(() => document.fonts.ready);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect.poll(async () => {
+    const header = await rect(page.locator("header"));
+    const breadcrumb = await rect(page.getByRole("navigation", { name: "Breadcrumb" }));
+    return breadcrumb.y - (header.y + header.height);
+  }).toBeGreaterThanOrEqual(0);
 }
 
 async function rect(locator: Locator) {
@@ -27,7 +33,7 @@ function intersects(a: { x: number; y: number; width: number; height: number }, 
 
 test.describe("PDP mobile — layout integrity", () => {
   test("não tem overflow horizontal e favorito não fica coberto pelo Badge", async ({ page }, testInfo) => {
-    test.skip(!/mobile/i.test(testInfo.project.name), "Somente breakpoints mobile");
+    test.skip(!/(mobile|tablet)/i.test(testInfo.project.name), "Somente breakpoints mobile e tablet");
     await openPdp(page);
 
     const metrics = await page.evaluate(() => ({

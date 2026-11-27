@@ -413,7 +413,7 @@ const ProductPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-28 md:pt-32 pb-16">
+        <main className="pt-[81px] sm:pt-[97px] md:pt-[137px] pb-16">
           <ProductPageSkeleton />
         </main>
         <Footer />
@@ -426,7 +426,7 @@ const ProductPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-28 md:pt-32 pb-16 container mx-auto px-4">
+        <main className="pt-[81px] sm:pt-[97px] md:pt-[137px] pb-16 container mx-auto px-4">
           <DataErrorState
             scope="product"
             error={productError}
@@ -444,7 +444,7 @@ const ProductPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-28 md:pt-32 pb-16 container mx-auto px-4 text-center">
+        <main className="pt-[81px] sm:pt-[97px] md:pt-[137px] pb-16 container mx-auto px-4 text-center">
           <h1 className="font-display text-4xl text-foreground mb-4">Produto não encontrado</h1>
           <p className="text-muted-foreground mb-8">O produto que você procura não existe ou foi removido.</p>
           <Link to="/produtos">
@@ -561,7 +561,9 @@ const ProductPage = () => {
       />
       <Header />
 
-      <main className="pt-20 md:pt-32 pb-16 max-w-full overflow-x-hidden">
+      {/* Match the fixed Header expanded heights (same offsets as .hero-shell).
+          Compact global spacing overrides ordinary pt-20; do not hide breadcrumbs. */}
+      <main className="pt-[81px] sm:pt-[97px] md:pt-[137px] pb-16 max-w-full overflow-x-hidden">
         {/* Breadcrumb */}
         <div className="layout-commerce py-1.5 md:py-3 overflow-hidden">
           <nav

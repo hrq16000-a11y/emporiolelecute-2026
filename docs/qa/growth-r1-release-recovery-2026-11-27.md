@@ -8,3 +8,7 @@
 - Sem alterações no banco, mídia comercial, preço, funil ou publicação. Merge somente com gates verdes e publicação real verificada.
 
 - Chromium Android emulado (393×851): layout da PDP, overflow, alvo de toque do favorito e badge aprovados (1/1); captura WebKit do CI ainda pendente. Build local aprovado.
+
+- CI 46053663674: unidade, desktop e tablet aprovados; iPhone 20 passaram, 1 falhou somente por ausência de snapshot. Artefato 15225786282, ZIP SHA-256 `259a8f213088b34f7903cf352a51448365cae6f9580f8d338aa2240386cb0c80`.
+- Revisão da captura iPhone **rejeitou** a imagem como baseline: breadcrumb oculto pelo header fixo, apesar de galeria e badge corretos. Chromium reproduziu com scrollY=0: header terminava em y=81 e breadcrumb começava em y=54. Causa: CSS global de densidade redefine pt-20.
+- Corrigida reserva de 81/97/137px nas quatro variantes de conteúdo da PDP (carregamento, erro, ausência, produto), conforme alturas expandidas do header existente. Novo teste exige breadcrumb abaixo do header no primeiro viewport; estendida checagem geométrica ao tablet. Snapshot só após nova captura real aprovada, mantendo limite de 1,5%.
