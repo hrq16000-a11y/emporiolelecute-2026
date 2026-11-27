@@ -18,6 +18,7 @@ async function robotsContent(page: Page) {
 async function openAndSettle(page: Page, url: string) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await expect(page.locator("main")).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
   await expect.poll(() => canonicalHref(page)).not.toBeNull();
 }
 
@@ -35,11 +36,13 @@ test.describe("SEO — canonical em páginas filtradas", () => {
     const href = await canonicalHref(page);
     expect(new URL(href!).pathname).toBe("/produtos");
     expect(new URL(href!).search).toBe("");
-    expect((await robotsContent(page)) ?? "").toContain("noindex");
+    await expect.poll(() => robotsContent(page)).toContain("noindex");
+    await expect(page.locator('meta[name="robots"]')).toHaveCount(1);
   });
 
   test("canonical permanece sem parâmetros após reload", async ({ page }) => {
     await openAndSettle(page, "/produtos?ocasiao=maternidade&search=lavanda");
+    await expect.poll(() => robotsContent(page)).toContain("noindex");
     const before = await canonicalHref(page);
 
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -49,7 +52,8 @@ test.describe("SEO — canonical em páginas filtradas", () => {
     const after = await canonicalHref(page);
     expect(new URL(after!).search).toBe("");
     // Nunca deve haver mais de um canonical na página.
-    expect(await page.locator('link[rel="canonical"]').count()).toBe(1);
+    await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
+    await expect.poll(() => robotsContent(page)).toContain("noindex");
   });
 
   test("página de categoria canonicaliza para si mesma", async ({ page }) => {

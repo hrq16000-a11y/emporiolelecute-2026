@@ -45,15 +45,15 @@ export function NatalHomeSpotlight() {
               <Heart className="h-4 w-4 text-[#b25d64]" aria-hidden="true" /> Personalização e carinho em cada detalhe
             </p>
           </div>
-          <div className="relative grid h-[295px] grid-cols-[1.15fr_.85fr] gap-3 sm:h-[390px] sm:gap-4" aria-label="Produtos natalinos artesanais do Empório LeleCute">
-            <Link to="/natal" aria-label="Conhecer a coleção de Natal com presépios artesanais" className="group relative row-span-2 overflow-hidden rounded-3xl bg-[#ecdfd3] shadow-xl">
-              <img src={PRESEPIO_IMAGE} loading="lazy" alt="Lembrancinha de Natal com presépio da Sagrada Família" className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
+          <div className="atelier-depth-gallery relative grid h-[295px] grid-cols-[1.15fr_.85fr] gap-3 sm:h-[390px] sm:gap-4" aria-label="Produtos natalinos artesanais do Empório LeleCute">
+            <Link to="/natal" aria-label="Conhecer a coleção de Natal com presépios artesanais" className="atelier-depth-tile group relative row-span-2 rounded-3xl">
+              <img src={PRESEPIO_IMAGE} loading="lazy" alt="Lembrancinha de Natal com presépio da Sagrada Família" className="atelier-depth-photo h-full w-full rounded-[inherit] object-cover" />
             </Link>
-            <Link to="/natal" aria-label="Conhecer as mini velas natalinas" className="group overflow-hidden rounded-2xl bg-[#ecdfd3] shadow-lg">
-              <img src={MINI_VELA_IMAGE} loading="lazy" alt="Mini vela natalina artesanal personalizada" className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
+            <Link to="/natal" aria-label="Conhecer as mini velas natalinas" className="atelier-depth-tile group rounded-2xl">
+              <img src={MINI_VELA_IMAGE} loading="lazy" alt="Mini vela natalina artesanal personalizada" className="atelier-depth-photo h-full w-full rounded-[inherit] object-cover" />
             </Link>
-            <Link to="/natal" aria-label="Conhecer os sabonetes de Papai Noel" className="group overflow-hidden rounded-2xl bg-[#ecdfd3] shadow-lg">
-              <img src={PAPAI_NOEL_IMAGE} loading="lazy" alt="Sabonete natalino em formato de Papai Noel" className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
+            <Link to="/natal" aria-label="Conhecer os sabonetes de Papai Noel" className="atelier-depth-tile group rounded-2xl">
+              <img src={PAPAI_NOEL_IMAGE} loading="lazy" alt="Sabonete natalino em formato de Papai Noel" className="atelier-depth-photo h-full w-full rounded-[inherit] object-cover" />
             </Link>
             <div className="pointer-events-none absolute -bottom-3 left-4 rounded-full border border-[#ecd7af] bg-[#fffaf0] px-4 py-2 shadow-md">
               <span className="flex items-center gap-2 font-serif text-sm italic text-[#8b3942]">

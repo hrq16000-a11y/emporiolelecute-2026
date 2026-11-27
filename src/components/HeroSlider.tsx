@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback, type TouchEvent } from "react";
 import { Helmet } from "react-helmet-async";
-import { Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 
 import TrustBadges from "@/components/TrustBadges";
 import HeroLoading from "@/components/HeroLoading";
+import HeroEditorialCaption from "@/components/HeroEditorialCaption";
 import { Button } from "@/components/ui/button";
 import { useHeroSlides, type HeroSlide } from "@/hooks/useHeroSlides";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -111,16 +112,16 @@ function SlideTextImage({
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         {/* Text column */}
         <div className="max-w-xl">
-          <div className="animate-fade-in">
+          <div>
             {slide.tagline && (
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-light rounded-full mb-6">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-primary">{slide.tagline}</span>
               </div>
             )}
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground mb-6 leading-tight">
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground mb-6 leading-tight">
               {slide.title}
-            </h1>
+            </h2>
             {slide.subtitle && (
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
                 {slide.subtitle}
@@ -140,10 +141,7 @@ function SlideTextImage({
 
         {/* Image column */}
         <div className="relative flex justify-center items-center">
-          <div className="absolute -bottom-4 right-8 lg:right-16 text-primary z-10">
-            <Heart className="h-10 w-10 fill-primary/20 animate-float" />
-          </div>
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl animate-scale-in max-w-md lg:max-w-lg w-full">
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl max-w-md lg:max-w-lg w-full">
             <img
               src={imgSrc}
               alt={alt}
@@ -188,7 +186,7 @@ function SlideBannerMobile({
         decoding="async"
         width={963}
         height={565}
-        className="w-full h-full object-contain block hero-kenburns"
+        className="w-full h-full object-contain block"
       />
     </div>
   );
@@ -220,7 +218,7 @@ function SlideBannerDesktop({
         decoding="async"
         width={1900}
         height={565}
-        className="w-full h-full object-contain block hero-kenburns"
+        className="w-full h-full object-contain block"
       />
     </div>
   );
@@ -275,6 +273,7 @@ const HeroSlider = () => {
   const [systemReducedMotion, setReducedMotion] = useState(false);
   const reducedMotion = userReducedMotion || systemReducedMotion;
   const [isPaused, setIsPaused] = useState(false);
+  const [pausedByUser, setPausedByUser] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -290,12 +289,12 @@ const HeroSlider = () => {
 
   // Autoplay — pausado durante interação (touch/drag) e em reduced-motion
   useEffect(() => {
-    if (slides.length <= 1 || isPaused || reducedMotion) return;
+    if (slides.length <= 1 || isPaused || pausedByUser || reducedMotion) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [slides.length, isPaused, reducedMotion]);
+  }, [slides.length, isPaused, pausedByUser, reducedMotion]);
 
   // Limpa timer de resume ao desmontar
   useEffect(() => () => {
@@ -408,25 +407,6 @@ const HeroSlider = () => {
       </Helmet>
 
 
-      {/* Decorative background — only for text_image mode */}
-      {!hasAnyBanner && (
-        <>
-          <div className="absolute inset-0 bg-dotted-pattern opacity-30 pointer-events-none" />
-          <div className="absolute top-32 right-[15%] text-amber-400 pointer-events-none">
-            <Sparkles className="h-8 w-8 animate-pulse-slow" fill="currentColor" />
-          </div>
-        </>
-      )}
-
-      {/* Camadas decorativas suaves (profundidade) — puramente visuais */}
-      {hasAnyBanner && (
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
-          <span className="hero-orb hero-orb-a" />
-          <span className="hero-orb hero-orb-b" />
-          <span className="hero-veil" />
-        </div>
-      )}
-
       {/* All slides share a grid cell; hidden slides still reserve structural height. */}
       <div
         className="hero-stage relative grid w-full touch-pan-y"
@@ -435,6 +415,8 @@ const HeroSlider = () => {
         onTouchCancel={handleTouchCancel}
         onMouseEnter={pauseAutoplay}
         onMouseLeave={() => scheduleResume(1200)}
+        onFocusCapture={pauseAutoplay}
+        onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) scheduleResume(1200); }}
       >
         {isLoading && (
           <div className="[grid-area:1/1]" aria-hidden="true">
@@ -456,7 +438,7 @@ const HeroSlider = () => {
           <>
             <button
               onClick={prevSlideFn}
-              className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 md:w-12 md:h-12 bg-transparent md:bg-background/80 md:backdrop-blur-sm md:shadow-md rounded-full flex items-center justify-center hover:bg-primary/10 md:hover:bg-primary hover:text-primary md:hover:text-primary-foreground active:scale-95 transition-all"
+              className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 md:w-12 md:h-12 bg-transparent md:bg-background/80 md:backdrop-blur-sm md:shadow-md rounded-full flex items-center justify-center hover:bg-primary/10 md:hover:bg-primary hover:text-primary md:hover:text-primary-foreground active:scale-95 transition-colors"
               aria-label="Slide anterior"
             >
               <span className="flex h-8 w-8 md:h-auto md:w-auto items-center justify-center rounded-full bg-background/85 shadow-sm md:bg-transparent md:shadow-none">
@@ -465,7 +447,7 @@ const HeroSlider = () => {
             </button>
             <button
               onClick={nextSlideFn}
-              className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 md:w-12 md:h-12 bg-transparent md:bg-background/80 md:backdrop-blur-sm md:shadow-md rounded-full flex items-center justify-center hover:bg-primary/10 md:hover:bg-primary hover:text-primary md:hover:text-primary-foreground active:scale-95 transition-all"
+              className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 md:w-12 md:h-12 bg-transparent md:bg-background/80 md:backdrop-blur-sm md:shadow-md rounded-full flex items-center justify-center hover:bg-primary/10 md:hover:bg-primary hover:text-primary md:hover:text-primary-foreground active:scale-95 transition-colors"
               aria-label="Próximo slide"
             >
               <span className="flex h-8 w-8 md:h-auto md:w-auto items-center justify-center rounded-full bg-background/85 shadow-sm md:bg-transparent md:shadow-none">
@@ -491,12 +473,13 @@ const HeroSlider = () => {
               <button
                 key={index}
                 onClick={() => goTo(index)}
-                className="inline-flex h-8 min-w-8 items-center justify-center rounded-full transition-all duration-500 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-full transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label={`Slide ${index + 1}`}
+                aria-current={index === currentSlide ? "true" : undefined}
               >
                 <span className="sr-only">Slide {index + 1}</span>
                 <span
-                  className={`block h-2.5 rounded-full transition-all duration-500 ease-in-out ${
+                  className={`block h-2.5 rounded-full transition-colors duration-200 ease-out ${
                     index === currentSlide
                       ? "w-8 bg-primary md:w-10"
                       : "w-2.5 bg-primary/30 hover:bg-primary/50 md:w-3"
@@ -504,11 +487,17 @@ const HeroSlider = () => {
                 />
               </button>
             ))}
+            {slides.length > 1 && !reducedMotion && (
+              <button type="button" onClick={() => setPausedByUser((value) => !value)} className="inline-flex h-8 w-11 items-center justify-center rounded-full text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary" aria-label={pausedByUser ? "Reproduzir slides" : "Pausar slides"}>
+                {pausedByUser ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
+              </button>
+            )}
           </div>
 
         </>
       )}
 
+      <HeroEditorialCaption />
       <TrustBadges className="mt-1 md:mt-4" />
     </section>
   );

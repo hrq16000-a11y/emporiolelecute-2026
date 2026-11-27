@@ -68,13 +68,13 @@ const ProductCard = ({ product, priority = false }: ProductCardProps) => {
       itemType="https://schema.org/Product"
     >
       {/* Product Image */}
-      <Link to={urls.product(product.slug)} className="block relative aspect-square max-w-full overflow-hidden bg-muted">
+      <Link to={urls.product(product.slug)} className="product-card-media block relative aspect-square max-w-full overflow-hidden bg-muted">
         <img 
           src={optimizeImage(product.image, { width: 600, resize: "contain" })}
           srcSet={buildSrcSet(product.image, [300, 450, 600, 800], 75, "contain")}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
           alt={`${product.name} - Lembrancinha artesanal personalizada Empório LeleCute`}
-          className="w-full h-full object-contain opacity-0 [&.loaded]:opacity-100"
+          className="product-card-photo w-full h-full object-contain opacity-0 [&.loaded]:opacity-100"
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           // @ts-expect-error fetchpriority is a valid HTML attribute
@@ -87,7 +87,6 @@ const ProductCard = ({ product, priority = false }: ProductCardProps) => {
             e.currentTarget.src = '/placeholder.svg';
             e.currentTarget.removeAttribute('srcset');
           }}
-          style={{ transition: 'opacity 400ms ease' }}
         />
         
 
