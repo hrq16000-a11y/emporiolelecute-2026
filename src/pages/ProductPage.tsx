@@ -1113,7 +1113,7 @@ const ProductPage = () => {
 
             if (links.length < 3) return null;
             return (
-              <div className="container mx-auto max-w-full overflow-hidden">
+              <div className="w-full min-w-0 max-w-full overflow-hidden">
                 <SemanticLinkingBlock title="Explore mais ideias relacionadas" links={links} />
               </div>
             );
