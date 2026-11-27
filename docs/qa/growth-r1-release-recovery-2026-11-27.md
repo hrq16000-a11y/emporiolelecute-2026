@@ -6,3 +6,5 @@
 - PDP: fixture de teste local com produto fictício, imagem versionada e badge explícito; não altera catálogo nem estoque reais. APIs/telemetria da fixture são interceptadas. Asserções de geometria e limite visual de 1,5% preservados; baseline inédita deve ser inspecionada na captura real do navegador do CI antes de ser versionada.
 - Gate da loja e 5 testes do guard aprovados localmente. Testes focados de canonical, carrossel e resolver: 14/14. A suíte ampla local tinha 6 timeouts de testes existentes de RPC/RLS por acesso ao Supabase; confirmação no CI é obrigatória. WebKit local sem bibliotecas do sistema; não se declara browser QA completo.
 - Sem alterações no banco, mídia comercial, preço, funil ou publicação. Merge somente com gates verdes e publicação real verificada.
+
+- Chromium Android emulado (393×851): layout da PDP, overflow, alvo de toque do favorito e badge aprovados (1/1); captura WebKit do CI ainda pendente. Build local aprovado.

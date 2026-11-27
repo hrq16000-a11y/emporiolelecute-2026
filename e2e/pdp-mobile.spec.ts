@@ -10,7 +10,7 @@ async function openPdp(page: Page) {
   await expect(page.locator("main")).toBeVisible();
   await expect(page.locator('[data-testid="pdp-gallery-main"]')).toBeVisible();
   await expect(page.locator('[data-testid="pdp-badge"]')).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Kit de aromas — amostra visual" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Kit de aromas — amostra visual", level: 1, exact: true })).toBeVisible();
   await expect.poll(() => page.locator('[data-testid="pdp-gallery-main"] img').first().evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
   await page.evaluate(() => document.fonts.ready);
 }
