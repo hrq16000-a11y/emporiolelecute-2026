@@ -4,8 +4,8 @@ import { PDP_TEST_SLUG, usePdpCatalog } from "./fixtures/pdp-catalog";
 
 const PDP_PATH = `/produto/${PDP_TEST_SLUG}`;
 
-async function openPdp(page: Page) {
-  await usePdpCatalog(page);
+async function openPdp(page: Page, images?: string[]) {
+  await usePdpCatalog(page, images);
   await page.goto(PDP_PATH, { waitUntil: "domcontentloaded" });
   await expect(page.locator("main")).toBeVisible();
   await expect(page.locator('[data-testid="pdp-gallery-main"]')).toBeVisible();
@@ -80,4 +80,30 @@ test.describe("PDP mobile — layout integrity", () => {
       maxDiffPixelRatio: 0.015,
     });
   });
+});
+
+test("galeria respeita movimento reduzido e mantém controles acessíveis", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openPdp(page, ["/e2e-fixtures/pdp-kit.webp", "/e2e-fixtures/pdp-kit-alt.webp"]);
+
+  const gallery = page.getByTestId("pdp-gallery-main");
+  const first = gallery.locator('[data-gallery-slide="0"]');
+  const second = gallery.locator('[data-gallery-slide="1"]');
+  await expect(first).toHaveAttribute("aria-hidden", "false");
+  await expect(second).toHaveAttribute("aria-hidden", "true");
+  await gallery.getByRole("button", { name: "Próxima imagem", exact: true }).click();
+  await expect(second).toHaveAttribute("aria-hidden", "false");
+  await expect(first).toHaveAttribute("aria-hidden", "true");
+  await expect.poll(() => second.evaluate(el => parseFloat(getComputedStyle(el).transitionDuration))).toBeLessThan(0.01);
+
+  const zoom = gallery.getByRole("button", { name: "Ampliar imagem", exact: true });
+  if ((page.viewportSize()?.width ?? 0) >= 640) {
+    await expect(zoom).toBeVisible();
+    const box = await rect(zoom);
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    await zoom.focus();
+    await expect(zoom).toBeFocused();
+    await expect(zoom).toHaveCSS("opacity", "1");
+  }
 });

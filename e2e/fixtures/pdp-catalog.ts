@@ -40,9 +40,9 @@ const product = {
   },
 };
 
-export async function usePdpCatalog(page: Page) {
+export async function usePdpCatalog(page: Page, images = product.images) {
   await page.addInitScript(() => localStorage.setItem("elc_cookie_consent", "rejected"));
-  await page.route("**/e2e-fixtures/pdp-kit.webp", route =>
+  await page.route("**/e2e-fixtures/pdp-kit*.webp", route =>
     route.fulfill({
       path: path.resolve(process.cwd(), "src/assets/category-kits.webp"),
       contentType: "image/webp",
@@ -58,7 +58,7 @@ export async function usePdpCatalog(page: Page) {
       }] });
     }
     if (req.method() === "GET" && url.pathname.endsWith("/products")) {
-      return route.fulfill({ json: [product] });
+      return route.fulfill({ json: [{ ...product, images }] });
     }
     // Other public tables are empty and all telemetry/mutations are isolated.
     return route.fulfill({ json: [] });

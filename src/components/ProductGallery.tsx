@@ -17,7 +17,6 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
   const { enabled: reducedMotion } = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -32,10 +31,6 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
     if (!el) return;
     setCanScrollLeft(el.scrollLeft > 4);
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  }, []);
-
-  useEffect(() => {
-    setIsLoaded(true);
   }, []);
 
   // Vibração tátil sutil ao trocar de slide (mobile, quando disponível)
@@ -175,21 +170,20 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
     const node = thumbItemsRef.current[currentIndex];
     if (!el || !node) return;
     const target = node.offsetLeft - el.clientWidth / 2 + node.offsetWidth / 2;
-    el.scrollTo({ left: target, behavior: 'smooth' });
-  }, [currentIndex, layout]);
+    el.scrollTo({ left: target, behavior: reducedMotion ? 'auto' : 'smooth' });
+  }, [currentIndex, layout, reducedMotion]);
 
   const scrollThumbs = (dir: -1 | 1) => {
     const el = thumbsRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.7, 240), behavior: 'smooth' });
+    el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.7, 240), behavior: reducedMotion ? 'auto' : 'smooth' });
   };
 
 
 
   return (
     <div className={cn(
-      "relative w-full max-w-full min-w-0 overflow-hidden transition-all duration-500",
-      isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
+      "relative w-full max-w-full min-w-0 overflow-hidden",
       layout === 'vertical' && "flex gap-4",
       layout === 'horizontal' && "sm:max-lg:flex sm:max-lg:w-fit sm:max-lg:mx-auto sm:max-lg:items-center sm:max-lg:justify-center sm:max-lg:gap-3 md:max-lg:gap-4 sm:max-lg:px-2"
     )}>
@@ -304,8 +298,10 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
             {images.map((image, index) => (
               <div
                 key={index}
+                data-gallery-slide={index}
+                aria-hidden={index !== currentIndex}
                 className={cn(
-                  "absolute inset-0 transition-opacity duration-700 ease-out motion-reduce:transition-none",
+                  "absolute inset-0 transition-opacity duration-[180ms] ease-out motion-reduce:transition-none",
                   index === currentIndex ? "opacity-100" : "opacity-0"
                 )}
               >
@@ -318,7 +314,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
                   priority={index === 0}
                   sizes="(max-width: 767px) calc(100vw - 2rem), (max-width: 1024px) 400px, 440px"
                   wrapperClassName="w-full h-full"
-                  className="object-cover object-center transition-transform duration-700 ease-out sm:group-hover:scale-105"
+                  className="object-cover object-center"
                 />
               </div>
             ))}
@@ -331,7 +327,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
               e.stopPropagation();
               setIsZoomed(true);
             }}
-            className="absolute bottom-4 right-4 hidden sm:flex p-2.5 bg-background/90 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-background hover:scale-110 active:scale-95 shadow-md"
+            className="absolute bottom-4 right-4 hidden sm:inline-flex min-h-11 min-w-11 items-center justify-center p-2.5 bg-background/90 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-[opacity,background-color] duration-[160ms] ease-out hover:bg-background shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Ampliar imagem"
           >
             <ZoomIn className="h-5 w-5 text-foreground" />
