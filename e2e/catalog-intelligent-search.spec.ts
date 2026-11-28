@@ -73,6 +73,9 @@ test("autocomplete não aceita sugestão antiga e oferece busca completa sem cor
   await input.press("ArrowDown");
   await input.press("Enter");
   await expect(page).toHaveURL(/\/buscar\?q=zzsemresultado/);
+  // A URL pode mudar antes que a rota lazy remonte o cabeçalho.
+  await expect(page.getByRole("heading", { name: "Buscar produtos", exact: true })).toBeVisible();
+  await expect(page.locator("main").getByRole("textbox", { name: "O que você procura?" })).toHaveValue("zzsemresultado");
 
   if (mobile) await mobileToggle.click();
   await input.fill("zzoutrotermo");
