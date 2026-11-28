@@ -542,7 +542,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
             <DialogClose asChild>
               <button
                 type="button"
-                className="absolute top-4 right-4 z-50 inline-flex h-11 w-11 items-center justify-center bg-background/90 rounded-full hover:bg-background transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="absolute top-4 right-4 z-50 inline-flex min-h-[44px] min-w-[44px] items-center justify-center bg-background/90 rounded-full hover:bg-background transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label="Fechar ampliação"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
