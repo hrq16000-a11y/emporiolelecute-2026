@@ -211,7 +211,8 @@ const QuoteFormSection = ({ pageHeading = false }: { pageHeading?: boolean }) =>
                 {feedback === "success" && <p role="status" className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-foreground">Solicitação processada. Se precisar, fale conosco pelo WhatsApp.</p>}
                 <Button 
                   type="submit" 
-                  className="w-full bg-primary hover:bg-primary-dark text-primary-foreground rounded-full py-6 text-lg"
+                  size="lg"
+                  className="w-full h-auto min-h-[48px] bg-primary hover:bg-primary-dark text-primary-foreground rounded-full py-3 text-lg"
                   disabled={isLoading}
                 >
                   {isLoading ? "Enviando..." : "Solicitar Orçamento"}
