@@ -1,3 +1,4 @@
+import { useId, useState } from "react";
 import { Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -13,26 +14,47 @@ interface Props {
   onChange: (values: PersonalizationValues) => void;
 }
 
+const normalizeSearch = (value: string) =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
+
 /** Renderiza as condições de personalização configuradas pelo admin no PDP. */
 const ProductPersonalizationOptions = ({ options, values, onChange }: Props) => {
+  const groupId = useId();
+  const [queries, setQueries] = useState<Record<string, string>>({});
   if (!options.length) return null;
 
   const set = (id: string, value: string) => onChange({ ...values, [id]: value });
 
   return (
     <div className="space-y-5">
-      {options.map((option) => {
+      {options.map((option, index) => {
         const selected = values[option.id] || "";
+        const fieldId = `${groupId}-${index}`;
+        const helpId = option.help ? `${fieldId}-help` : undefined;
+        const choices = option.choices || [];
+        const searchable = isChoiceType(option.type) && choices.length > 8;
+        const query = searchable ? (queries[option.id] || "") : "";
+        const term = normalizeSearch(query);
+        const matches = choices.filter((choice) => normalizeSearch(choice.label).includes(term));
+        // A busca não apaga escolhas: mantenha a opção selecionada visível.
+        const visibleChoices = choices.filter((choice) => choice.id === selected || matches.includes(choice));
         return (
           <div key={option.id} className="space-y-2">
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium text-foreground">{option.label}</span>
+              {option.type === "text" ? (
+                <label htmlFor={fieldId} className="text-sm font-medium text-foreground">{option.label}</label>
+              ) : (
+                <span id={`${fieldId}-label`} className="text-sm font-medium text-foreground">{option.label}</span>
+              )}
               {option.required && <span className="text-xs text-primary">obrigatório</span>}
             </div>
-            {option.help && <p className="text-xs text-muted-foreground">{option.help}</p>}
+            {option.help && <p id={helpId} className="text-xs text-muted-foreground">{option.help}</p>}
 
             {option.type === "text" && (
               <Input
+                id={fieldId}
+                aria-required={option.required || undefined}
+                aria-describedby={helpId}
                 value={selected}
                 maxLength={option.max_length || undefined}
                 placeholder={option.placeholder || ""}
@@ -41,16 +63,39 @@ const ProductPersonalizationOptions = ({ options, values, onChange }: Props) => 
               />
             )}
 
+            {searchable && (
+              <div className="space-y-1">
+                <label htmlFor={`${fieldId}-search`} className="text-xs text-muted-foreground">Buscar {option.label}</label>
+                <Input
+                  id={`${fieldId}-search`}
+                  type="search"
+                  autoComplete="off"
+                  placeholder="Filtrar opções"
+                  value={query}
+                  onChange={(e) => setQueries((previous) => ({ ...previous, [option.id]: e.target.value }))}
+                  className="min-h-[44px]"
+                />
+                {term && (
+                  <p role="status" className="text-xs text-muted-foreground">
+                    {matches.length === 0 ? "Nenhuma opção encontrada." : `${matches.length} ${matches.length === 1 ? "opção encontrada" : "opções encontradas"}.`}
+                    {selected && !matches.some((choice) => choice.id === selected) && " Sua escolha continua selecionada."}
+                  </p>
+                )}
+              </div>
+            )}
+
             {isChoiceType(option.type) && (
               <div
                 role="radiogroup"
-                aria-label={option.label}
+                aria-labelledby={`${fieldId}-label`}
+                aria-required={option.required || undefined}
+                aria-describedby={helpId}
                 className={cn(
                   "flex flex-wrap gap-2",
                   option.type === "image" && "gap-3",
                 )}
               >
-                {(option.choices || []).map((choice) => {
+                {visibleChoices.map((choice) => {
                   const active = selected === choice.id;
                   const commonProps = {
                     type: "button" as const,

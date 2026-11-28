@@ -802,10 +802,11 @@ const ProductPage = () => {
               {/* Personalization Field - only show if enabled */}
               {dbProduct?.personalization_enabled !== false && (
                 <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-5 mb-6">
-                  <h3 className="text-sm font-medium text-foreground mb-3 tracking-wide">
+                  <label htmlFor="pdp-personalization" className="block text-sm font-medium text-foreground mb-3 tracking-wide">
                     {dbProduct?.personalization_label || "Personalização"}
-                  </h3>
+                  </label>
                   <Textarea
+                    id="pdp-personalization"
                     placeholder={
                       dbProduct?.personalization_placeholder || "Digite o nome, data ou mensagem para personalização..."
                     }
@@ -816,6 +817,7 @@ const ProductPage = () => {
                   {personalizationOptions.length > 0 && (
                     <div className="mt-5 border-t border-primary/20 pt-4">
                       <ProductPersonalizationOptions
+                        key={product.id}
                         options={personalizationOptions}
                         values={optionValues}
                         onChange={setOptionValues}
@@ -828,8 +830,8 @@ const ProductPage = () => {
               {/* Quantity Selector */}
               <div className="mb-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <span className="font-medium text-foreground">Quantidade</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-primary/80">
+                  <label htmlFor="pdp-quantity" className="font-medium text-foreground">Quantidade</label>
+                  <span id="pdp-min-quantity" className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-primary/80">
                     <Package className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden />
                     Mínimo {product.minQuantity} un.
                   </span>
@@ -838,6 +840,7 @@ const ProductPage = () => {
                   <div className="flex items-center border border-border rounded-lg overflow-hidden max-w-full">
                     <button
                       type="button"
+                      aria-label="Diminuir quantidade"
                       onClick={() => {
                         const next = Math.max(product.minQuantity, quantity - 1);
                         setQuantity(next);
@@ -849,6 +852,8 @@ const ProductPage = () => {
                       <Minus className="h-4 w-4" />
                     </button>
                     <input
+                      id="pdp-quantity"
+                      aria-describedby="pdp-min-quantity"
                       type="number"
                       inputMode="numeric"
                       value={quantityInput}
@@ -872,6 +877,7 @@ const ProductPage = () => {
                     />
                     <button
                       type="button"
+                      aria-label="Aumentar quantidade"
                       onClick={() => {
                         const next = quantity + 1;
                         setQuantity(next);
