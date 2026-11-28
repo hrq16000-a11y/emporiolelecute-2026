@@ -90,9 +90,10 @@ test("filtros avançados mantêm o slug escolhido ao pesquisar outra categoria",
   const filter = page.getByRole("searchbox", { name: "Buscar categorias", exact: true });
   await filter.fill("ambar");
   const chosen = page.getByRole("checkbox", { name: "Âmbar", exact: true });
-  await chosen.check();
-  await expect(chosen).toBeChecked();
+  // A seleção é controlada pela URL: aguarde a navegação e a atualização do checkbox.
+  await chosen.click();
   await expect(page).toHaveURL(/categorias=ambar/);
+  await expect(chosen).toBeChecked();
   await filter.fill("azul");
   await expect(page.getByRole("checkbox", { name: "Azul", exact: true })).toBeVisible();
   await expect(chosen).toBeChecked();
