@@ -23,6 +23,7 @@ jobs:
         run: |
           node --test scripts/check-storefront-guard.test.mjs
           node scripts/check-storefront-guard.mjs
+          node --test scripts/product-social.test.mjs
       - run: bun run test --run
         env:
           CI: true
