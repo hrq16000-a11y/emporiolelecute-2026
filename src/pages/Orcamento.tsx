@@ -21,7 +21,7 @@ const Orcamento = () => {
       <BreadcrumbStructuredData items={breadcrumbItems} />
       <Header />
       <main className="pt-20">
-        <QuoteFormSection />
+        <QuoteFormSection pageHeading />
       </main>
       <Footer />
       <WhatsAppButton />

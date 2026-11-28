@@ -134,7 +134,7 @@ export default function ShippingCalculator({ items, state, initialCep = "", onSe
     <div className="space-y-4">
 
       <div className="flex items-end gap-3">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <Label htmlFor="ship-cep">CEP de entrega</Label>
           <Input
             id="ship-cep"
@@ -143,11 +143,11 @@ export default function ShippingCalculator({ items, state, initialCep = "", onSe
             value={cep}
             onChange={(e) => setCep(maskCep(e.target.value))}
             maxLength={9}
-            className="mt-1"
+            className="mt-1 min-h-[44px]"
           />
         </div>
-        <Button onClick={calculate} disabled={loading} className="bg-primary hover:bg-primary-dark text-primary-foreground">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Calcular"}
+        <Button onClick={calculate} disabled={loading} aria-busy={loading} className="min-h-[44px] bg-primary hover:bg-primary-dark text-primary-foreground">
+          {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" /> Calculando...</> : "Calcular"}
         </Button>
       </div>
 
