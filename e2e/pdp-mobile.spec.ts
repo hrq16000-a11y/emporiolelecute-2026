@@ -107,3 +107,57 @@ test("galeria respeita movimento reduzido e mantém controles acessíveis", asyn
     await expect(zoom).toHaveCSS("opacity", "1");
   }
 });
+
+
+test("galeria avança uma vez por tecla e não reage a teclas fora de seus controles", async ({ page }) => {
+  await openPdp(page, [
+    "/e2e-fixtures/pdp-kit.webp",
+    "/e2e-fixtures/pdp-kit-alt.webp",
+    "/e2e-fixtures/pdp-kit-third.webp",
+  ]);
+  const gallery = page.getByTestId("pdp-gallery-main");
+  const slide = (index: number) => gallery.locator(`[data-gallery-slide="${index}"]`);
+  const next = gallery.getByRole("button", { name: "Próxima imagem", exact: true });
+
+  await expect(slide(0)).toHaveAttribute("aria-hidden", "false");
+  // Sem gesto do visitante, a imagem permanece mesmo após o antigo intervalo.
+  await page.waitForTimeout(5200);
+  await expect(slide(0)).toHaveAttribute("aria-hidden", "false");
+
+  const outside = page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Início", exact: true });
+  await outside.press("ArrowRight");
+  await expect(outside).toBeFocused();
+  await expect(slide(0)).toHaveAttribute("aria-hidden", "false");
+
+  const quantity = page.locator("main").getByRole("spinbutton");
+  await quantity.press("ArrowRight");
+  await expect(quantity).toBeFocused();
+  await expect(slide(0)).toHaveAttribute("aria-hidden", "false");
+
+  // Três imagens tornam inequívoca uma eventual movimentação dupla.
+  await next.press("ArrowRight");
+  await expect(slide(1)).toHaveAttribute("aria-hidden", "false");
+  await expect(slide(2)).toHaveAttribute("aria-hidden", "true");
+  await next.press("ArrowLeft");
+  await expect(slide(0)).toHaveAttribute("aria-hidden", "false");
+
+  // O grupo desktop já tem um handler próprio (preventDefault): sem duplo avanço.
+  const horizontalThumbs = page.getByRole("tablist", { name: "Miniaturas do produto" });
+  if (await horizontalThumbs.isVisible()) {
+    const first = horizontalThumbs.getByRole("tab", { name: "Ver imagem 1 de 3", exact: true });
+    const second = horizontalThumbs.getByRole("tab", { name: "Ver imagem 2 de 3", exact: true });
+    await first.press("ArrowRight");
+    await expect(second).toBeFocused();
+    await expect(slide(1)).toHaveAttribute("aria-hidden", "false");
+    await expect(slide(2)).toHaveAttribute("aria-hidden", "true");
+  }
+
+  await gallery.locator('[data-gallery-slide][aria-hidden="false"]').click();
+  const lightbox = page.getByRole("dialog");
+  await expect(lightbox).toBeVisible();
+  const initialIndex = Number(await gallery.locator('[data-gallery-slide][aria-hidden="false"]').getAttribute("data-gallery-slide"));
+  await lightbox.getByRole("button", { name: "Próxima imagem", exact: true }).press("ArrowRight");
+  await expect(slide((initialIndex + 1) % 3)).toHaveAttribute("aria-hidden", "false");
+  await lightbox.getByRole("button", { name: "Próxima imagem", exact: true }).press("Escape");
+  await expect(lightbox).toBeHidden();
+});

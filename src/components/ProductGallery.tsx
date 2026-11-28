@@ -17,8 +17,6 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
   const { enabled: reducedMotion } = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
 
   // Tira horizontal de miniaturas — refs e estado de bordas
   const thumbsRef = useRef<HTMLDivElement>(null);
@@ -71,8 +69,6 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
     touchAxisRef.current = 'undecided';
-    setTouchStart(e.touches[0].clientX);
-    setIsPaused(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -92,62 +88,39 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStart === null) {
-      setIsPaused(false);
-      touchAxisRef.current = 'undecided';
-      return;
-    }
-
-    const wasHorizontal = touchAxisRef.current === 'horizontal';
-    const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchStart - touchEnd;
-
-    if (wasHorizontal && Math.abs(diff) > 40) {
-      if (diff > 0) goToNext();
-      else goToPrevious();
-    }
-    setTouchStart(null);
+  const resetTouch = () => {
     touchAxisRef.current = 'undecided';
     touchStartXRef.current = null;
     touchStartYRef.current = null;
-    window.setTimeout(() => setIsPaused(false), 1500);
   };
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') goToPrevious();
-      if (e.key === 'ArrowRight') goToNext();
-      if (e.key === 'Escape') setIsZoomed(false);
-    };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const startX = touchStartXRef.current;
+    const endX = e.changedTouches[0]?.clientX;
+    const wasHorizontal = touchAxisRef.current === 'horizontal';
+    resetTouch();
+    if (!wasHorizontal || startX === null || endX === undefined) return;
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hapticTick]);
+    const diff = startX - endX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) goToNext();
+      else goToPrevious();
+    }
+  };
 
-  // Autoplay suave (fade já aplicado via transition-opacity).
-  // Pausa em: zoom aberto, hover/touch/focus, aba oculta, prefers-reduced-motion, <2 imagens.
-  useEffect(() => {
-    if (images.length < 2 || isZoomed || isPaused || reducedMotion) return;
-    if (typeof window === 'undefined') return;
-    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
-    if (typeof document !== 'undefined' && document.hidden) return;
-
-    const id = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [images.length, isZoomed, isPaused, reducedMotion]);
-
-  // Pausa autoplay quando a aba fica oculta
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const onVis = () => setIsPaused(document.hidden);
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
-  }, []);
+  // A foto só muda por intenção explícita. As setas atuam na galeria
+  // (incluindo seu lightbox), nunca em quantidade ou personalização.
+  // As miniaturas horizontais já tratam suas próprias teclas.
+  const handleGalleryKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || images.length < 2) return;
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goToPrevious();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      goToNext();
+    }
+  };
 
   // Bordas da tira de thumbs (mostra/oculta setas)
   useEffect(() => {
@@ -182,7 +155,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
 
 
   return (
-    <div className={cn(
+    <div onKeyDown={handleGalleryKeyDown} className={cn(
       "relative w-full max-w-full min-w-0 overflow-hidden",
       layout === 'vertical' && "flex gap-4",
       layout === 'horizontal' && "sm:max-lg:flex sm:max-lg:w-fit sm:max-lg:mx-auto sm:max-lg:items-center sm:max-lg:justify-center sm:max-lg:gap-3 md:max-lg:gap-4 sm:max-lg:px-2"
@@ -285,10 +258,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onFocusCapture={() => setIsPaused(true)}
-          onBlurCapture={() => setIsPaused(false)}
+          onTouchCancel={resetTouch}
           role="region"
           aria-roledescription="carrossel"
           aria-label={`Galeria de imagens de ${productName}`}
@@ -560,6 +530,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
+              onTouchCancel={resetTouch}
             >
               <img
                 src={optimizeImage(images[currentIndex], { width: 1600, quality: 85, resize: "contain" })}
