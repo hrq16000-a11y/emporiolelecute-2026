@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import FacetSearch from "@/components/FacetSearch";
 export interface FacetItem { id: string; name: string; slug: string; count?: number }
 
 export type SpeedKey = "rapido" | "normal" | "longo";
@@ -128,17 +129,21 @@ function FilterBody({ values, onChange, occasions, categories, tags, segments, p
       {!hide?.occasion && occasions && occasions.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold text-foreground mb-2">Ocasião</h3>
-          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-            {occasions.map((o) => (
-              <label key={o.id} className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                <Checkbox
-                  checked={values.occasionSlugs.includes(o.slug)}
-                  onCheckedChange={() => onChange({ ...values, occasionSlugs: toggleArr(values.occasionSlugs, o.slug) })}
-                />
-                {o.name}
-              </label>
-            ))}
-          </div>
+          <FacetSearch items={occasions} selected={values.occasionSlugs} label="Buscar ocasiões">
+            {visible => (
+              <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                {visible.map((o) => (
+                  <label key={o.id} className="flex min-h-[44px] items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <Checkbox
+                      checked={values.occasionSlugs.includes(o.slug)}
+                      onCheckedChange={() => onChange({ ...values, occasionSlugs: toggleArr(values.occasionSlugs, o.slug) })}
+                    />
+                    {o.name}
+                  </label>
+                ))}
+              </div>
+            )}
+          </FacetSearch>
         </section>
       )}
 
@@ -146,17 +151,21 @@ function FilterBody({ values, onChange, occasions, categories, tags, segments, p
       {!hide?.category && categories && categories.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold text-foreground mb-2">Categoria</h3>
-          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-            {categories.map((c) => (
-              <label key={c.id} className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                <Checkbox
-                  checked={values.categorySlugs.includes(c.slug)}
-                  onCheckedChange={() => onChange({ ...values, categorySlugs: toggleArr(values.categorySlugs, c.slug) })}
-                />
-                {c.name}
-              </label>
-            ))}
-          </div>
+          <FacetSearch items={categories} selected={values.categorySlugs} label="Buscar categorias">
+            {visible => (
+              <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                {visible.map((c) => (
+                  <label key={c.id} className="flex min-h-[44px] items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <Checkbox
+                      checked={values.categorySlugs.includes(c.slug)}
+                      onCheckedChange={() => onChange({ ...values, categorySlugs: toggleArr(values.categorySlugs, c.slug) })}
+                    />
+                    {c.name}
+                  </label>
+                ))}
+              </div>
+            )}
+          </FacetSearch>
         </section>
       )}
 
@@ -164,17 +173,21 @@ function FilterBody({ values, onChange, occasions, categories, tags, segments, p
       {!hide?.segment && segments && segments.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold text-foreground mb-2">Segmento</h3>
-          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-            {segments.map((s) => (
-              <label key={s.id} className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                <Checkbox
-                  checked={values.segmentSlugs.includes(s.slug)}
-                  onCheckedChange={() => onChange({ ...values, segmentSlugs: toggleArr(values.segmentSlugs, s.slug) })}
-                />
-                {s.name}
-              </label>
-            ))}
-          </div>
+          <FacetSearch items={segments} selected={values.segmentSlugs} label="Buscar segmentos">
+            {visible => (
+              <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                {visible.map((s) => (
+                  <label key={s.id} className="flex min-h-[44px] items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <Checkbox
+                      checked={values.segmentSlugs.includes(s.slug)}
+                      onCheckedChange={() => onChange({ ...values, segmentSlugs: toggleArr(values.segmentSlugs, s.slug) })}
+                    />
+                    {s.name}
+                  </label>
+                ))}
+              </div>
+            )}
+          </FacetSearch>
         </section>
       )}
 
@@ -182,15 +195,18 @@ function FilterBody({ values, onChange, occasions, categories, tags, segments, p
       {tags && tags.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold text-foreground mb-2">Tags</h3>
+          <FacetSearch items={tags} selected={values.tagSlugs} label="Buscar tags">
+            {visible => (
           <div className="flex flex-wrap gap-1.5">
-            {tags.map((t) => {
+            {visible.map((t) => {
               const active = values.tagSlugs.includes(t.slug);
               return (
                 <button
                   key={t.id}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => onChange({ ...values, tagSlugs: toggleArr(values.tagSlugs, t.slug) })}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                  className={`min-h-[44px] px-2.5 py-1 rounded-full text-xs border transition-colors ${
                     active
                       ? "bg-primary text-primary-foreground border-primary"
                       : "border-border text-muted-foreground hover:border-primary/50"
@@ -201,6 +217,8 @@ function FilterBody({ values, onChange, occasions, categories, tags, segments, p
               );
             })}
           </div>
+            )}
+          </FacetSearch>
         </section>
       )}
 

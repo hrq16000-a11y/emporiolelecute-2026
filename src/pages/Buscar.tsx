@@ -15,6 +15,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useSearchCacheVersion } from "@/hooks/useSearchCacheVersion";
 import { supabase } from "@/integrations/supabase/client";
 import SearchEmptyState from "@/components/SearchEmptyState";
+import FacetSearch from "@/components/FacetSearch";
 import DataErrorState from "@/components/DataErrorState";
 import type { Product } from "@/data/products";
 
@@ -291,6 +292,7 @@ const Buscar = () => {
               enterKeyHint="search"
               autoComplete="off"
               placeholder="O que você procura?"
+              aria-label="O que você procura?"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -322,10 +324,14 @@ const Buscar = () => {
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Categoria
               </p>
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+              <FacetSearch items={dbCategories || []} selected={selectedCategory ? [selectedCategory] : []} label="Buscar categorias">
+                {visible => (
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Categoria">
                 <button
+                  type="button"
+                  aria-pressed={!selectedCategory}
                   onClick={() => setSelectedCategory(null)}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  className={`min-h-[44px] max-w-full break-words px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     !selectedCategory
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background text-foreground/80 border-border hover:border-primary/50"
@@ -333,13 +339,15 @@ const Buscar = () => {
                 >
                   Todas
                 </button>
-                {(dbCategories || []).map((c) => (
+                {visible.map((c) => (
                   <button
                     key={c.id}
+                    type="button"
+                    aria-pressed={selectedCategory === c.slug}
                     onClick={() =>
                       setSelectedCategory((cur) => (cur === c.slug ? null : c.slug))
                     }
-                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    className={`min-h-[44px] max-w-full break-words px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                       selectedCategory === c.slug
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-background text-foreground/80 border-border hover:border-primary/50"
@@ -349,20 +357,24 @@ const Buscar = () => {
                   </button>
                 ))}
               </div>
+                )}
+              </FacetSearch>
             </div>
 
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
                 Faixa de preço
               </p>
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Faixa de preço">
                 {PRICE_RANGES.map((r) => (
                   <button
                     key={r.id}
+                    type="button"
+                    aria-pressed={selectedPrice === r.id}
                     onClick={() =>
                       setSelectedPrice((cur) => (cur === r.id ? null : r.id))
                     }
-                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    className={`min-h-[44px] max-w-full break-words px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                       selectedPrice === r.id
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-background text-foreground/80 border-border hover:border-primary/50"
@@ -386,7 +398,7 @@ const Buscar = () => {
 
           {/* Resultados */}
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-muted-foreground">
+            <p role="status" className="text-sm text-muted-foreground">
               {productsError || searchError
                 ? "Busca indisponível no momento"
                 : isLoading || (isSearching && !isFetchingNextPage)

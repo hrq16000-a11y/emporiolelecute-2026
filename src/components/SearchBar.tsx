@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useId } from "react";
 import { Search, X, Loader2, Package, Tag, Calendar, FileText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDbProducts, useDbCategories, useDbOccasions } from "@/hooks/useProducts";
@@ -61,6 +61,7 @@ const SearchBar = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const listId = `${useId()}-search-suggestions`;
 
   // Debounce 300ms — evita re-render por tecla
   const debouncedQuery = useDebounce(query, 300);
@@ -152,17 +153,28 @@ const SearchBar = ({
     return { suggestions: flat, grouped: groups };
   }, [debouncedQuery, products, categories, occasions]);
 
-  // Abre/fecha dropdown conforme query debouncada
-  useEffect(() => {
-    setIsOpen(debouncedQuery.trim().length >= 2);
+  // Não permita escolher uma sugestão da consulta anterior durante o debounce.
+  const isSearching = searchTerm.length >= 2 && query !== debouncedQuery;
+  const suggestionsReady = !isSearching && !(loadingProducts && products.length === 0);
+  const activeSuggestion = isOpen && suggestionsReady ? suggestions[selectedIndex] : undefined;
+
+  const closeSuggestions = () => {
+    setIsOpen(false);
     setSelectedIndex(-1);
-  }, [debouncedQuery]);
+  };
+
+  useEffect(() => {
+    if (activeSuggestion) {
+      document.getElementById(`${listId}-option-${selectedIndex}`)?.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeSuggestion, listId, selectedIndex]);
 
   // Fecha ao clicar fora
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setSelectedIndex(-1);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -172,28 +184,32 @@ const SearchBar = ({
   const handleSelect = (s: Suggestion) => {
     navigate(s.to);
     setQuery("");
-    setIsOpen(false);
+    closeSuggestions();
     onResultSelect?.();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
+    if (e.nativeEvent.isComposing) return;
+    if (e.key === "ArrowDown" && searchTerm.length >= 2) {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
-    } else if (e.key === "ArrowUp") {
+      setIsOpen(true);
+      if (suggestionsReady && suggestions.length > 0) {
+        setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
+      }
+    } else if (e.key === "ArrowUp" && isOpen && suggestionsReady) {
       e.preventDefault();
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-        handleSelect(suggestions[selectedIndex]);
+      if (activeSuggestion) {
+        handleSelect(activeSuggestion);
       } else if (searchTerm.length >= 2) {
         navigate(`${searchPath}?${paramKey}=${encodeURIComponent(searchTerm)}`);
-        setIsOpen(false);
+        closeSuggestions();
         onResultSelect?.();
       }
     } else if (e.key === "Escape") {
-      setIsOpen(false);
+      closeSuggestions();
     }
   };
 
@@ -207,34 +223,40 @@ const SearchBar = ({
 
   const clearSearch = () => {
     setQuery("");
-    setIsOpen(false);
     inputRef.current?.focus();
+    closeSuggestions();
   };
 
-  // Loading visível apenas enquanto debounce ainda não alcançou query
-  const isSearching = searchTerm.length >= 2 && query !== debouncedQuery;
-
   return (
-    <div ref={containerRef} className="relative w-full max-w-xs">
+    <div
+      ref={containerRef}
+      className="relative w-full max-w-xs"
+      onBlur={(e) => {
+        if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) closeSuggestions();
+      }}
+    >
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
         <Input
           ref={inputRef}
           type="text"
           placeholder="Buscar produtos, categorias..."
+          aria-label="Buscar produtos, categorias..."
+          autoComplete="off"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
             setSelectedIndex(-1);
+            setIsOpen(e.target.value.trim().length >= 2);
           }}
           onKeyDown={handleKeyDown}
-          onFocus={() => debouncedQuery.trim().length >= 2 && setIsOpen(true)}
+          onFocus={() => searchTerm.length >= 2 && setIsOpen(true)}
           className="pl-9 pr-8 h-9 rounded-full bg-secondary/50 border-border/50 focus:bg-background"
           role="combobox"
           aria-expanded={isOpen}
           aria-autocomplete="list"
-          aria-controls="search-suggestions"
-          aria-activedescendant={selectedIndex >= 0 ? `search-opt-${selectedIndex}` : undefined}
+          aria-controls={isOpen ? listId : undefined}
+          aria-activedescendant={activeSuggestion ? `${listId}-option-${selectedIndex}` : undefined}
         />
         {query && (
           <button
@@ -250,11 +272,10 @@ const SearchBar = ({
 
       {isOpen && (
         <div
-          id="search-suggestions"
-          role="listbox"
           className="absolute top-full mt-2 w-full bg-popover text-popover-foreground border border-border rounded-xl shadow-lg overflow-hidden z-50 animate-fade-in max-h-[70vh] overflow-y-auto"
         >
-          {isSearching || (loadingProducts && products.length === 0) ? (
+          <div id={listId} role="listbox" aria-label="Sugestões de busca" aria-busy={!suggestionsReady}>
+          {!suggestionsReady ? (
             <div className="flex items-center justify-center py-6" role="status" aria-live="polite">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               <span className="ml-2 text-sm text-muted-foreground">Buscando...</span>
@@ -267,20 +288,21 @@ const SearchBar = ({
                   const Meta = KIND_META[group.kind];
                   const Icon = Meta.icon;
                   return (
-                    <div key={group.kind} className="py-1">
+                    <div key={group.kind} role="group" aria-label={Meta.label} className="py-1">
                       <div className="flex items-center gap-1.5 px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/80">
                         <Icon className="h-3 w-3" />
                         {Meta.label}
                       </div>
-                      <ul>
+                      <ul role="presentation">
                         {group.items.map((s) => {
                           flatIdx += 1;
                           const idx = flatIdx;
                           return (
-                            <li key={`${s.kind}-${s.id}`}>
+                            <li key={`${s.kind}-${s.id}`} role="presentation">
                               <Link
-                                id={`search-opt-${idx}`}
+                                id={`${listId}-option-${idx}`}
                                 role="option"
+                                tabIndex={-1}
                                 aria-selected={idx === selectedIndex}
                                 to={s.to}
                                 onClick={(e) => {
@@ -294,7 +316,7 @@ const SearchBar = ({
                                 {s.kind === "product" ? (
                                   <img
                                     src={optimizeImage(s.image, { width: 96, resize: "contain" })}
-                                    alt={s.label}
+                                    alt=""
                                     className="w-10 h-10 rounded-lg object-contain bg-muted p-1 shrink-0"
                                   />
                                 ) : (
@@ -321,23 +343,28 @@ const SearchBar = ({
                   );
                 });
               })()}
-              <Link
-                to={`${searchPath}?${paramKey}=${encodeURIComponent(searchTerm)}`}
-                onClick={() => {
-                  setIsOpen(false);
-                  onResultSelect?.();
-                }}
-                className="block px-4 py-3 text-center text-sm text-primary hover:bg-secondary border-t border-border"
-              >
-                Ver todos os resultados para "{query}"
-              </Link>
+
             </>
           ) : (
-            <div className="p-4">
+            <div className="p-4" role="status">
               <p className="text-sm text-muted-foreground text-center">
-                Nenhum resultado encontrado para "{debouncedQuery}"
+                Nenhuma sugestão imediata para "{debouncedQuery}". Consulte a busca completa.
               </p>
             </div>
+          )}
+          </div>
+          {/* A RPC pode encontrar sinônimos mesmo sem sugestões locais. */}
+          {suggestionsReady && (
+            <Link
+              to={`${searchPath}?${paramKey}=${encodeURIComponent(searchTerm)}`}
+              onClick={() => {
+                closeSuggestions();
+                onResultSelect?.();
+              }}
+              className="block min-h-[44px] px-4 py-3 text-center text-sm text-primary hover:bg-secondary border-t border-border"
+            >
+              Ver todos os resultados para "{query}"
+            </Link>
           )}
         </div>
       )}
