@@ -41,7 +41,7 @@ const Footer = () => {
             Empório LeleCute — perfumaria artesanal, feita em pequena escala.
           </p>
           <p className="mt-2 text-sm text-primary-foreground/55 font-light">
-            Do nosso ateliê, em Curitiba, para a sua casa.
+            Do nosso ateliê para a sua casa.
           </p>
         </div>
 
@@ -148,7 +148,7 @@ const Footer = () => {
             <Button variant="link" onClick={openConsentPreferences} className="min-h-11 px-0 text-xs text-primary-foreground/70">
               Preferências de cookies
             </Button>
-            <span className="tracking-wide">Feito à mão. Em Curitiba.</span>
+            <span className="tracking-wide">Feito à mão, com cuidado.</span>
           </div>
         </div>
       </div>
