@@ -74,7 +74,9 @@ test("consentimento, convite e prova social não competem; convite devolve foco"
 
 test("exit intent não interfere com edição ou lightbox, mas mantém convite legítimo", async ({ page }) => {
   test.setTimeout(45000);
-  await usePdpCatalog(page, undefined, { personalization_enabled: true, personalization_label: "Mensagem especial" });
+  // Reproduz o título longo que extravasava o modal e cobre palavra sem espaços.
+  const longName = "Lembrancinha Sabonete Natal – Presépio Sagrada Família " + "personalização".repeat(8);
+  await usePdpCatalog(page, undefined, { name: longName, personalization_enabled: true, personalization_label: "Mensagem especial" });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(`/produto/${PDP_TEST_SLUG}`, { waitUntil: "domcontentloaded" });
   const field = page.getByRole("textbox", { name: "Mensagem especial", exact: true });
@@ -100,6 +102,29 @@ test("exit intent não interfere com edição ou lightbox, mas mantém convite l
   await trigger();
   await expect(exit).toBeVisible();
   const closeExit = exit.getByRole("button", { name: "Fechar sugestão de atendimento" });
+  const productName = exit.getByText(longName, { exact: true });
+  const whatsapp = exit.getByRole("button", { name: "Falar no WhatsApp", exact: true });
+  const dismiss = exit.getByRole("button", { name: "Continuar navegando", exact: true });
+  await expect(productName).toBeVisible();
+  await expect(whatsapp).toBeVisible();
+  const originalViewport = page.viewportSize();
+  for (const [width, height] of [[320, 568], [390, 844], [517, 517], [768, 1024], [1440, 900]]) {
+    await page.setViewportSize({ width, height });
+    // A grade deve caber no painel, e o nome completo deve quebrar linhas.
+    await expect.poll(async () => {
+      const panel = await exit.boundingBox();
+      if (!panel) return false;
+      const boxes = await Promise.all([productName, closeExit, whatsapp, dismiss].map(el => el.boundingBox()));
+      const textFits = await productName.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1);
+      const panelFits = await exit.evaluate(el => el.scrollWidth <= el.clientWidth + 1);
+      return panel.x >= 8 && panel.x + panel.width <= width - 8 &&
+        panel.y >= 0 && panel.y + panel.height <= height + 1 &&
+        textFits && panelFits &&
+        boxes.every(box => box && box.x >= panel.x && box.x + box.width <= panel.x + panel.width + 1) &&
+        boxes.slice(1).every(box => box && box.height >= 44);
+    }, { message: `modal e conteúdo devem caber em ${width}×${height}` }).toBe(true);
+  }
+  if (originalViewport) await page.setViewportSize(originalViewport);
   const exitCloseBox = await closeExit.boundingBox();
   expect(exitCloseBox?.height ?? 0).toBeGreaterThanOrEqual(44);
   expect(exitCloseBox?.width ?? 0).toBeGreaterThanOrEqual(44);

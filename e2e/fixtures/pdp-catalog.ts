@@ -44,6 +44,7 @@ export async function usePdpCatalog(
   page: Page,
   images = product.images,
   overrides: {
+    name?: string;
     personalization_enabled?: boolean;
     personalization_label?: string;
     personalization_options?: unknown[];
