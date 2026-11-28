@@ -160,7 +160,7 @@ export const ExitIntentPopup = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-sm" hideCloseButton onCloseAutoFocus={event => {
+      <DialogContent className="w-[calc(100%_-_2rem)] max-w-sm max-h-[calc(100dvh_-_2rem)] grid-cols-1 overflow-y-auto rounded-lg" hideCloseButton onCloseAutoFocus={event => {
         const target = previousFocus.current;
         if (target?.isConnected && target !== document.body) {
           event.preventDefault();
@@ -170,16 +170,16 @@ export const ExitIntentPopup = ({
         <DialogClose aria-label="Fechar sugestão de atendimento" className="absolute right-3 top-3 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
           <X className="h-4 w-4" aria-hidden="true" />
         </DialogClose>
-        <DialogHeader>
+        <DialogHeader className="min-w-0">
           <div className="mx-auto mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Gift className="h-6 w-6" />
           </div>
-          <DialogTitle className="text-center">{title}</DialogTitle>
-          <DialogDescription className="text-center">{description}</DialogDescription>
+          <DialogTitle className="text-center [overflow-wrap:anywhere]">{title}</DialogTitle>
+          <DialogDescription className="text-center [overflow-wrap:anywhere]">{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-md bg-muted/40 p-3 text-sm">
-          <p className="font-semibold mb-2 truncate">{productName}</p>
+        <div className="min-w-0 rounded-md bg-muted/40 p-3 text-sm">
+          <p className="mb-2 font-semibold [overflow-wrap:anywhere]">{productName}</p>
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-2">
             <span className="inline-flex items-center gap-1"><Package className="h-3 w-3" /> mín. {minQuantity} un.</span>
             <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {productionDays} dias</span>
@@ -189,15 +189,15 @@ export const ExitIntentPopup = ({
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 mt-2">
+        <div className="mt-2 flex min-w-0 flex-col gap-2">
           <Button
             onClick={handleWhatsApp}
-            className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold"
+            className="h-auto min-h-11 w-full min-w-0 whitespace-normal bg-[#25D366] leading-snug text-white font-bold hover:bg-[#128C7E]"
           >
-            <MessageCircle className="h-4 w-4 mr-2" /> {ctaLabel}
+            <MessageCircle className="h-4 w-4" aria-hidden="true" /> <span className="min-w-0 [overflow-wrap:anywhere]">{ctaLabel}</span>
           </Button>
-          <Button variant="ghost" onClick={handleDismiss} className="w-full">
-            {dismissLabel}
+          <Button variant="ghost" onClick={handleDismiss} className="h-auto min-h-11 w-full min-w-0 whitespace-normal leading-snug">
+            <span className="min-w-0 [overflow-wrap:anywhere]">{dismissLabel}</span>
           </Button>
         </div>
       </DialogContent>
