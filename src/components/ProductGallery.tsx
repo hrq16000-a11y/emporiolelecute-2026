@@ -272,7 +272,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
                 aria-hidden={index !== currentIndex}
                 className={cn(
                   "absolute inset-0 transition-opacity duration-[180ms] ease-out motion-reduce:transition-none",
-                  index === currentIndex ? "opacity-100" : "opacity-0"
+                  index === currentIndex ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 )}
               >
                 <BlurImage
