@@ -4,6 +4,7 @@ import { Star, X, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { urls } from "@/lib/urls";
 import { optimizeImage } from "@/lib/image";
+import { readStorefrontLayers, useStorefrontLayers } from "@/lib/storefront-layers";
 
 /**
  * Prova social flutuante: exibe avaliações reais (product_reviews) com
@@ -107,6 +108,7 @@ export default function SocialProofToast() {
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const hoverRef = useRef(false);
+  const layersBlocked = useStorefrontLayers() !== 0;
 
   // Carrega settings + escuta updates em tempo real
   useEffect(() => {
@@ -209,14 +211,18 @@ export default function SocialProofToast() {
 
   // Ciclo de exibição (usa timings do settings)
   useEffect(() => {
-    if (!settings || blocked || dismissed || reviews.length === 0) return;
+    if (!settings || blocked || dismissed || reviews.length === 0 || layersBlocked) {
+      setVisible(false);
+      hoverRef.current = false;
+      return;
+    }
 
     let showTimer: number;
     let hideTimer: number;
     let cycleTimer: number;
 
     const showOne = () => {
-      if (hoverRef.current) {
+      if (hoverRef.current || readStorefrontLayers() !== 0 || document.visibilityState !== "visible") {
         cycleTimer = window.setTimeout(showOne, 3000);
         return;
       }
@@ -235,9 +241,9 @@ export default function SocialProofToast() {
       window.clearTimeout(hideTimer);
       window.clearTimeout(cycleTimer);
     };
-  }, [reviews, settings, blocked, dismissed]);
+  }, [reviews, settings, blocked, dismissed, layersBlocked]);
 
-  if (!settings || blocked || dismissed || reviews.length === 0) return null;
+  if (!settings || blocked || dismissed || reviews.length === 0 || !visible || layersBlocked) return null;
 
   const review = reviews[index];
   if (!review?.product) return null;
@@ -261,10 +267,12 @@ export default function SocialProofToast() {
 
   // No carrinho, há CTA fixo "Finalizar pelo WhatsApp" embaixo — sobe o toast
   const isCart = path.startsWith("/carrinho");
-  const bottomOffset = isCart ? "bottom-24 md:bottom-28" : "bottom-3 md:bottom-5";
+  const raisedBottom = "bottom-[calc(6.25rem_+_env(safe-area-inset-bottom,0px))] md:bottom-[calc(7rem_+_env(safe-area-inset-bottom,0px))]";
+  const bottomOffset = isCart ? raisedBottom : "bottom-[calc(6.25rem_+_env(safe-area-inset-bottom,0px))] md:bottom-5";
+  const rightBottomOffset = raisedBottom;
   const positionClass: Record<Settings["position"], string> = {
     "bottom-left": `left-3 md:left-5 ${bottomOffset}`,
-    "bottom-right": `right-3 md:right-5 ${bottomOffset}`,
+    "bottom-right": `right-3 md:right-5 ${rightBottomOffset}`,
     "top-left": "left-3 top-20 md:left-5 md:top-24",
     "top-right": "right-3 top-20 md:right-5 md:top-24",
   };
@@ -278,11 +286,8 @@ export default function SocialProofToast() {
       className={[
         "fixed z-40",
         positionClass[settings.position],
-        "max-w-[19rem] md:max-w-[22rem]",
-        "transition-all duration-500 ease-out",
-        visible
-          ? "opacity-100 translate-y-0 pointer-events-auto"
-          : "opacity-0 translate-y-3 pointer-events-none",
+        "w-[calc(100vw-2rem)] max-w-[19rem] md:max-w-[22rem]",
+        "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-200",
       ].join(" ")}
     >
       <div className="relative flex items-stretch gap-3 rounded-xl border border-border bg-card/95 backdrop-blur shadow-lg p-2.5 pr-9">
@@ -345,7 +350,7 @@ export default function SocialProofToast() {
           type="button"
           onClick={handleClose}
           aria-label="Fechar prova social"
-          className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-foreground text-background shadow-md ring-2 ring-background flex items-center justify-center hover:scale-110 transition-transform"
+          className="absolute -top-2 -right-2 min-h-[44px] min-w-[44px] rounded-full bg-foreground text-background shadow-md ring-2 ring-background flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <X className="h-4 w-4" strokeWidth={2.5} />
         </button>

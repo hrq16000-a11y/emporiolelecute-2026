@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import { useContactInfo } from "@/hooks/useContactInfo";
 import { markLead } from "@/lib/visitor";
+import { CONSENT_LAYER, MODAL_LAYER, useStorefrontLayers } from "@/lib/storefront-layers";
 
 interface Props {
   /** Mensagem pré-preenchida no WhatsApp. Se omitida, usa a padrão genérica. */
@@ -19,6 +20,9 @@ const WhatsAppButton = ({ message, ariaLabel }: Props = {}) => {
   const isCart = pathname === "/carrinho";
   const { buildWhatsappUrl } = useContactInfo();
   const href = buildWhatsappUrl(message || DEFAULT_MESSAGE);
+  const layers = useStorefrontLayers();
+  // Controles fixos não devem disputar o consentimento nem um diálogo ativo.
+  if (layers & (CONSENT_LAYER | MODAL_LAYER)) return null;
 
   // No carrinho: dispara o mesmo fluxo do botão "Finalizar pelo WhatsApp" (valida formulário antes)
   if (isCart) {
@@ -39,7 +43,7 @@ const WhatsAppButton = ({ message, ariaLabel }: Props = {}) => {
         className="whatsapp-float"
         aria-label={ariaLabel || "Finalizar pelo WhatsApp"}
       >
-        <div className="bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 px-5 py-3 sm:px-6 sm:py-3.5">
+        <div className="bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-150 motion-safe:hover:scale-105 px-5 py-3 sm:px-6 sm:py-3.5">
           <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           <span className="ml-2 text-white font-medium text-sm sm:text-base whitespace-nowrap">
             Finalizar pelo WhatsApp
@@ -59,7 +63,7 @@ const WhatsAppButton = ({ message, ariaLabel }: Props = {}) => {
       className="whatsapp-float"
       aria-label={ariaLabel || "Contato via WhatsApp"}
     >
-      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-150 motion-safe:hover:scale-105">
         <MessageCircle className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
       </div>
     </a>,

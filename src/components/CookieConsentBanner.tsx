@@ -79,6 +79,7 @@ export default function CookieConsentBanner() {
   return (
     <div
       role="dialog"
+      data-storefront-layer="consent"
       aria-label="Consentimento de cookies"
       className={`fixed inset-x-0 ${posClass} z-[100] p-2 sm:p-3 pointer-events-none`}
     >
