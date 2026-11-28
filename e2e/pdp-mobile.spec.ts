@@ -160,4 +160,31 @@ test("galeria avança uma vez por tecla e não reage a teclas fora de seus contr
   await expect(slide((initialIndex + 1) % 3)).toHaveAttribute("aria-hidden", "false");
   await lightbox.getByRole("button", { name: "Próxima imagem", exact: true }).press("Escape");
   await expect(lightbox).toBeHidden();
+  await expect(gallery.getByRole("button", { name: "Ampliar imagem", exact: true })).toBeFocused();
+});
+
+test("ampliação é acessível mesmo com uma única foto e devolve o foco", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openPdp(page);
+  const zoom = page.getByTestId("pdp-gallery-main").getByRole("button", { name: "Ampliar imagem", exact: true });
+  await expect(zoom).toBeVisible();
+  await zoom.press("Enter");
+  const lightbox = page.getByRole("dialog", { name: "Imagem ampliada de Kit de aromas — amostra visual", exact: true });
+  await expect(lightbox).toBeVisible();
+  await expect(lightbox).toHaveAccessibleDescription(/retornar à galeria/);
+  const close = lightbox.getByRole("button", { name: "Fechar ampliação", exact: true });
+  await expect(close).toBeFocused();
+  await expect(lightbox.getByRole("button", { name: /^(Fechar ampliação|Fechar|Close)$/i })).toHaveCount(1);
+  const target = await rect(close);
+  expect(target.width).toBeGreaterThanOrEqual(44);
+  expect(target.height).toBeGreaterThanOrEqual(44);
+  await close.click();
+  await expect(lightbox).toBeHidden();
+  await expect(zoom).toBeFocused();
+
+  await zoom.press("Enter");
+  await expect(lightbox).toBeVisible();
+  await close.press("Escape");
+  await expect(lightbox).toBeHidden();
+  await expect(zoom).toBeFocused();
 });

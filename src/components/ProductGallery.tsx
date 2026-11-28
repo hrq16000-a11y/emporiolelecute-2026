@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { optimizeImage } from "@/lib/image";
 import { BlurImage } from "@/components/BlurImage";
@@ -17,6 +17,23 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
   const { enabled: reducedMotion } = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
+  const zoomButtonRef = useRef<HTMLButtonElement>(null);
+  const zoomOpenerRef = useRef<HTMLButtonElement | null>(null);
+
+  const openZoom = (trigger?: HTMLButtonElement) => {
+    zoomOpenerRef.current = trigger ?? zoomButtonRef.current;
+    setIsZoomed(true);
+  };
+
+  const restoreZoomFocus = (event: Event) => {
+    const opener = zoomOpenerRef.current;
+    const target = opener?.isConnected && opener.getClientRects().length > 0 ? opener : zoomButtonRef.current;
+    zoomOpenerRef.current = null;
+    if (target?.isConnected) {
+      event.preventDefault();
+      target.focus({ preventScroll: true });
+    }
+  };
 
   // Tira horizontal de miniaturas — refs e estado de bordas
   const thumbsRef = useRef<HTMLDivElement>(null);
@@ -189,7 +206,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
           ))}
           {images.length > 5 && (
             <button
-              onClick={() => setIsZoomed(true)}
+              onClick={(event) => openZoom(event.currentTarget)}
               className="w-16 h-16 md:w-20 md:h-20 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 transition-colors"
             >
               +{images.length - 5}
@@ -254,7 +271,7 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
         <div
           className="relative aspect-square sm:aspect-[4/5] w-full max-w-full rounded-xl sm:rounded-2xl overflow-hidden bg-muted/20 group cursor-pointer touch-pan-y select-none"
           data-testid="pdp-gallery-main"
-          onClick={() => setIsZoomed(true)}
+          onClick={() => openZoom()}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -293,11 +310,13 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
 
           {/* Zoom Button */}
           <button
+            type="button"
+            ref={zoomButtonRef}
             onClick={(e) => {
               e.stopPropagation();
-              setIsZoomed(true);
+              openZoom(e.currentTarget);
             }}
-            className="absolute bottom-4 right-4 hidden sm:inline-flex min-h-11 min-w-11 items-center justify-center p-2.5 bg-background/90 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-[opacity,background-color] duration-[160ms] ease-out hover:bg-background shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="absolute bottom-4 right-4 inline-flex min-h-11 min-w-11 items-center justify-center p-2.5 bg-background/90 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-[opacity,background-color] duration-[160ms] ease-out hover:bg-background shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Ampliar imagem"
           >
             <ZoomIn className="h-5 w-5 text-foreground" />
@@ -508,16 +527,27 @@ const ProductGallery = ({ images, productName, badge, layout = 'vertical' }: Pro
 
       {/* Zoom Dialog - Fullscreen Gallery */}
       <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
-        <DialogContent className="w-[calc(100vw-1rem)] max-w-[95vw] max-h-[95vh] p-0 bg-background/95 backdrop-blur-xl border-none overflow-hidden">
+        <DialogContent
+          hideCloseButton
+          onCloseAutoFocus={restoreZoomFocus}
+          className="w-[calc(100vw-1rem)] max-w-[95vw] max-h-[95vh] p-0 bg-background/95 backdrop-blur-xl border-none overflow-hidden motion-reduce:animate-none"
+        >
+          <DialogTitle className="sr-only">Imagem ampliada de {productName}</DialogTitle>
+          <DialogDescription className="sr-only">
+            {images.length > 1 ? "Use as setas ou miniaturas para trocar de fotografia. " : ""}
+            Pressione Escape ou use o botão Fechar ampliação para retornar à galeria.
+          </DialogDescription>
           <div className="relative h-full flex flex-col">
-            {/* Close Button */}
-            <button
-              onClick={() => setIsZoomed(false)}
-              className="absolute top-4 right-4 z-50 p-2 bg-background/80 rounded-full hover:bg-background transition-colors"
-              aria-label="Fechar"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            {/* Close Button — um único controle nativo do Dialog. */}
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="absolute top-4 right-4 z-50 inline-flex min-h-[44px] min-w-[44px] items-center justify-center bg-background/90 rounded-full hover:bg-background transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                aria-label="Fechar ampliação"
+              >
+                <X className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </DialogClose>
 
             {/* Image Counter */}
             <div className="absolute top-4 left-4 z-50 px-3 py-1.5 bg-background/80 rounded-full text-sm font-medium">
