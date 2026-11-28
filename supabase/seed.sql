@@ -17,13 +17,18 @@ begin
     insert into auth.users (
       instance_id, id, aud, role, email, encrypted_password,
       email_confirmed_at, created_at, updated_at,
-      raw_app_meta_data, raw_user_meta_data
+      raw_app_meta_data, raw_user_meta_data,
+      confirmation_token, recovery_token, email_change_token_current,
+      email_change_token_new, email_change, email_change_confirm_status,
+      phone_change, phone_change_token, reauthentication_token,
+      is_sso_user, is_anonymous
     ) values (
       '00000000-0000-0000-0000-000000000000', v_user_id, 'authenticated', 'authenticated',
       'admin@local.test', crypt('admin123', gen_salt('bf')),
       now(), now(), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"Admin Local"}'::jsonb
+      '{"full_name":"Admin Local"}'::jsonb,
+      '', '', '', '', '', 0, '', '', '', false, false
     );
 
     insert into auth.identities (
@@ -96,9 +101,10 @@ insert into public.occasions (name, slug, description, position, is_draft)
 values ('Aniversário', 'aniversario', 'Lembranças e kits para festas.', 1, false)
 on conflict (slug) do nothing;
 
-insert into public.products (name, slug, description, price, is_active, category_id)
+-- Dados sintéticos com peso positivo, conforme a regra atual de inserção.
+insert into public.products (name, slug, description, price, is_active, category_id, weight, weight_kg)
 select v.name, v.slug, v.description, v.price, true,
-       (select id from public.categories where slug = 'papelaria-personalizada')
+       (select id from public.categories where slug = 'papelaria-personalizada'), 0.30::numeric, 0.30::numeric
 from (values
   ('Caderno Personalizado A5', 'caderno-personalizado-a5',
    'Caderno artesanal A5 com capa personalizada. Produto de exemplo (seed local).', 39.90::numeric),

@@ -1,0 +1,133 @@
+name: Local security QA (disposable)
+
+on:
+  push:
+    branches:
+      - fix/round-2a-local-rls-test-isolation
+  workflow_dispatch:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local-security-qa
+  cancel-in-progress: false
+
+jobs:
+  local-security:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref_name == 'fix/round-2a-local-rls-test-isolation') ||
+      (github.event_name == 'push' && github.ref_name == 'fix/round-2a-local-rls-test-isolation') ||
+      (github.event_name == 'pull_request' && github.event.label.name == 'qa-local-approved' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'fix/round-2a-local-rls-test-isolation')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13
+        with:
+          version: 2.75.0
+      - name: Isolate local stack before migrations
+        id: isolate
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_SERVICE_ROLE_KEY
+          rm -f .env .env.local .env.test .env.test.local supabase/.env supabase/.env.local
+          rm -rf supabase/.temp
+          sed -i 's/^project_id = .*/project_id = "lelecute-local-security-qa"/' supabase/config.toml
+          # Docker daemon can pull images; containers cannot reach external networks.
+          sudo iptables -S DOCKER-USER >/dev/null
+          sudo iptables -I DOCKER-USER 1 -i br+ ! -o br+ -j REJECT
+          sudo iptables -I DOCKER-USER 1 -i docker0 ! -o docker0 -j REJECT
+          sudo iptables -I INPUT 1 -i br+ -m conntrack --ctstate NEW -j REJECT
+          sudo iptables -I INPUT 1 -i docker0 -m conntrack --ctstate NEW -j REJECT
+          sudo ip6tables -I FORWARD 1 -i br+ ! -o br+ -j REJECT
+          sudo ip6tables -I FORWARD 1 -i docker0 ! -o docker0 -j REJECT
+          sudo ip6tables -I INPUT 1 -i br+ -m conntrack --ctstate NEW -j REJECT
+          sudo ip6tables -I INPUT 1 -i docker0 -m conntrack --ctstate NEW -j REJECT
+          # Separate unprivileged test process with loopback-only network access.
+          sudo useradd --system --no-create-home --shell /usr/sbin/nologin leleqa
+          uid="$(id -u leleqa)"
+          sudo iptables -I OUTPUT 1 -m owner --uid-owner "$uid" ! -d 127.0.0.1/32 -j REJECT
+          sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid" -j REJECT
+          sudo iptables -C OUTPUT -m owner --uid-owner "$uid" ! -d 127.0.0.1/32 -j REJECT
+          sudo ip6tables -C OUTPUT -m owner --uid-owner "$uid" -j REJECT
+      - name: Make historical cron cleanup safe on fresh local database
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("supabase/migrations/20260814154716_b2258712-76bd-49f4-b81e-5854d32e5bd9.sql")
+          original = p.read_text()
+          patched = original
+          for job in ("submit-sitemap-weekly", "weekly-sitemap-submission", "submit-sitemap-12h"):
+              before = f"SELECT cron.unschedule('{job}');"
+              after = f"SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = '{job}';"
+              assert patched.count(before) == 1, "Historical migration drift: " + job
+              patched = patched.replace(before, after, 1)
+          for job, schedule in (
+              ("seo-sitemap-auto-resubmit-15m", "7 * * * *"),
+              ("telemetry-alert-monitor-15m", "23 * * * *"),
+              ("instagram-sync-hourly", "0 */6 * * *"),
+              ("instagram-bulk-refresh-hourly", "17 */6 * * *"),
+          ):
+              before = f"SELECT cron.alter_job((SELECT jobid FROM cron.job WHERE jobname = '{job}'), schedule := '{schedule}');"
+              after = f"SELECT cron.alter_job(jobid, schedule := '{schedule}') FROM cron.job WHERE jobname = '{job}';"
+              assert patched.count(before) == 1, "Historical migration drift: " + job
+              patched = patched.replace(before, after, 1)
+          p.write_text(patched)
+          print("Local-only adaptation: three removals and four reschedules skip absent historical jobs.")
+          PY
+          git diff --stat -- supabase/migrations
+      - name: Start disposable Supabase (no edge runtime)
+        run: supabase start -x edge-runtime
+      - name: Synthetic Auth, RLS, checkout and privacy checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          node -e 'if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'
+          local_status="$(supabase status -o env)"
+          api="$(printf '%s\n' "$local_status" | sed -n 's/^API_URL="\([^"]*\)"$/\1/p')"
+          key="$(printf '%s\n' "$local_status" | sed -n 's/^ANON_KEY="\([^"]*\)"$/\1/p')"
+          test "$api" = "http://127.0.0.1:54321"
+          test -n "$key"
+          echo "::add-mask::$key"
+          tmp="$(mktemp -d /tmp/local-security-qa.XXXXXX)"
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/scripts" "$tmp/supabase/functions/track-order"
+          cp scripts/local-security-qa.mjs "$tmp/scripts/"
+          cp supabase/functions/track-order/privacy.ts "$tmp/supabase/functions/track-order/"
+          node_bin="$(readlink -f "$(command -v node)")"
+          install -m 0755 "$node_bin" "$tmp/node22"
+          chmod -R a+rX "$tmp"
+          sudo -u leleqa "$tmp/node22" --version
+          sudo -u leleqa env -i PATH=/usr/bin:/bin RUN_LOCAL_RLS_TESTS=1 SUPABASE_URL="$api" SUPABASE_ANON_KEY="$key" "$tmp/node22" --experimental-strip-types "$tmp/scripts/local-security-qa.mjs"
+      - name: Capture local Auth and Postgres logs on failure
+        if: failure() && steps.isolate.outcome == 'success'
+        shell: bash
+        run: |
+          set +e
+          echo "=== disposable Supabase containers ==="
+          docker ps -a --format '{{.Names}}'
+          auth_container="$(docker ps -aq --filter name=supabase_auth | head -n1)"
+          if [ -n "$auth_container" ]; then
+            echo "=== Auth/GoTrue logs ==="
+            docker logs --tail 250 "$auth_container"
+          fi
+          db_container="$(docker ps -aq --filter name=supabase_db | head -n1)"
+          if [ -n "$db_container" ]; then
+            echo "=== Postgres logs ==="
+            docker logs --tail 250 "$db_container"
+          fi
+      - name: Destroy local stack
+        if: always() && steps.isolate.outcome == 'success'
+        run: supabase stop --no-backup
