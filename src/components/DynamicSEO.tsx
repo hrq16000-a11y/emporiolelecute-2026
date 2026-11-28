@@ -40,7 +40,7 @@ const DynamicSEO = ({ title, description, image, url, type = 'website', product 
 
   const pageTitle = title || seoConfig.site_title;
   const pageDescription = description || seoConfig.site_description;
-  const pageImage = image || seoConfig.og_image;
+  const pageImage = image || seoConfig.og_image || `${SITE_ORIGIN}/og-image.webp`;
   const pageUrl = url || buildCanonical(location.pathname);
 
   return (

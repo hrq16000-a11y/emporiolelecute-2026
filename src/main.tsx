@@ -6,11 +6,13 @@ import { installChunkReloadHandler } from "./lib/chunkReload";
 import { runCacheCleanup } from "./lib/cacheCleanup";
 import { installTelemetry } from "./lib/telemetry";
 import { installWebVitals } from "./lib/webVitals";
+import { installSeoFallbacks } from "./lib/seoFallbacks";
 import RootErrorBoundary from "./components/RootErrorBoundary";
 
 installChunkReloadHandler();
 installTelemetry();
 installWebVitals();
+installSeoFallbacks(document.head);
 runCacheCleanup();
 
 // Auditoria automática de acessibilidade (contraste + foco visível) apenas em dev.
