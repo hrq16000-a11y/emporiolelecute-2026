@@ -693,6 +693,10 @@
 .hero-shell { padding-top: 81px; }
 .hero-banner-mobile { aspect-ratio: 963 / 565; }
 .hero-banner-desktop { aspect-ratio: 1900 / 565; }
+.hero-banner-responsive { aspect-ratio: 963 / 565; }
+@media (min-width: 768px) {
+  .hero-banner-responsive { aspect-ratio: 1900 / 565; }
+}
 .hero-preview-stage { height: 360px; width: 100%; }
 .hero-preview-frame { max-width: 100%; max-height: 100%; }
 .hero-preview-mobile { width: 360px; }

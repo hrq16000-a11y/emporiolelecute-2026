@@ -235,6 +235,26 @@ function SlideRenderer({ slide, isPriority }: { slide: HeroSlide; isPriority: bo
   const fallbackSrc = resolveImageSrc(slide.image_url) || sabonetesImg;
   const hasAnyBanner = Boolean(mobileBannerSrc || desktopBannerSrc);
 
+  // When both responsive banners exist, choose the source at the browser level.
+  // CSS-hidden eager <img> elements otherwise download both LCP variants.
+  if (mobileBannerSrc && desktopBannerSrc) {
+    return (
+      <picture className="block w-full hero-frame hero-banner-responsive">
+        <source media="(max-width: 767px)" srcSet={mobileBannerSrc} width={963} height={565} />
+        <img
+          src={desktopBannerSrc}
+          alt={slide.image_alt || slide.title}
+          loading={isPriority ? "eager" : "lazy"}
+          fetchPriority={isPriority ? "high" : "auto"}
+          decoding="async"
+          width={1900}
+          height={565}
+          className="w-full h-full object-contain block"
+        />
+      </picture>
+    );
+  }
+
   if (!hasAnyBanner) {
     return (
       <div className="pb-10 md:pb-14">

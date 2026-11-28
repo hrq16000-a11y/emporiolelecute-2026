@@ -83,6 +83,11 @@ export default function Natal() {
         <meta property="og:url" content={canonical} />
         <meta property="og:image" content={products[0].image} />
         <meta property="og:locale" content="pt_BR" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={canonical} />
+        <meta name="twitter:title" content="Natal Empório LeleCute | Pequenos presentes, grandes afetos" />
+        <meta name="twitter:description" content="Lembrancinhas de Natal artesanais, com personalização e carinho em cada detalhe." />
+        <meta name="twitter:image" content={products[0].image} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
