@@ -112,3 +112,11 @@ Esta seção é o checkpoint mais recente deste playbook; a descrição de estad
 | E6 — P2 | Performance/SEO contínuos: imagens responsivas e mídia acima da dobra sem loading ornamental, medir LCP/CLS/INP no ambiente certo; canônico, robots, sitemap, JSON-LD/OG efetivos e URLs válidas; nenhuma mudança em indexação sem evidência. | Comparação antes/depois, mesmo cenário/viewports, gates reais (sem alterar thresholds); confirmação do SHA e domínio em Production; resultados e limitações explicitados. |
 
 Uma micro-PR por problema comprovado, sem PR substituta desnecessária. Antes de cada item, registrar base, motivo, evidência e risco; após a correção, evidenciar 390/768/1440 (ou dimensões reais configuradas), guard, Vitest, build e Playwright afetado. Não forçar merge com falha, não executar fila Lovable nem Max, não confundir documento com release visual. Preserve PRs de segurança/compatibilidade #9/#11 e qualquer trabalho concorrente. As rodadas do backlog têm numeração própria e não reabrem artificialmente as 12 rodadas deste ciclo.
+
+
+### E1 — novo ciclo, galeria e lightbox (28/11/2026)
+
+- PR #19 integrada em `997382de9e8d2aafb7a54669a8eaa55d52b18c92`; CI 46100727138 com todos os quatro jobs aprovados. Production Vercel READY no deployment `dpl_cMgaWgqDgV7kbDzB81cTsz3Cranh`, SHA exato e aliases `emporiolelecute.com.br` e `www.emporiolelecute.com.br` confirmados. A norma contextual adicionada à main foi preservada.
+- Evidência real no ampliador da PDP Anjinho Cute: ao abrir via Enter, dois botões de fechamento (Fechar e Close), nome/descrição do diálogo ausentes; após Escape e fechamento, o foco retornava ao BODY. Não houve interação comercial.
+- Candidato E1: um DialogClose nativo, em português, 44×44 px; título/descrição acessíveis, gatilho focável inclusive com uma foto em mobile, retorno ao gatilho (ou zoom da PDP se o original não existir), foco visível e ausência de animação ornamental com redução de movimento. O novo opt-out do botão padrão do DialogContent é local à galeria; demais modais mantêm comportamento anterior.
+- QA: fixture isolada com uma e três fotos, nome/descrição, único fechamento, dimensão, Enter, Escape/clique e retorno do foco em desktop/tablet/mobile. Homologação e publicação do candidato ainda pendentes; sem alterações de fotos, identidade, preços, estoque, personalização, carrinho, dados ou checkout. 
