@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -16,7 +15,7 @@ const LABELS = ["Carrinho", "Seus dados", "WhatsApp"] as const;
  * Barra flutuante e compacta de etapas do checkout.
  * - Sticky abaixo do header fixo.
  * - Scroll-spy via IntersectionObserver atualiza a etapa ativa.
- * - Clique em cada etapa rola suavemente até a seção correspondente.
+ * - Clique em cada etapa navega e transfere foco à seção correspondente.
  */
 const CheckoutSteps = ({
   current = 1,
@@ -64,8 +63,8 @@ const CheckoutSteps = ({
     if (!sectionIds) return;
     const el = document.getElementById(sectionIds[idx]);
     if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - 120;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
 
   return (
@@ -78,7 +77,6 @@ const CheckoutSteps = ({
     >
       {LABELS.map((label, idx) => {
         const step = (idx + 1) as 1 | 2 | 3;
-        const isDone = step < active;
         const isCurrent = step === active;
         const Tag = sectionIds ? "button" : ("div" as const);
         return (
@@ -90,20 +88,21 @@ const CheckoutSteps = ({
               type={sectionIds ? "button" : undefined}
               onClick={sectionIds ? () => handleClick(idx) : undefined}
               aria-current={isCurrent ? "step" : undefined}
+              aria-label={sectionIds ? `${step}. ${label}` : undefined}
+              aria-controls={sectionIds?.[idx]}
               className={cn(
                 "flex items-center gap-1.5 min-w-0 rounded-full px-1.5 py-0.5 transition-colors",
-                sectionIds && "hover:bg-muted/60 cursor-pointer"
+                sectionIds && "min-h-[44px] min-w-[44px] justify-center hover:bg-muted/60 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               )}
             >
               <span
                 className={cn(
                   "flex-shrink-0 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-semibold border transition-colors",
-                  isDone && "bg-primary text-primary-foreground border-primary",
                   isCurrent && "bg-primary/10 text-primary border-primary",
-                  !isDone && !isCurrent && "bg-muted text-muted-foreground border-border"
+                  !isCurrent && "bg-muted text-muted-foreground border-border"
                 )}
               >
-                {isDone ? <Check className="h-3 w-3" aria-hidden="true" /> : step}
+                {step}
               </span>
               <span
                 className={cn(
@@ -119,8 +118,7 @@ const CheckoutSteps = ({
             {idx < LABELS.length - 1 && (
               <div
                 className={cn(
-                  "flex-1 h-px mx-1 sm:mx-2 transition-colors",
-                  isDone ? "bg-primary" : "bg-border"
+                  "flex-1 h-px mx-1 sm:mx-2 bg-border"
                 )}
                 aria-hidden="true"
               />

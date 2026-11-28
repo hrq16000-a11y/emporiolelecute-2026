@@ -169,9 +169,9 @@ const Carrinho = () => {
     }
   };
 
-  // Classe aplicada nos inputs vazios após tentativa de submit — contorno pulsante
-  const errorRing = "ring-2 ring-destructive ring-offset-2 animate-pulse border-destructive";
-  const fieldClass = (field: string, base = "mt-1") =>
+  // Contorno estático: informa o campo sem movimento contínuo.
+  const errorRing = "ring-2 ring-destructive ring-offset-2 border-destructive";
+  const fieldClass = (field: string, base = "mt-1 min-h-[44px]") =>
     `${base} ${invalidFields.has(field) ? errorRing : ""}`;
   const clearInvalid = (field: string) =>
     setInvalidFields(prev => {
@@ -502,7 +502,7 @@ const Carrinho = () => {
 
   const handleSubmitOrder = async () => {
     if (submissionLock.current) return;
-    // Coleta todos os campos vazios para destacar com efeito pulsante
+    // Coleta todos os campos inválidos antes de qualquer envio.
     const missing = new Set<string>();
     if (!customer.name.trim()) missing.add('name');
     if (!customer.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) missing.add('email');
@@ -518,13 +518,13 @@ const Carrinho = () => {
         description: "Preencha os campos destacados para continuar.",
         variant: "destructive",
       });
-      // Faz scroll suave até o primeiro campo inválido
+      // Foco imediato; não interrompe uma nova interação com um timer.
       const firstId = ['name','email','phone','cep','city','state'].find(f => missing.has(f));
       if (firstId) {
         const el = document.getElementById(firstId);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setTimeout(() => el.focus(), 300);
+          el.focus({ preventScroll: true });
+          el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
         }
       }
       return;
@@ -861,11 +861,9 @@ const Carrinho = () => {
             <p className="text-muted-foreground mb-8">
               Adicione produtos ao carrinho para continuar
             </p>
-            <Link to="/produtos">
-              <Button className="bg-primary hover:bg-primary/90">
-                Ver Produtos
-              </Button>
-            </Link>
+            <Button asChild className="min-h-[44px] bg-primary hover:bg-primary/90">
+              <Link to="/produtos">Ver Produtos</Link>
+            </Button>
           </div>
         </main>
         <Footer />
@@ -892,7 +890,7 @@ const Carrinho = () => {
             return (
               <Link
                 to={target}
-                className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-8 transition-colors"
+                className="inline-flex min-h-[44px] items-center gap-2 text-muted-foreground hover:text-primary mb-8 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Continuar comprando
@@ -905,7 +903,7 @@ const Carrinho = () => {
           </h1>
 
           <CheckoutStepsBar
-            current={items.length > 0 ? 2 : 1}
+            current={1}
             sectionIds={["step-cart", "step-data", "step-checkout"]}
           />
 
@@ -915,9 +913,9 @@ const Carrinho = () => {
             {/* Left Column - Form */}
             <div className="lg:col-span-2 space-y-4 md:space-y-6">
               {/* Cart Items */}
-              <div id="step-cart" className="bg-card rounded-xl border border-border p-3 md:p-6 scroll-mt-32">
+              <div id="step-cart" tabIndex={-1} role="region" aria-labelledby="checkout-products-heading" className="bg-card rounded-xl border border-border p-3 md:p-6 scroll-mt-40 md:scroll-mt-48">
 
-                <h2 className="font-display text-lg md:text-xl text-foreground mb-3 md:mb-4 flex items-center gap-2">
+                <h2 id="checkout-products-heading" className="font-display text-lg md:text-xl text-foreground mb-3 md:mb-4 flex items-center gap-2">
                   <Package className="h-5 w-5 text-primary" />
                   Produtos ({items.length})
                 </h2>
@@ -964,34 +962,37 @@ const Carrinho = () => {
                           )}
                         </div>
                         {item.personalization && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                          <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap break-words">
                             {item.personalization}
                           </p>
                         )}
-                        <div className="flex items-center gap-3 mt-2">
-                          <div className="flex items-center border border-border rounded overflow-hidden">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                          <div role="group" aria-label={`Quantidade de ${item.name}`} className="flex items-center border border-border rounded-lg">
                             <button 
+                              type="button" aria-label={`Diminuir quantidade de ${item.name}`}
                               onClick={() => updateQuantity(item.id, item.quantity - 1)}
                               disabled={item.quantity <= item.minQuantity}
-                              className="p-1.5 hover:bg-muted transition-colors disabled:opacity-50"
+                              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                             >
                               <Minus className="h-3 w-3" />
                             </button>
-                            <span className="px-3 text-sm font-medium">{item.quantity}</span>
+                            <output aria-live="polite" aria-label={`Quantidade de ${item.name}`} className="min-w-8 px-1 text-center text-sm font-medium tabular-nums">{item.quantity}</output>
                             <button 
+                              type="button" aria-label={`Aumentar quantidade de ${item.name}`}
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              className="p-1.5 hover:bg-muted transition-colors"
+                              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md hover:bg-muted transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                             >
                               <Plus className="h-3 w-3" />
                             </button>
                           </div>
                           <button
+                            type="button" aria-label={`Remover ${item.name} do carrinho`}
                             onClick={() => removeItem(item.id)}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-muted-foreground hover:text-destructive transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
-                          <span className="ml-auto font-bold text-foreground">
+                          <span className="ml-auto min-w-0 break-words font-bold tabular-nums text-foreground">
                             {formatBRL(item.price * item.quantity)}
                           </span>
                         </div>
@@ -1002,9 +1003,9 @@ const Carrinho = () => {
               </div>
 
               {/* Customer Data */}
-              <div id="step-data" className="bg-card rounded-xl border border-border p-3 md:p-6 scroll-mt-32">
+              <div id="step-data" tabIndex={-1} role="region" aria-labelledby="checkout-data-heading" className="bg-card rounded-xl border border-border p-3 md:p-6 scroll-mt-40 md:scroll-mt-48">
 
-                <h2 className="font-display text-lg md:text-xl text-foreground mb-3 md:mb-4 flex items-center gap-2">
+                <h2 id="checkout-data-heading" className="font-display text-lg md:text-xl text-foreground mb-3 md:mb-4 flex items-center gap-2">
                   <User className="h-5 w-5 text-primary" />
                   Dados Pessoais
                 </h2>
@@ -1014,6 +1015,9 @@ const Carrinho = () => {
                     <Label htmlFor="name">Nome completo *</Label>
                     <Input
                       id="name"
+                      autoComplete="name"
+                      aria-required="true"
+                      aria-describedby={invalidFields.has('name') ? 'checkout-name-error' : undefined}
                       placeholder="Seu nome completo"
                       value={customer.name}
                       onChange={(e) => { setCustomer(prev => ({ ...prev, name: e.target.value })); clearInvalid('name'); }}
@@ -1021,11 +1025,15 @@ const Carrinho = () => {
                       aria-invalid={invalidFields.has('name')}
                       className={fieldClass('name')}
                     />
+                    {invalidFields.has('name') && <p id="checkout-name-error" className="mt-1 text-xs text-destructive">Informe seu nome completo.</p>}
                   </div>
                   <div>
                     <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
+                      autoComplete="email"
+                      aria-required="true"
+                      aria-describedby={invalidFields.has('email') ? 'checkout-email-error' : undefined}
                       type="email"
                       placeholder="seu@email.com"
                       value={customer.email}
@@ -1038,14 +1046,17 @@ const Carrinho = () => {
                       aria-invalid={invalidFields.has('email')}
                       className={fieldClass('email')}
                     />
-                    {invalidFields.has('email') && customer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) && (
-                      <p className="mt-1 text-xs text-destructive">Informe um email válido.</p>
+                    {invalidFields.has('email') && (
+                      <p id="checkout-email-error" className="mt-1 text-xs text-destructive">Informe um email válido.</p>
                     )}
                   </div>
                   <div>
                     <Label htmlFor="phone">WhatsApp *</Label>
                     <Input
                       id="phone"
+                      autoComplete="tel"
+                      aria-required="true"
+                      aria-describedby={invalidFields.has('phone') ? 'checkout-phone-error' : undefined}
                       type="tel"
                       inputMode="tel"
                       placeholder="(41) 99999-9999"
@@ -1056,8 +1067,8 @@ const Carrinho = () => {
                       aria-invalid={invalidFields.has('phone')}
                       className={fieldClass('phone')}
                     />
-                    {invalidFields.has('phone') && customer.phone && !isValidPhoneBR(customer.phone) && (
-                      <p className="mt-1 text-xs text-destructive">Informe um número válido com DDD (10 ou 11 dígitos).</p>
+                    {invalidFields.has('phone') && (
+                      <p id="checkout-phone-error" className="mt-1 text-xs text-destructive">Informe um número válido com DDD (10 ou 11 dígitos).</p>
                     )}
                   </div>
                 </div>
@@ -1077,7 +1088,7 @@ const Carrinho = () => {
                     size="sm"
                     onClick={handleAutoFillAddress}
                     disabled={loadingGeo}
-                    className="gap-1.5 h-8 text-xs px-2.5 py-1"
+                    className="gap-1.5 min-h-[44px] text-xs px-2.5 py-1"
                   >
                     {loadingGeo ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1093,33 +1104,45 @@ const Carrinho = () => {
                     <div className={`relative mt-1 ${invalidFields.has('cep') ? 'rounded-md ' + errorRing : ''}`}>
                       <Input
                         id="cep"
+                      aria-invalid={invalidFields.has('cep')}
+                      aria-required="true"
+                      aria-describedby={invalidFields.has('cep') ? 'checkout-cep-error' : undefined}
                         inputMode="numeric"
                         autoComplete="postal-code"
                         placeholder="00000-000"
                         value={address.cep}
                         onChange={(e) => { addressEditedRef.current = true; handleCepChange(e.target.value); clearInvalid('cep'); }}
                         maxLength={9}
+                        className="min-h-[44px]"
                       />
                       {loadingCep && (
                         <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
                       )}
                     </div>
+                    {invalidFields.has('cep') && <p id="checkout-cep-error" className="mt-1 text-xs text-destructive">Informe o CEP de entrega.</p>}
                   </div>
                   <div>
                     <Label htmlFor="city">Cidade *</Label>
                     <Input
                       id="city"
+                      aria-invalid={invalidFields.has('city')}
+                      aria-required="true"
+                      aria-describedby={invalidFields.has('city') ? 'checkout-city-error' : undefined}
                       autoComplete="address-level2"
                       placeholder="Cidade"
                       value={address.city}
                       onChange={(e) => { addressEditedRef.current = true; setAddress(prev => ({ ...prev, city: e.target.value })); clearInvalid('city'); }}
                       className={fieldClass('city')}
                     />
+                    {invalidFields.has('city') && <p id="checkout-city-error" className="mt-1 text-xs text-destructive">Informe a cidade de entrega.</p>}
                   </div>
                   <div>
                     <Label htmlFor="state">Estado *</Label>
                     <Input
                       id="state"
+                      aria-invalid={invalidFields.has('state')}
+                      aria-required="true"
+                      aria-describedby={invalidFields.has('state') ? 'checkout-state-error' : undefined}
                       autoComplete="address-level1"
                       placeholder="UF"
                       value={address.state}
@@ -1127,6 +1150,7 @@ const Carrinho = () => {
                       className={fieldClass('state')}
                       maxLength={2}
                     />
+                    {invalidFields.has('state') && <p id="checkout-state-error" className="mt-1 text-xs text-destructive">Informe a UF de entrega.</p>}
                   </div>
                 </div>
                 {addressNotice && <p role="status" className="mt-2 text-xs text-muted-foreground">{addressNotice}</p>}
@@ -1161,8 +1185,8 @@ const Carrinho = () => {
 
             {/* Right Column - Summary */}
             <div className="lg:col-span-1">
-              <div id="step-checkout" className="bg-card rounded-xl border border-border p-3 md:p-6 sticky top-28 scroll-mt-32">
-                <h2 className="font-display text-lg md:text-xl text-foreground mb-3 md:mb-4">
+              <div id="step-checkout" tabIndex={-1} role="region" aria-labelledby="checkout-summary-heading" className="bg-card rounded-xl border border-border p-3 md:p-6 lg:sticky lg:top-44 scroll-mt-40 md:scroll-mt-48">
+                <h2 id="checkout-summary-heading" className="font-display text-lg md:text-xl text-foreground mb-3 md:mb-4">
                   Resumo do Pedido
                 </h2>
 
@@ -1207,21 +1231,22 @@ const Carrinho = () => {
 
                 {/* Coupon */}
                 <div className="mt-4 pt-4 border-t border-border">
-                  <Label className="text-xs">Cupom de desconto</Label>
+                  <Label htmlFor="order-coupon" className="text-xs">Cupom de desconto</Label>
                   <div className="flex gap-2 mt-1">
                     <Input
+                      id="order-coupon"
                       placeholder="Código"
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                      className="font-mono uppercase"
+                      className="min-h-[44px] min-w-0 font-mono uppercase"
                       disabled={!!coupon}
                     />
                     {coupon ? (
-                      <Button variant="outline" size="sm" onClick={() => { setCoupon(null); setCouponInput(''); }}>
+                      <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => { setCoupon(null); setCouponInput(''); }}>
                         Remover
                       </Button>
                     ) : (
-                      <Button size="sm" onClick={handleApplyCoupon} disabled={couponLoading || !couponInput}>
+                      <Button size="sm" className="min-h-[44px]" onClick={handleApplyCoupon} disabled={couponLoading || !couponInput}>
                         {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
                       </Button>
                     )}
@@ -1282,7 +1307,7 @@ const Carrinho = () => {
                   <Button 
                     id="finalize-whatsapp-btn"
                     size="lg" 
-                    className="w-full bg-green-500 hover:bg-green-600 text-white"
+                    className="w-full min-h-[44px] bg-green-500 hover:bg-green-600 text-white"
                     onClick={handleSubmitOrder}
                     disabled={isSubmitting}
                   >

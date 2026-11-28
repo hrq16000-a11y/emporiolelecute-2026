@@ -1,13 +1,16 @@
-import { useState } from "react";
-import { Send, Heart, MessageCircle, CheckCircle2 } from "lucide-react";
+import { useId, useRef, useState } from "react";
+import { Send, MessageCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const QuoteFormSection = () => {
+const QuoteFormSection = ({ pageHeading = false }: { pageHeading?: boolean }) => {
+  const id = useId();
+  const Heading = pageHeading ? "h1" : "h2";
+  const submitLock = useRef(false);
+  const [feedback, setFeedback] = useState<"success" | "error" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -17,10 +20,12 @@ const QuoteFormSection = () => {
     quantity: "",
     message: ""
   });
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitLock.current) return;
+    submitLock.current = true;
+    setFeedback(null);
     setIsLoading(true);
 
     try {
@@ -31,13 +36,10 @@ const QuoteFormSection = () => {
         }
       });
 
-      if (error) throw error;
+      if (error || data?.success !== true) throw new Error("Solicitação não confirmada");
 
-      toast({
-        title: "Orçamento enviado! 🎉",
-        description: "Entraremos em contato em breve pelo WhatsApp.",
-      });
-      setFormData({
+      setFeedback("success");
+      setFormData(current => current !== formData ? current : {
         name: "",
         email: "",
         whatsapp: "",
@@ -45,14 +47,10 @@ const QuoteFormSection = () => {
         quantity: "",
         message: ""
       });
-    } catch (error) {
-      console.error("Error sending quote:", error);
-      toast({
-        title: "Erro ao enviar",
-        description: "Tente novamente ou entre em contato pelo WhatsApp.",
-        variant: "destructive"
-      });
+    } catch {
+      setFeedback("error");
     } finally {
+      submitLock.current = false;
       setIsLoading(false);
     }
   };
@@ -61,7 +59,7 @@ const QuoteFormSection = () => {
     <section 
       id="orcamento" 
       className="py-16 md:py-24 bg-cream/50 relative overflow-hidden"
-      aria-labelledby="orcamento-heading"
+      aria-labelledby={`${id}-heading`}
     >
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-dotted-pattern opacity-30" />
@@ -70,9 +68,9 @@ const QuoteFormSection = () => {
         <div className="max-w-5xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-12">
-            <h2 id="orcamento-heading" className="font-display text-3xl md:text-5xl text-foreground mb-4">
+            <Heading id={`${id}-heading`} className="font-display text-3xl md:text-5xl text-foreground mb-4">
               Orçamento <span className="font-script text-primary italic">Personalizado</span>
-            </h2>
+            </Heading>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Preencha o formulário abaixo e receba um orçamento personalizado para suas lembrancinhas. Respondemos em até 24 horas!
             </p>
@@ -109,67 +107,68 @@ const QuoteFormSection = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Atendimento rápido e personalizado
                 </p>
-                <a
-                  href="https://wa.me/5541992214299?text=Olá! Gostaria de solicitar um orçamento."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button 
-                    className="w-full bg-green-500 hover:bg-green-600 text-white rounded-full"
-                  >
-                    <MessageCircle className="h-5 w-5 mr-2" />
+                <Button asChild className="w-full min-h-[44px] bg-green-500 hover:bg-green-600 text-white rounded-full">
+                  <a href="https://wa.me/5541992214299?text=Olá! Gostaria de solicitar um orçamento." target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-5 w-5 mr-2" aria-hidden="true" />
                     (41) 99221-4299
-                  </Button>
-                </a>
+                  </a>
+                </Button>
               </div>
             </div>
             
             {/* Right Column - Form */}
             <div className="lg:col-span-3 bg-card p-6 md:p-8 rounded-2xl shadow-medium border border-border/50">
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} aria-busy={isLoading} className="space-y-5">
+                <p className="text-xs text-muted-foreground">Os campos com * são obrigatórios.</p>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Nome completo *</label>
+                  <label htmlFor={`${id}-name`} className="text-sm font-medium text-foreground">Nome completo *</label>
                   <Input
                     required
+                    id={`${id}-name`}
+                    name="name" autoComplete="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Seu nome"
-                    className="mt-1.5"
+                    className="mt-1.5 min-h-[44px]"
                   />
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-foreground">Email *</label>
+                    <label htmlFor={`${id}-email`} className="text-sm font-medium text-foreground">Email *</label>
                     <Input
                       required
                       type="email"
-                      value={formData.email}
+                      id={`${id}-email`}
+                    name="email" autoComplete="email"
+                    value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="seu@email.com"
-                      className="mt-1.5"
+                      className="mt-1.5 min-h-[44px]"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground">WhatsApp *</label>
+                    <label htmlFor={`${id}-whatsapp`} className="text-sm font-medium text-foreground">WhatsApp *</label>
                     <Input
                       required
-                      value={formData.whatsapp}
+                      id={`${id}-whatsapp`}
+                    name="whatsapp" type="tel" inputMode="tel" autoComplete="tel"
+                    value={formData.whatsapp}
                       onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                       placeholder="(41) 99999-9999"
-                      className="mt-1.5"
+                      className="mt-1.5 min-h-[44px]"
                     />
                   </div>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-foreground">Ocasião *</label>
-                    <Select 
+                    <label htmlFor={`${id}-occasion`} className="text-sm font-medium text-foreground">Ocasião</label>
+                    <Select name="occasion"
                       value={formData.occasion} 
                       onValueChange={(value) => setFormData({ ...formData, occasion: value })}
                     >
-                      <SelectTrigger className="mt-1.5">
+                      <SelectTrigger id={`${id}-occasion`} className="mt-1.5 min-h-[44px]">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
@@ -184,19 +183,23 @@ const QuoteFormSection = () => {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground">Quantidade</label>
+                    <label htmlFor={`${id}-quantity`} className="text-sm font-medium text-foreground">Quantidade</label>
                     <Input
-                      value={formData.quantity}
+                      id={`${id}-quantity`}
+                    name="quantity"
+                    value={formData.quantity}
                       onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                       placeholder="Ex: 50 unidades"
-                      className="mt-1.5"
+                      className="mt-1.5 min-h-[44px]"
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-foreground">Mensagem</label>
+                  <label htmlFor={`${id}-message`} className="text-sm font-medium text-foreground">Mensagem</label>
                   <Textarea
+                    id={`${id}-message`}
+                    name="message"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder="Descreva o que você precisa, cores preferidas, data do evento..."
@@ -204,6 +207,8 @@ const QuoteFormSection = () => {
                   />
                 </div>
                 
+                {feedback === "error" && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Não foi possível confirmar o envio. Seus dados continuam no formulário. Tente novamente ou fale pelo WhatsApp.</p>}
+                {feedback === "success" && <p role="status" className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-foreground">Solicitação processada. Se precisar, fale conosco pelo WhatsApp.</p>}
                 <Button 
                   type="submit" 
                   className="w-full bg-primary hover:bg-primary-dark text-primary-foreground rounded-full py-6 text-lg"
