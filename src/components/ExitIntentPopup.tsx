@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useEffect, useRef, useState } from "react";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Gift, Package, Clock } from "lucide-react";
+import { MessageCircle, Gift, Package, Clock, X } from "lucide-react";
 import { trackFunnelEvent } from "@/lib/analytics";
+import { CONSENT_LAYER, readStorefrontLayers, useStorefrontLayers } from "@/lib/storefront-layers";
 
 interface ExitIntentPopupProps {
   /** URL pronta para abrir o WhatsApp. Deve sempre refletir o estado atual (quantidade/personalização). */
@@ -65,6 +66,11 @@ export const ExitIntentPopup = ({
   armDelayMs = 8000,
 }: ExitIntentPopupProps) => {
   const [open, setOpen] = useState(false);
+  const previousFocus = useRef<HTMLElement | null>(null);
+  const layers = useStorefrontLayers();
+  useEffect(() => {
+    if (layers & CONSENT_LAYER) setOpen(false);
+  }, [layers]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -87,11 +93,14 @@ export const ExitIntentPopup = ({
       return true;
     };
 
-    const trigger = (reason: "mouse_out" | "scroll_up" | "visibility") => {
-      if (!armed) return;
+    const trigger = (reason: "mouse_out" | "scroll_up") => {
+      if (!armed || document.visibilityState !== "visible" || readStorefrontLayers() !== 0) return;
+      const focused = document.activeElement;
+      if (focused instanceof HTMLElement && (focused.matches("input, textarea, select, [role=combobox]") || focused.isContentEditable)) return;
       if (!canShow(reason)) return;
       const s = readState();
       writeState({ shownCount: s.shownCount + 1, lastShown: Date.now() });
+      previousFocus.current = focused instanceof HTMLElement ? focused : null;
       setOpen(true);
       trackFunnelEvent("exit_popup_open", {
         reason,
@@ -118,19 +127,13 @@ export const ExitIntentPopup = ({
       lastT = now;
     };
 
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") trigger("visibility");
-    };
-
     document.addEventListener("mouseout", onMouseOut);
     window.addEventListener("scroll", onScroll, { passive: true });
-    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       window.clearTimeout(armTimer);
       document.removeEventListener("mouseout", onMouseOut);
       window.removeEventListener("scroll", onScroll);
-      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [enabled, armDelayMs, cooldownMinutes, maxPerSession, productSlug, quantity, personalized]);
 
@@ -157,7 +160,16 @@ export const ExitIntentPopup = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" hideCloseButton onCloseAutoFocus={event => {
+        const target = previousFocus.current;
+        if (target?.isConnected && target !== document.body) {
+          event.preventDefault();
+          target.focus({ preventScroll: true });
+        }
+      }}>
+        <DialogClose aria-label="Fechar sugestão de atendimento" className="absolute right-3 top-3 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+          <X className="h-4 w-4" aria-hidden="true" />
+        </DialogClose>
         <DialogHeader>
           <div className="mx-auto mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Gift className="h-6 w-6" />

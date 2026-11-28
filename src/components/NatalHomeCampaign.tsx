@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CONSENT_LAYER, MODAL_LAYER, readStorefrontLayers, useStorefrontLayers } from "@/lib/storefront-layers";
 import { Link } from "react-router-dom";
 import { ArrowRight, Gift, Heart, Sparkles, X } from "lucide-react";
 
@@ -33,6 +34,7 @@ export function NatalHomeSpotlight() {
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link
                 to="/natal"
+                id="home-natal-campaign-link"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#872c3b] px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-[#68212e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#872c3b]"
               >
                 Visitar nosso Natal encantado <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -74,51 +76,83 @@ export function NatalHomeSpotlight() {
  */
 export function NatalWelcomeInvite() {
   const [visible, setVisible] = useState(false);
+  const inviteRef = useRef<HTMLElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+  const shown = useRef(false);
+  const layers = useStorefrontLayers();
+  const blocked = Boolean(layers & (CONSENT_LAYER | MODAL_LAYER));
+
+  const dismiss = () => {
+    // Um convite automático não rouba o foco nem deixa o teclado no body.
+    if (inviteRef.current?.contains(document.activeElement)) {
+      const previous = previousFocus.current;
+      const fallback = document.getElementById("home-natal-campaign-link");
+      const target = previous?.isConnected && previous !== document.body ? previous : fallback;
+      target?.focus({ preventScroll: true });
+    }
+    setVisible(false);
+  };
 
   useEffect(() => {
+    if (blocked) {
+      setVisible(false);
+      return;
+    }
+    if (shown.current) return;
     try {
       if (window.sessionStorage.getItem(INVITE_SEEN_KEY) === "1") return;
     } catch {
-      // Armazenamento indisponível não deve impedir o convite.
+      // Sem armazenamento, mantenha o limite nesta montagem.
     }
 
-    const timer = window.setTimeout(() => {
-      if (document.visibilityState !== "visible") return;
-      setVisible(true);
-      try {
-        window.sessionStorage.setItem(INVITE_SEEN_KEY, "1");
-      } catch {
-        // A experiência funciona mesmo sem armazenamento.
-      }
-    }, 8000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
+    let timer: number;
+    const schedule = () => {
+      window.clearTimeout(timer);
+      if (document.visibilityState !== "visible" || shown.current) return;
+      timer = window.setTimeout(() => {
+        if (document.visibilityState !== "visible" || (readStorefrontLayers() & (CONSENT_LAYER | MODAL_LAYER))) return;
+        previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        shown.current = true;
+        setVisible(true);
+        try {
+          window.sessionStorage.setItem(INVITE_SEEN_KEY, "1");
+        } catch { /* Somente o limite local permanece. */ }
+      }, 8000);
+    };
+    schedule();
+    document.addEventListener("visibilitychange", schedule);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", schedule);
+    };
+  }, [blocked]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || blocked) return;
     const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setVisible(false);
+      if (event.key === "Escape") dismiss();
     };
     window.addEventListener("keydown", onEscape);
     return () => window.removeEventListener("keydown", onEscape);
-  }, [visible]);
+  }, [visible, blocked]);
 
-  if (!visible) return null;
+  if (!visible || blocked) return null;
 
   return (
     <aside
+      ref={inviteRef}
+      data-storefront-layer="campaign"
       role="dialog"
       aria-modal="false"
       aria-labelledby="natal-invite-title"
       aria-describedby="natal-invite-description"
-      className="fixed right-4 top-24 z-[60] w-[calc(100vw-2rem)] max-w-[355px] overflow-hidden rounded-[1.5rem] border border-[#e8cfb1] bg-[#fff9f0] text-[#59443c] shadow-[0_22px_70px_-22px_rgba(75,32,40,.45)] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-3 motion-safe:duration-500"
+      className="fixed right-4 top-24 z-[60] w-[calc(100vw-2rem)] max-w-[355px] overflow-hidden rounded-[1.5rem] border border-[#e8cfb1] bg-[#fff9f0] text-[#59443c] shadow-[0_22px_70px_-22px_rgba(75,32,40,.45)] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-3 motion-safe:duration-200"
     >
       <button
         type="button"
         aria-label="Fechar convite de Natal"
-        onClick={() => setVisible(false)}
-        className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#73323c] shadow-sm transition-colors hover:bg-[#f8e5dd] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8d2836]"
+        onClick={dismiss}
+        className="absolute right-3 top-3 z-10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-white/95 text-[#73323c] shadow-sm transition-colors hover:bg-[#f8e5dd] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8d2836]"
       >
         <X className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -139,7 +173,7 @@ export function NatalWelcomeInvite() {
           <Link
             to="/natal"
             onClick={() => setVisible(false)}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#862c3b] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#65202c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#862c3b]"
+            className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-[#862c3b] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#65202c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#862c3b]"
           >
             Conhecer a coleção <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>

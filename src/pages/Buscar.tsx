@@ -154,7 +154,14 @@ const Buscar = () => {
 
   // Autofoco no campo ao abrir a página (UX mobile)
   useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 80);
+    const t = setTimeout(() => {
+      // A navegação não deve roubar o foco de quem já começou a interagir
+      // com a busca do cabeçalho, com os filtros ou com outro controle.
+      const active = document.activeElement;
+      if (!active || active === document.body || active === document.documentElement) {
+        inputRef.current?.focus({ preventScroll: true });
+      }
+    }, 80);
     return () => clearTimeout(t);
   }, []);
 
