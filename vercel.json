@@ -1,7 +1,38 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
+  "headers": [
+    {
+      "source": "/api/product-social",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/produto/:slug([a-z0-9-]+)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Ff]acebookexternalhit|[Ff]acebot|[Ww]hatsApp|[Tt]witterbot|[Ll]inkedInBot|[Ss]lackbot|[Tt]elegramBot|[Dd]iscordbot|[Pp]interestbot).*"
+        }
+      ],
+      "missing": [
+        {
+          "type": "query",
+          "key": "slug"
+        }
+      ],
+      "destination": "/api/product-social?slug=:slug"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
